@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "439410ef-8376-4395-9906-0a49a644fedc"
+      }
+    },
+    "owner": "kennethprz09",
+    "slug": "doki",
+    "android": {
+      "package": "com.kennethprz09.doki"
+    },
+    "ios": {
+      "bundleIdentifier": "com.kennethprz09.doki",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
