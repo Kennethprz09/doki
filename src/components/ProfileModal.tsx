@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUserStore } from '../store/userStore';
 import { useDocumentsStore } from '../store/documentsStore';
-import { RootStackParamList } from '@components/types';
+import { RootStackParamList } from './types';
 
 interface ProfileModalProps {
   isVisible: boolean;

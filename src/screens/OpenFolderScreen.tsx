@@ -4,10 +4,10 @@ import FiltersFolderComponents from '../components/Filters/FiltersFolderComponen
 import NewActionComponent from '../components/NewAction/NewActionComponent';
 import { useDocumentsStore } from '../store/documentsStore';
 import { RouteProp } from '@react-navigation/native';
-import { supabase } from '@src/supabase/supabaseClient';
-import { checkInternetConnection } from '@src/utils/actions';
-import { Document, RootStackParamList } from '@src/components/types';
-import { useGlobalStore } from '@src/store/globalStore';
+import { useGlobalStore } from 'src/store/globalStore';
+import { RootStackParamList } from 'src/components/types';
+import { checkInternetConnection } from 'src/utils/actions';
+import { supabase } from 'src/supabase/supabaseClient';
 
 interface OpenFolderScreenProps {
   route: RouteProp<RootStackParamList, 'OpenFolderPage'>;

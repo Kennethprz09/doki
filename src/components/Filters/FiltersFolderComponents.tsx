@@ -4,12 +4,12 @@ import { TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, Document } from '@components/types';
-import { supabase } from '@src/supabase/supabaseClient';
-import { checkInternetConnection } from '@src/utils/actions';
 import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
 import ProfileModal from '../ProfileModal';
+import { RootStackParamList } from '../types';
+import { checkInternetConnection } from 'src/utils/actions';
+import { supabase } from 'src/supabase/supabaseClient';
 
 interface FiltersFolderComponentsProps {
   documents: Document[] | undefined;

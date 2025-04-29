@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { MainNavigator } from '@src/navigation/BottomTap';
-import { Alert, Platform, StatusBar } from 'react-native';
+import { StatusBar } from 'react-native';
 import Toast from 'react-native-toast-message';
 import toastConfig from './src/components/Template/toastConfig';
 import Loader from './src/components/Template/Loader';
 import { useGlobalStore } from './src/store/globalStore';
 import * as Font from 'expo-font';
-import useNetInfo from '@src/hook/useNetInfo';
-import { useUserStore } from '@src/store/userStore';
+import useNetInfo from 'src/hook/useNetInfo';
+import { useUserStore } from 'src/store/userStore';
+import { MainNavigator } from 'src/navigation/BottomTap';
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);

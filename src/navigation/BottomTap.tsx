@@ -11,7 +11,7 @@ import HighlightsScreen from '../screens/HighlightsScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import OpenFolderScreen from '../screens/OpenFolderScreen';
 import MyAccountScreen from '../screens/MyAccountScreen';
-import { RootStackParamList } from '@src/components/types';
+import { RootStackParamList } from 'src/components/types';
 
 
 const Tab = createBottomTabNavigator<RootStackParamList>();

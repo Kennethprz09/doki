@@ -1,5 +1,5 @@
+import { Document } from 'src/components/types';
 import { create } from 'zustand';
-import { Document } from '@src/components/types';
 
 interface DocumentsState {
   documents: Document[];

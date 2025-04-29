@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useGlobalStore } from '@src/store/globalStore';
-import { useDocumentsStore } from '@src/store/documentsStore';
-import { checkInternetConnection } from '@src/utils/actions';
-import { supabase } from '@src/supabase/supabaseClient';
-import { Document } from '@src/components/types';
+import { useGlobalStore } from 'src/store/globalStore';
+import { useDocumentsStore } from 'src/store/documentsStore';
+import { checkInternetConnection } from 'src/utils/actions';
+import { supabase } from 'src/supabase/supabaseClient';
+import { Document } from '../types';
 
 interface ActionColorPickerProps {
   field: {

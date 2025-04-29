@@ -1,7 +1,7 @@
 import * as Network from 'expo-network';
 import { Alert } from 'react-native';
-import { syncUser, listDocuments } from '@src/utils/actions';
 import { useEffect, useState } from 'react';
+import { listDocuments, syncUser } from 'src/utils/actions';
 
 const useNetInfo = (): boolean => {
   const [isConnected, setIsConnected] = useState<boolean>(true);

@@ -14,8 +14,8 @@ import { useUserStore } from '../store/userStore';
 import { useGlobalStore } from '../store/globalStore';
 import { checkInternetConnection } from '../utils/actions';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { supabase } from '@src/supabase/supabaseClient';
-import { RootStackParamList } from '@src/components/types';
+import { RootStackParamList } from 'src/components/types';
+import { supabase } from 'src/supabase/supabaseClient';
 
 interface User {
   id: string;

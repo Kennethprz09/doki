@@ -7,8 +7,6 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".", // Root directory for resolving paths
     "paths": {
-      "@src/*": ["src/*"],
-      "@components/*": ["src/components/*"],
     }
   }
 }

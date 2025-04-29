@@ -5,9 +5,9 @@ import ActionDrawer from './ActionDrawer';
 import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, Document } from '@components/types';
-import { listDocuments } from '@src/utils/actions';
 import { formatDate } from 'date-fns';
+import { Document, RootStackParamList } from '../types';
+import { listDocuments } from 'src/utils/actions';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;

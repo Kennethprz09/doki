@@ -3,13 +3,13 @@ import { Alert, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedb
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useGlobalStore } from '@src/store/globalStore';
-import { useDocumentsStore } from '@src/store/documentsStore';
-import { checkInternetConnection } from '@src/utils/actions';
 import ActionColorPicker from './ActionColorPicker';
 import CreateFolderModal from '../NewAction/CreateFolderModal';
-import { supabase } from '@src/supabase/supabaseClient';
-import { Document } from '@src/components/types';
+import { Document } from '../types';
+import { useGlobalStore } from 'src/store/globalStore';
+import { useDocumentsStore } from 'src/store/documentsStore';
+import { checkInternetConnection } from 'src/utils/actions';
+import { supabase } from 'src/supabase/supabaseClient';
 
 interface ActionDrawerProps {
   field: {

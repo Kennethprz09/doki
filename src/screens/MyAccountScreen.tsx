@@ -13,16 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../store/userStore';
 import { useGlobalStore } from '../store/globalStore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { supabase } from '@src/supabase/supabaseClient';
-import { RootStackParamList } from '@src/components/types';
-
-interface User {
-  id: string;
-  name?: string;
-  surname?: string;
-  email?: string;
-  [key: string]: any;
-}
+import { RootStackParamList } from 'src/components/types';
+import { supabase } from 'src/supabase/supabaseClient';
 
 const MyAccountScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

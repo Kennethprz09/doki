@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Document } from '@components/types';
 import ProfileModal from '../ProfileModal';
-import { useUserStore } from '@src/store/userStore';
-import { listDocuments } from '@src/utils/actions';
 import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
+import { useUserStore } from 'src/store/userStore';
+import { listDocuments } from 'src/utils/actions';
 
 interface FiltersComponentsProps {
   documents: Document[] | undefined;

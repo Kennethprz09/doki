@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import CreateFolderModal from './CreateFolderModal';
-import { useUserStore } from '@src/store/userStore';
-import { useGlobalStore } from '@src/store/globalStore';
-import { useDocumentsStore } from '@src/store/documentsStore';
-import { checkInternetConnection } from '@src/utils/actions';
-import { supabase } from '@src/supabase/supabaseClient';
-import base64 from 'react-native-base64';
-import { Document } from '@src/components/types';
+import { Buffer } from 'buffer';
+import { useUserStore } from 'src/store/userStore';
+import { useGlobalStore } from 'src/store/globalStore';
+import { useDocumentsStore } from 'src/store/documentsStore';
+import { checkInternetConnection } from 'src/utils/actions';
+import { Document } from '../types';
+import { supabase } from 'src/supabase/supabaseClient';
 
 interface NewActionComponentProps {
   folder?: { folder?: Partial<Document> };
@@ -76,8 +76,8 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
       // Generar ruta única
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
 
-      // Convertir Base64 a Uint8Array usando react-native-base64
-      const fileData = base64.decode(fileContent);
+      // Convertir Base64 a Uint8Array usando Buffer
+      const fileData = Buffer.from(fileContent, 'base64');
 
       // Subir archivo a Supabase Storage
       const { error: uploadError } = await supabase.storage
