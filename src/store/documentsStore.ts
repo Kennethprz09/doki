@@ -1,4 +1,4 @@
-import { Document } from './src/components/types';
+import { Document } from '../components/types';
 import { create } from 'zustand';
 
 interface DocumentsState {

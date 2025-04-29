@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ProfileModal from '../ProfileModal';
 import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
-import { useUserStore } from './src/store/userStore';
-import { listDocuments } from './src/utils/actions';
+import { useUserStore } from '../../store/userStore';
+import { listDocuments } from '../../utils/actions';
 
 interface FiltersComponentsProps {
   documents: Document[] | undefined;

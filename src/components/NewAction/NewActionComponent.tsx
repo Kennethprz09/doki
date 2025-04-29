@@ -5,12 +5,12 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import CreateFolderModal from './CreateFolderModal';
 import { Buffer } from 'buffer';
-import { useUserStore } from './src/store/userStore';
-import { useGlobalStore } from './src/store/globalStore';
-import { useDocumentsStore } from './src/store/documentsStore';
-import { checkInternetConnection } from './src/utils/actions';
+import { useUserStore } from '../../store/userStore';
+import { useGlobalStore } from '../../store/globalStore';
+import { useDocumentsStore } from '../../store/documentsStore';
+import { checkInternetConnection } from '../../utils/actions';
 import { Document } from '../types';
-import { supabase } from './src/supabase/supabaseClient';
+import { supabase } from '../../supabase/supabaseClient';
 
 interface NewActionComponentProps {
   folder?: { folder?: Partial<Document> };

@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
-import { Document } from './src/components/types';
-import { useDocumentsStore } from './src/store/documentsStore';
-import { supabase } from './src/supabase/supabaseClient';
+import { Document } from '../components/types';
+import { useDocumentsStore } from '../store/documentsStore';
+import { supabase } from '../supabase/supabaseClient';
 
 interface Filter {
   name?: string;

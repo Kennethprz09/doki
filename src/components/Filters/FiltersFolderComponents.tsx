@@ -8,8 +8,8 @@ import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
 import ProfileModal from '../ProfileModal';
 import { RootStackParamList } from '../types';
-import { checkInternetConnection } from './src/utils/actions';
-import { supabase } from './src/supabase/supabaseClient';
+import { checkInternetConnection } from '../../utils/actions';
+import { supabase } from '../../supabase/supabaseClient';
 
 interface FiltersFolderComponentsProps {
   documents: Document[] | undefined;
