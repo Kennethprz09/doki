@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Document } from '../types';
-import { useGlobalStore } from 'src/store/globalStore';
-import { useUserStore } from 'src/store/userStore';
-import { useDocumentsStore } from 'src/store/documentsStore';
-import { checkInternetConnection } from 'src/utils/actions';
-import { supabase } from 'src/supabase/supabaseClient';
+import { useGlobalStore } from './src/store/globalStore';
+import { useUserStore } from './src/store/userStore';
+import { useDocumentsStore } from './src/store/documentsStore';
+import { checkInternetConnection } from './src/utils/actions';
+import { supabase } from './src/supabase/supabaseClient';
 
 const { width } = Dimensions.get('window');
 

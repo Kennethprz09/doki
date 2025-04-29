@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, FlatList, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Document } from '../types';
-import { useGlobalStore } from 'src/store/globalStore';
-import { useDocumentsStore } from 'src/store/documentsStore';
-import { checkInternetConnection } from 'src/utils/actions';
-import { supabase } from 'src/supabase/supabaseClient';
+import { useGlobalStore } from './src/store/globalStore';
+import { useDocumentsStore } from './src/store/documentsStore';
+import { checkInternetConnection } from './src/utils/actions';
+import { supabase } from './src/supabase/supabaseClient';
 
 
 interface ActionMoveModalProps {

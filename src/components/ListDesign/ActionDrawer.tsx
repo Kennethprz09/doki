@@ -6,10 +6,10 @@ import * as Sharing from 'expo-sharing';
 import ActionColorPicker from './ActionColorPicker';
 import CreateFolderModal from '../NewAction/CreateFolderModal';
 import { Document } from '../types';
-import { useGlobalStore } from 'src/store/globalStore';
-import { useDocumentsStore } from 'src/store/documentsStore';
-import { checkInternetConnection } from 'src/utils/actions';
-import { supabase } from 'src/supabase/supabaseClient';
+import { useGlobalStore } from './src/store/globalStore';
+import { useDocumentsStore } from './src/store/documentsStore';
+import { checkInternetConnection } from './src/utils/actions';
+import { supabase } from './src/supabase/supabaseClient';
 
 interface ActionDrawerProps {
   field: {

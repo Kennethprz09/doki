@@ -3,9 +3,9 @@ import { View, StyleSheet, SafeAreaView } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from 'src/components/types';
-import { supabase } from 'src/supabase/supabaseClient';
-import { syncUser } from 'src/utils/actions';
+import { RootStackParamList } from './src/components/types';
+import { supabase } from './src/supabase/supabaseClient';
+import { syncUser } from './src/utils/actions';
 
 interface SplashScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;

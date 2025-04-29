@@ -7,7 +7,7 @@ import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Document, RootStackParamList } from '../types';
-import { listDocuments } from 'src/utils/actions';
+import { listDocuments } from './src/utils/actions';
 
 interface FileItemProps {
   item: Document;

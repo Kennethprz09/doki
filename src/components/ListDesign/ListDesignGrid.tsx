@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { formatDate } from 'date-fns';
 import { Document, RootStackParamList } from '../types';
-import { listDocuments } from 'src/utils/actions';
+import { listDocuments } from './src/utils/actions';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;

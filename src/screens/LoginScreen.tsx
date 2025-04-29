@@ -6,8 +6,8 @@ import { useGlobalStore } from '../store/globalStore';
 import { checkInternetConnection } from '../utils/actions';
 import PrivacyPoliciesModal from '../components/PrivacyPoliciesModal';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from 'src/components/types';
-import { login } from 'src/supabase/auth';
+import { RootStackParamList } from './src/components/types';
+import { login } from './src/supabase/auth';
 
 interface LoginScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
