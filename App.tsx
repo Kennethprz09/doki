@@ -9,6 +9,7 @@ import * as Font from 'expo-font';
 import useNetInfo from './src/hook/useNetInfo';
 import { useUserStore } from './src/store/userStore';
 import { MainNavigator } from './src/navigation/BottomTap';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -52,10 +53,11 @@ const App = () => {
   }
 
   return (
-    <>
-      <StatusBar translucent={false} backgroundColor={'transparent'} />
+    <SafeAreaView style={{ flex: 1 }}>
+      <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle={'dark-content'} />
+
       <AppContent />
-    </>
+    </SafeAreaView>
   );
 };
 
