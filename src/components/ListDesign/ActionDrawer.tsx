@@ -11,6 +11,7 @@ import { useDocumentsStore } from '../../store/documentsStore';
 import { checkInternetConnection } from '../../utils/actions';
 import { supabase } from '../../supabase/supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 interface ActionDrawerProps {
   field: {
@@ -134,21 +135,13 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     }
 
     try {
+      handleClose();
       setLoading(true);
 
-      // Normalizar la extensión (quitar el punto y convertir a minúsculas)
       const normalizedExt = fileExt.toLowerCase().replace('.', '');
-      // const supportedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpeg', 'jpg'];
-      // if (!supportedExtensions.includes(normalizedExt)) {
-      //   Alert.alert('Error', 'Formato de archivo no soportado.');
-      //   return;
-      // }
-
-      // Obtener el nombre del archivo y definir la ruta local
       const fileName = fileUrl.split('/').pop() || `tempfile.${normalizedExt}`;
       const localFile = `${FileSystem.documentDirectory}${fileName}`;
 
-      // Obtener URL firmada de Supabase
       const { data, error } = await supabase.storage
         .from('documents')
         .createSignedUrl(fileUrl, 60);
@@ -156,17 +149,24 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
         throw error || new Error('No se pudo obtener la URL firmada.');
       }
 
-      // Descargar el archivo localmente
       const { uri } = await FileSystem.downloadAsync(data.signedUrl, localFile);
 
-      // Intentar abrir el archivo con una aplicación nativa
-      const fileUri = `file://${uri}`;
-      const canOpen = await Linking.canOpenURL(fileUri);
-      if (canOpen) {
-        await Linking.openURL(fileUri);
-      } else {
-        Alert.alert('Error', 'No se encontró una aplicación para abrir este tipo de archivo.');
+      let fileUri = uri;
+      if (Platform.OS === 'android') {
+        // fileUri = await FileSystem.getContentUriAsync(uri);
+
+        const contentUri = await FileSystem.getContentUriAsync(uri);
+        await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+          data: contentUri,
+          flags: 1,
+          type: fileExt
+        });
+        return;
       }
+
+      console.log('File URI:', fileUri);
+
+      await Linking.openURL(fileUri);
     } catch (error) {
       console.error('Error al visualizar el archivo:', error);
       Alert.alert('Error', 'No se pudo abrir el archivo. Asegúrate de tener una aplicación compatible instalada.');
@@ -182,6 +182,7 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     }
 
     try {
+      handleClose();
       setLoading(true);
       const fileName = fileUrl.split('/').pop() || 'tempfile';
       const localFile = `${FileSystem.documentDirectory}${fileName}`;
@@ -218,6 +219,7 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     }
 
     try {
+      handleClose();
       setLoading(true);
 
       // Obtener URL firmada de Supabase
@@ -330,7 +332,7 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
                 <>
                   <TouchableOpacity style={styles.option} onPress={() => viewFile(field.item?.path, field.item?.ext)}>
                     <Ionicons name="eye-outline" size={24} color="#888" />
-                    <Text style={styles.optionText}>Ver (EnPruebas)</Text>
+                    <Text style={styles.optionText}>Ver</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.option} onPress={() => shareFile(field.item?.path)}>
                     <Ionicons name="share-social-outline" size={24} color="#888" />

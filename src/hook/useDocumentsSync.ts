@@ -17,6 +17,7 @@ const useDocumentsSync = () => {
         const { data, error } = await supabase
           .from('documents')
           .select('*')
+          .is('folder_id', null)
           .eq('user_id', user.id);
 
         if (error) {
@@ -47,7 +48,7 @@ const useDocumentsSync = () => {
           event: '*',
           schema: 'public',
           table: 'documents',
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${user.id}, folder_id.is.null`,
         },
         (payload) => {
           const document = payload.new as Document;

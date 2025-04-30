@@ -24,12 +24,14 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
   const [isAscending, setIsAscending] = useState(true);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const setDocumentsFolder = useDocumentsStore((state) => state.setDocumentsFolder);
+
 
   // Selector estabilizado con useMemo
-  const documents = useDocumentsStore((state) => state.documents, shallow);
+  const documentsFolder = useDocumentsStore((state) => state.documentsFolder, shallow);
   const filteredDocs = useMemo(
-    () => documents.filter((doc) => doc.folder_id === folder?.id),
-    [documents, folder?.id]
+    () => documentsFolder.filter((doc) => doc.folder_id === folder?.id),
+    [documentsFolder, folder?.id]
   );
 
   // Filtrar y ordenar documentos con useMemo
@@ -55,25 +57,21 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
 
   // Función para búsqueda en línea
   const handleOnlineSearch = async () => {
-    if (!folder?.id || checkInternetConnection()) return;
+    if (!folder?.id || (await checkInternetConnection())) return;
 
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('documents')
         .select('*')
         .eq('folder_id', folder.id)
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
 
-      if (search) {
-        query = query.ilike('name', `%${search}%`);
-      }
-
-      query = query.order(order.field, { ascending: order.type === 'asc' });
-
-      const { data, error } = await query;
       if (error) throw error;
+
+      // Actualizar el store con los documentos de la carpeta
+      setDocumentsFolder(data || []);
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error fetching folder documents:', error);
     }
   };
 
@@ -146,7 +144,6 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
   );
 };
 
-// Estilos (sin cambios)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   searchContainer: {

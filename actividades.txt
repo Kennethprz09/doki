@@ -1,5 +1,7 @@
 ++++++++++++++++++++++++++++++++++++++++++++Pendiente++++++++++++++++++++++++++++++++++++++++++++++++++++
-    1- Login y registro ponerlos de fondo negreo y cambiar el logo de negro
+    3- Busqueda por fuera y dentro de carpetas.
+    4- Revisar mi cuenta.
+    5- Generar logos y nombre de la app.
 
 ++++++++++++++++++++++++++++++++++++++++++++Preguntas++++++++++++++++++++++++++++++++++++++++++++++++++++
     Funcion global que valide cuanto espacio esta ocupando en archivos el usuario (Pendiente banner, Pendiente limite maximo y Pendiente limite individual)

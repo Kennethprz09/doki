@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import FiltersFolderComponents from '../components/Filters/FiltersFolderComponents';
-import { Document } from '../components/types';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../components/types';
 
