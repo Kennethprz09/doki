@@ -10,6 +10,7 @@ import { useGlobalStore } from '../../store/globalStore';
 import { useDocumentsStore } from '../../store/documentsStore';
 import { checkInternetConnection } from '../../utils/actions';
 import { supabase } from '../../supabase/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ActionDrawerProps {
   field: {
@@ -131,10 +132,10 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
       Alert.alert('Error', 'Falta la URL o la extensión del archivo.');
       return;
     }
-  
+
     try {
       setLoading(true);
-  
+
       // Normalizar la extensión (quitar el punto y convertir a minúsculas)
       const normalizedExt = fileExt.toLowerCase().replace('.', '');
       // const supportedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpeg', 'jpg'];
@@ -142,11 +143,11 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
       //   Alert.alert('Error', 'Formato de archivo no soportado.');
       //   return;
       // }
-  
+
       // Obtener el nombre del archivo y definir la ruta local
       const fileName = fileUrl.split('/').pop() || `tempfile.${normalizedExt}`;
       const localFile = `${FileSystem.documentDirectory}${fileName}`;
-  
+
       // Obtener URL firmada de Supabase
       const { data, error } = await supabase.storage
         .from('documents')
@@ -154,10 +155,10 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
       if (error || !data?.signedUrl) {
         throw error || new Error('No se pudo obtener la URL firmada.');
       }
-  
+
       // Descargar el archivo localmente
       const { uri } = await FileSystem.downloadAsync(data.signedUrl, localFile);
-  
+
       // Intentar abrir el archivo con una aplicación nativa
       const fileUri = `file://${uri}`;
       const canOpen = await Linking.canOpenURL(fileUri);
@@ -215,10 +216,10 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
       Alert.alert('Error', 'Falta la URL o el nombre del archivo.');
       return;
     }
-  
+
     try {
       setLoading(true);
-  
+
       // Obtener URL firmada de Supabase
       const { data, error } = await supabase.storage
         .from('documents')
@@ -226,33 +227,55 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
       if (error || !data?.signedUrl) {
         throw error || new Error('No se pudo obtener la URL firmada.');
       }
-  
-      // Definir la carpeta de destino (Descargas/DokiFiles)
-      const downloadDir = `${FileSystem.cacheDirectory}DokiFiles/`; // Temporal para iOS
-      const finalDir = Platform.OS === 'android' 
-        ? `${FileSystem.documentDirectory.replace('files', 'Download')}/DokiFiles/`
-        : downloadDir; // En iOS usaremos un enfoque diferente
-  
-      // Crear la carpeta DokiFiles si no existe
-      await FileSystem.makeDirectoryAsync(finalDir, { intermediates: true });
-  
-      // Definir la ruta completa del archivo
-      const downloadDest = `${finalDir}${fileName}`;
-  
-      // Descargar el archivo
-      const { uri } = await FileSystem.downloadAsync(data.signedUrl, downloadDest);
-  
-      if (Platform.OS === 'ios') {
-        // En iOS, usar Sharing para permitir al usuario guardar en "Descargas"
+
+      if (Platform.OS === 'android') {
+        // Comprobar si ya tenemos permisos guardados
+        const savedDirUri = await AsyncStorage.getItem('downloadDirUri');
+        let dirUri = savedDirUri;
+
+        if (!dirUri) {
+          // Solicitar permisos para acceder a la carpeta Descargas
+          const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (!permissions.granted) {
+            Alert.alert('Permisos denegados', 'Se requieren permisos para guardar archivos en Descargas.');
+            return;
+          }
+          dirUri = permissions.directoryUri;
+          // Guardar el URI para futuras descargas
+          await AsyncStorage.setItem('downloadDirUri', dirUri);
+        }
+
+        // Utilizar la carpeta seleccionada sin crear una subcarpeta adicional
+        const dokiFilesUri = dirUri;
+
+        // Descargar el archivo temporalmente
+        const tempFile = `${FileSystem.cacheDirectory}${fileName}`;
+        const { uri: tempUri } = await FileSystem.downloadAsync(data.signedUrl, tempFile);
+
+        // Copiar el archivo a la carpeta DokiFiles
+        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          dokiFilesUri,
+          fileName,
+          field.item?.ext || 'application/octet-stream'
+        );
+        const fileBase64 = await FileSystem.readAsStringAsync(tempUri, { encoding: FileSystem.EncodingType.Base64 });
+        await FileSystem.StorageAccessFramework.writeAsStringAsync(fileUri, fileBase64, { encoding: FileSystem.EncodingType.Base64 });
+
+        Alert.alert('Descarga completada', `Archivo guardado en: Descargas/${fileName}`);
+      } else {
+        // iOS: Usar Sharing para permitir al usuario guardar en Descargas
+        const downloadDir = `${FileSystem.cacheDirectory}DokiFiles/`;
+        await FileSystem.makeDirectoryAsync(downloadDir, { intermediates: true });
+        const downloadDest = `${downloadDir}${fileName}`;
+
+        const { uri } = await FileSystem.downloadAsync(data.signedUrl, downloadDest);
+
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(uri, { dialogTitle: 'Guardar archivo en Descargas' });
           Alert.alert('Descarga completada', 'Por favor, guarda el archivo en la carpeta Descargas desde el diálogo.');
         } else {
           Alert.alert('Error', 'No se puede guardar el archivo en este dispositivo.');
         }
-      } else {
-        // En Android, el archivo ya está en Descargas/DokiFiles
-        Alert.alert('Descarga completada', `Archivo guardado en: Descargas/DokiFiles/${fileName}`);
       }
     } catch (error) {
       console.error('Error al descargar el archivo:', error);
