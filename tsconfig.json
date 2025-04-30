@@ -5,8 +5,6 @@
     "jsx": "react-native",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".", // Root directory for resolving paths
-    "paths": {
-    }
+    "baseUrl": "."
   }
 }

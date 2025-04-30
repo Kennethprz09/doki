@@ -7,7 +7,6 @@ import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Document, RootStackParamList } from '../types';
-import { listDocuments } from '../../utils/actions';
 
 interface FileItemProps {
   item: Document;
@@ -26,7 +25,7 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
         if (showMoreButton) {
           navigation.navigate('OpenFolderPage', { item });
         }
-      } else {        
+      } else {
         onPress(item);
       }
     }}
@@ -61,8 +60,8 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
 );
 
 interface ListDesignBasicProps {
-  documents: Document[] | undefined;
-  folder?: Document;
+  documents: Document[]; // Recibe documentos filtrados
+  folder?: Document; // Mantenemos folder para ActionMoveModal
 }
 
 const ListDesignBasic: React.FC<ListDesignBasicProps> = ({ documents, folder }) => {
@@ -103,8 +102,7 @@ const ListDesignBasic: React.FC<ListDesignBasicProps> = ({ documents, folder }) 
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await listDocuments({ folder_id_Null: 1 });
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   return (

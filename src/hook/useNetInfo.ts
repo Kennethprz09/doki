@@ -1,7 +1,7 @@
 import * as Network from 'expo-network';
 import { Alert } from 'react-native';
 import { useEffect, useState } from 'react';
-import { listDocuments, syncUser } from '../utils/actions';
+import { syncUser } from '../utils/actions';
 
 const useNetInfo = (): boolean => {
   const [isConnected, setIsConnected] = useState<boolean>(true);
@@ -15,9 +15,8 @@ const useNetInfo = (): boolean => {
       if (!networkState.isConnected && isConnected) {
         Alert.alert('Sin conexión', 'No tienes conexión a Internet. Mostrando datos offline.');
       } else if (networkState.isConnected && !wasConnected) {
-        // Sincronizar datos cuando la conexión se restaura
+        // Sincronizar datos del usuario cuando la conexión se restaura
         await syncUser();
-        await listDocuments({});
       }
     };
 

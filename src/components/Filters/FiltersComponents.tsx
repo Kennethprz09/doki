@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileModal from '../ProfileModal';
 import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
 import { useUserStore } from '../../store/userStore';
-import { listDocuments } from '../../utils/actions';
+import { useDocumentsStore } from '../../store/documentsStore';
+import { Document } from '../types';
 
 interface FiltersComponentsProps {
-  documents: Document[] | undefined;
+  filterType: 'all' | 'favorites';
 }
 
-const FiltersComponents: React.FC<FiltersComponentsProps> = ({ documents }) => {
+const FiltersComponents: React.FC<FiltersComponentsProps> = ({ filterType }) => {
   const user = useUserStore((state) => state.user);
+  const documents = useDocumentsStore((state) => state.documents);
+  const documentsFavorite = useDocumentsStore((state) => state.documentsFavorite);
   const [search, setSearch] = useState('');
   const [order, setOrder] = useState([{ field: 'name', type: 'asc' }]);
   const [typeList, setTypeList] = useState(true);
@@ -25,25 +28,54 @@ const FiltersComponents: React.FC<FiltersComponentsProps> = ({ documents }) => {
 
   const toggleSortOrder = () => {
     setIsAscending(!isAscending);
-    setOrder([{ field: 'name', type: isAscending ? 'asc' : 'desc' }]);
-    handleSearch();
+    setOrder([{ field: 'name', type: isAscending ? 'desc' : 'asc' }]);
   };
 
   const toggleList = () => {
     setTypeList(!typeList);
   };
 
-  const handleSearch = async () => {
-    await listDocuments({ name: search, order, folder_id_Null: 1 });
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleSearch();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [search]);
+  // Filtrar y ordenar documentos con useMemo
+  const filteredDocuments = useMemo(() => {
+    const sourceDocuments = filterType === 'all' ? documents : documentsFavorite;
+  
+    // Verificación defensiva mejorada
+    if (!Array.isArray(sourceDocuments)) {
+      console.warn('sourceDocuments no es un array:', {
+        filterType,
+        source: filterType === 'all' ? 'documents' : 'documentsFavorite',
+        value: sourceDocuments,
+      });
+      return [];
+    }
+  
+    let result = [...sourceDocuments];
+  
+    // Filtrar por búsqueda
+    if (search) {
+      result = result.filter((doc) =>
+        doc.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+  
+    // Filtrar por documentos sin folder_id solo para 'all'
+    if (filterType === 'all') {
+      result = result.filter((doc) => !doc.folder_id);
+    }
+  
+    // Ordenar
+    result.sort((a, b) => {
+      const field = order[0].field as keyof Document;
+      const type = order[0].type;
+      const aValue = a[field] || '';
+      const bValue = b[field] || '';
+      return type === 'asc'
+        ? aValue.toString().localeCompare(bValue.toString())
+        : bValue.toString().localeCompare(aValue.toString());
+    });
+  
+    return result;
+  }, [search, order, documents, documentsFavorite, filterType]);
 
   return (
     <View style={styles.container}>
@@ -85,9 +117,9 @@ const FiltersComponents: React.FC<FiltersComponentsProps> = ({ documents }) => {
       </View>
 
       {typeList ? (
-        <ListDesignBasic documents={documents} />
+        <ListDesignBasic documents={filteredDocuments} />
       ) : (
-        <ListDesignGrid documents={documents} />
+        <ListDesignGrid documents={filteredDocuments} />
       )}
 
       <ProfileModal isVisible={isModalVisible} onClose={toggleModal} />

@@ -1,5 +1,4 @@
-// src/components/Filters/FiltersFolderComponents.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -7,55 +6,56 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ListDesignBasic from '../ListDesign/ListDesignBasic';
 import ListDesignGrid from '../ListDesign/ListDesignGrid';
 import ProfileModal from '../ProfileModal';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, Document } from '../types';
 import { checkInternetConnection } from '../../utils/actions';
 import { supabase } from '../../supabase/supabaseClient';
+import { useDocumentsStore } from '../../store/documentsStore';
+import { shallow } from 'zustand/shallow';
 
 interface FiltersFolderComponentsProps {
-  documents: Document[] | undefined;
   folder: Document | null;
 }
 
-const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ documents, folder }) => {
+const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folder }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
   const [search, setSearch] = useState('');
-  const [order, setOrder] = useState([{ field: 'name', type: 'asc' as 'asc' | 'desc' }]);
+  const [order, setOrder] = useState<{ field: string; type: 'asc' | 'desc' }>({ field: 'name', type: 'asc' });
   const [typeList, setTypeList] = useState(true);
   const [isAscending, setIsAscending] = useState(true);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>(documents || []);
 
-  // Sincronizar documentos iniciales solo una vez
-  useEffect(() => {
-    if (documents && filteredDocuments.length === 0) {
-      const validDocuments = documents.filter((doc) => doc && doc.id);
-      console.log('Initial valid documents:', validDocuments);
-      setFilteredDocuments(validDocuments);
+  // Selector estabilizado con useMemo
+  const documents = useDocumentsStore((state) => state.documents, shallow);
+  const filteredDocs = useMemo(
+    () => documents.filter((doc) => doc.folder_id === folder?.id),
+    [documents, folder?.id]
+  );
+
+  // Filtrar y ordenar documentos con useMemo
+  const filteredDocuments = useMemo(() => {
+    let result = [...filteredDocs];
+
+    if (search) {
+      result = result.filter((doc) => doc.name.toLowerCase().includes(search.toLowerCase()));
     }
-  }, [documents]);
 
-  // Manejar búsqueda y ordenamiento
-  const handleSearch = async () => {
-    if (!folder?.id) return;
+    result.sort((a, b) => {
+      const field = order.field as keyof Document;
+      const type = order.type;
+      const aValue = a[field] || '';
+      const bValue = b[field] || '';
+      return type === 'asc'
+        ? aValue.toString().localeCompare(bValue.toString())
+        : bValue.toString().localeCompare(aValue.toString());
+    });
 
-    console.log('Searching documents for folder:', folder.id, 'with query:', search);
+    return result;
+  }, [filteredDocs, search, order]);
 
-    const isOffline = await checkInternetConnection();
-    if (isOffline) {
-      console.log('Offline, filtering locally');
-      let offlineDocs = (documents || []).filter(
-        (doc) => doc && doc.id && (search ? doc.name.toLowerCase().includes(search.toLowerCase()) : true)
-      );
-      offlineDocs = offlineDocs.sort((a, b) => {
-        const isAsc = order[0].type === 'asc';
-        return isAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      });
-      console.log('Offline documents:', offlineDocs);
-      setFilteredDocuments(offlineDocs);
-      return;
-    }
+  // Función para búsqueda en línea
+  const handleOnlineSearch = async () => {
+    if (!folder?.id || checkInternetConnection()) return;
 
     try {
       let query = supabase
@@ -68,41 +68,26 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ docum
         query = query.ilike('name', `%${search}%`);
       }
 
-      query = query.order(order[0].field, { ascending: order[0].type === 'asc' });
+      query = query.order(order.field, { ascending: order.type === 'asc' });
 
       const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      const validData = (data || []).filter((doc) => doc && doc.id);
-      console.log('Documents fetched from Supabase:', validData);
-      setFilteredDocuments(validData);
+      if (error) throw error;
     } catch (error) {
       console.error('Error fetching documents:', error);
-      const validDocuments = (documents || []).filter((doc) => doc && doc.id);
-      setFilteredDocuments(validDocuments);
     }
   };
 
-  // Ejecutar búsqueda cuando cambian search u order
+  // Ejecutar búsqueda solo cuando cambian search u order
   useEffect(() => {
-    handleSearch();
+    handleOnlineSearch();
   }, [search, order, folder?.id]);
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
-
+  const toggleModal = () => setModalVisible(!isModalVisible);
   const toggleSortOrder = () => {
     setIsAscending(!isAscending);
-    setOrder([{ field: 'name', type: isAscending ? 'desc' : 'asc' }]);
+    setOrder({ field: 'name', type: isAscending ? 'desc' : 'asc' });
   };
-
-  const toggleList = () => {
-    setTypeList(!typeList);
-  };
+  const toggleList = () => setTypeList(!typeList);
 
   return (
     <View style={styles.container}>
@@ -118,7 +103,6 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ docum
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#a3a3a3"
-              onSubmitEditing={handleSearch}
               autoFocus
             />
           </View>
@@ -147,12 +131,7 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ docum
           />
         </TouchableOpacity>
         <TouchableOpacity style={styles.rightSection} onPress={toggleList}>
-          <Ionicons
-            name="grid-outline"
-            size={20}
-            color="#333"
-            style={styles.additionalIcon}
-          />
+          <Ionicons name="grid-outline" size={20} color="#333" style={styles.additionalIcon} />
         </TouchableOpacity>
       </View>
 
@@ -167,11 +146,9 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ docum
   );
 };
 
+// Estilos (sin cambios)
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
+  container: { flex: 1, backgroundColor: '#FFF' },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -181,12 +158,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     paddingHorizontal: 10,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'Karla-Regular',
-    color: '#000',
-  },
+  searchInput: { flex: 1, fontSize: 16, fontFamily: 'Karla-Regular', color: '#000' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,17 +171,8 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
     marginBottom: 10,
   },
-  title: {
-    fontSize: 18,
-    fontFamily: 'Karla-Bold',
-    color: '#FFF',
-    flex: 1,
-    marginLeft: 10,
-  },
-  icons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  title: { fontSize: 18, fontFamily: 'Karla-Bold', color: '#FFF', flex: 1, marginLeft: 10 },
+  icons: { flexDirection: 'row', alignItems: 'center' },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -217,22 +180,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 10,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  filterText: {
-    fontSize: 16,
-    fontFamily: 'Karla-Bold',
-    marginRight: 5,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  additionalIcon: {
-    marginLeft: 10,
-  },
+  filterContainer: { flexDirection: 'row', alignItems: 'center' },
+  filterText: { fontSize: 16, fontFamily: 'Karla-Bold', marginRight: 5 },
+  rightSection: { flexDirection: 'row', alignItems: 'center' },
+  additionalIcon: { marginLeft: 10 },
 });
 
 export default FiltersFolderComponents;

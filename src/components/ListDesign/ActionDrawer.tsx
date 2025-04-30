@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -20,7 +20,7 @@ interface ActionDrawerProps {
 
 const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
   const setLoading = useGlobalStore((state) => state.setLoading);
-  const { updateDocument, deleteDocument } = useDocumentsStore();
+  const { deleteDocument } = useDocumentsStore();
   const [showVisible, setShowVisible] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
   const [actionDrawerField, setActionDrawerField] = useState<{ visible?: boolean; item?: Document }>({});
@@ -29,7 +29,7 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     setShowVisible(false);
   };
 
-  const handleFavorite = async (id?: string, status?: number) => {
+  const handleFavorite = async (id?: string, status?: boolean) => {
     const isOffline = await checkInternetConnection();
     if (isOffline) {
       return;
@@ -38,10 +38,9 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     if (id && status !== undefined) {
       setLoading(true);
       try {
-        // Actualiza el estado de favorito en Supabase
         const { error } = await supabase
           .from('documents')
-          .update({ is_favorite: status === 1 })
+          .update({ is_favorite: status })
           .eq('id', id)
           .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
 
@@ -49,8 +48,16 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
           throw error;
         }
 
-        // Actualiza el documento en el store
-        updateDocument({ id, changes: { is_favorite: status === 1 } });
+        useDocumentsStore.setState((state) => {
+          const updatedDocuments = state.documents.map((doc) =>
+            doc.id === id ? { ...doc, is_favorite: status } : doc
+          );
+          const updatedFavorites = updatedDocuments.filter((doc) => doc.is_favorite);
+          return {
+            documents: updatedDocuments,
+            documentsFavorite: Array.isArray(updatedFavorites) ? updatedFavorites : [],
+          };
+        });
 
         handleClose();
       } catch (error) {
@@ -79,7 +86,6 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
             onPress: async () => {
               setLoading(true);
               try {
-                // Elimina el documento en Supabase
                 const { error } = await supabase
                   .from('documents')
                   .delete()
@@ -90,9 +96,7 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
                   throw error;
                 }
 
-                // Elimina el documento del store
                 deleteDocument(id);
-
                 handleClose();
               } catch (error) {
                 console.error('Error eliminando documento:', error);
@@ -122,50 +126,139 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
     setActionDrawerField({ visible: true, item });
   };
 
-  const downloadFile = async (fileUrl?: string, fileName?: string) => {
-    if (!fileUrl || !fileName) return;
-
+  const viewFile = async (fileUrl?: string, fileExt?: string) => {
+    if (!fileUrl || !fileExt) {
+      Alert.alert('Error', 'Falta la URL o la extensión del archivo.');
+      return;
+    }
+  
     try {
-      const downloadDir = `${FileSystem.documentDirectory}Doki_download/`;
-      await FileSystem.makeDirectoryAsync(downloadDir, { intermediates: true });
-      const downloadDest = `${downloadDir}${fileName}`;
-
-      // Obtener URL pública o firmada de Supabase Storage
-      const { data, error } = await supabase.storage.from('documents').createSignedUrl(fileUrl, 60);
+      setLoading(true);
+  
+      // Normalizar la extensión (quitar el punto y convertir a minúsculas)
+      const normalizedExt = fileExt.toLowerCase().replace('.', '');
+      // const supportedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpeg', 'jpg'];
+      // if (!supportedExtensions.includes(normalizedExt)) {
+      //   Alert.alert('Error', 'Formato de archivo no soportado.');
+      //   return;
+      // }
+  
+      // Obtener el nombre del archivo y definir la ruta local
+      const fileName = fileUrl.split('/').pop() || `tempfile.${normalizedExt}`;
+      const localFile = `${FileSystem.documentDirectory}${fileName}`;
+  
+      // Obtener URL firmada de Supabase
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(fileUrl, 60);
       if (error || !data?.signedUrl) {
-        throw error || new Error('No se pudo obtener la URL del archivo');
+        throw error || new Error('No se pudo obtener la URL firmada.');
       }
-
-      const { uri } = await FileSystem.downloadAsync(data.signedUrl, downloadDest);
-      Alert.alert('Descarga completada', `Archivo guardado en: ${uri}`);
+  
+      // Descargar el archivo localmente
+      const { uri } = await FileSystem.downloadAsync(data.signedUrl, localFile);
+  
+      // Intentar abrir el archivo con una aplicación nativa
+      const fileUri = `file://${uri}`;
+      const canOpen = await Linking.canOpenURL(fileUri);
+      if (canOpen) {
+        await Linking.openURL(fileUri);
+      } else {
+        Alert.alert('Error', 'No se encontró una aplicación para abrir este tipo de archivo.');
+      }
     } catch (error) {
-      console.error('Error descargando el archivo:', error);
-      Alert.alert('Error', 'No se pudo descargar el archivo.');
+      console.error('Error al visualizar el archivo:', error);
+      Alert.alert('Error', 'No se pudo abrir el archivo. Asegúrate de tener una aplicación compatible instalada.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openFile = async (url?: string) => {
-    if (!url) return;
+  const shareFile = async (fileUrl?: string) => {
+    if (!fileUrl) {
+      Alert.alert('Error', 'No se proporcionó una URL válida.');
+      return;
+    }
 
     try {
-      const fileName = url.split('/').pop() || 'tempfile';
+      setLoading(true);
+      const fileName = fileUrl.split('/').pop() || 'tempfile';
       const localFile = `${FileSystem.documentDirectory}${fileName}`;
 
-      // Obtener URL pública o firmada de Supabase Storage
-      const { data, error } = await supabase.storage.from('documents').createSignedUrl(url, 60);
+      // Obtener URL firmada de Supabase
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(fileUrl, 60);
       if (error || !data?.signedUrl) {
-        throw error || new Error('No se pudo obtener la URL del archivo');
+        throw error || new Error('No se pudo obtener la URL firmada.');
       }
 
+      // Descargar el archivo localmente
       const { uri } = await FileSystem.downloadAsync(data.signedUrl, localFile);
+
+      // Compartir el archivo
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
+        await Sharing.shareAsync(uri, { dialogTitle: 'Compartir archivo' });
       } else {
-        Alert.alert('Error', 'No se puede compartir el archivo.');
+        Alert.alert('Error', 'No se puede compartir el archivo en este dispositivo.');
       }
     } catch (error) {
-      console.error('Error abriendo el archivo:', error);
-      Alert.alert('Error', 'No se pudo abrir el archivo.');
+      console.error('Error al compartir el archivo:', error);
+      Alert.alert('Error', 'No se pudo compartir el archivo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadFile = async (fileUrl?: string, fileName?: string) => {
+    if (!fileUrl || !fileName) {
+      Alert.alert('Error', 'Falta la URL o el nombre del archivo.');
+      return;
+    }
+  
+    try {
+      setLoading(true);
+  
+      // Obtener URL firmada de Supabase
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(fileUrl, 60);
+      if (error || !data?.signedUrl) {
+        throw error || new Error('No se pudo obtener la URL firmada.');
+      }
+  
+      // Definir la carpeta de destino (Descargas/DokiFiles)
+      const downloadDir = `${FileSystem.cacheDirectory}DokiFiles/`; // Temporal para iOS
+      const finalDir = Platform.OS === 'android' 
+        ? `${FileSystem.documentDirectory.replace('files', 'Download')}/DokiFiles/`
+        : downloadDir; // En iOS usaremos un enfoque diferente
+  
+      // Crear la carpeta DokiFiles si no existe
+      await FileSystem.makeDirectoryAsync(finalDir, { intermediates: true });
+  
+      // Definir la ruta completa del archivo
+      const downloadDest = `${finalDir}${fileName}`;
+  
+      // Descargar el archivo
+      const { uri } = await FileSystem.downloadAsync(data.signedUrl, downloadDest);
+  
+      if (Platform.OS === 'ios') {
+        // En iOS, usar Sharing para permitir al usuario guardar en "Descargas"
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { dialogTitle: 'Guardar archivo en Descargas' });
+          Alert.alert('Descarga completada', 'Por favor, guarda el archivo en la carpeta Descargas desde el diálogo.');
+        } else {
+          Alert.alert('Error', 'No se puede guardar el archivo en este dispositivo.');
+        }
+      } else {
+        // En Android, el archivo ya está en Descargas/DokiFiles
+        Alert.alert('Descarga completada', `Archivo guardado en: Descargas/DokiFiles/${fileName}`);
+      }
+    } catch (error) {
+      console.error('Error al descargar el archivo:', error);
+      Alert.alert('Error', 'No se pudo descargar el archivo. Verifica tu conexión o permisos.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,13 +286,13 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
                 <Ionicons name="pencil-outline" size={24} color="#888" />
                 <Text style={styles.optionText}>Cambiar nombre</Text>
               </TouchableOpacity>
-              {field.item?.is_favorite ? (
-                <TouchableOpacity style={styles.option} onPress={() => handleFavorite(field.item?.id, 0)}>
+              {field.item?.is_favorite == true ? (
+                <TouchableOpacity style={styles.option} onPress={() => handleFavorite(field.item?.id, false)}>
                   <Ionicons name="star-outline" size={24} color="#ffa500" />
                   <Text style={styles.optionText}>Quitar de favoritos</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={styles.option} onPress={() => handleFavorite(field.item?.id, 1)}>
+                <TouchableOpacity style={styles.option} onPress={() => handleFavorite(field.item?.id, true)}>
                   <Ionicons name="star-outline" size={24} color="#888" />
                   <Text style={styles.optionText}>Agregar a favoritos</Text>
                 </TouchableOpacity>
@@ -212,9 +305,13 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({ field }) => {
               )}
               {field.item?.is_folder === false && (
                 <>
-                  <TouchableOpacity style={styles.option} onPress={() => openFile(field.item?.path)}>
+                  <TouchableOpacity style={styles.option} onPress={() => viewFile(field.item?.path, field.item?.ext)}>
                     <Ionicons name="eye-outline" size={24} color="#888" />
-                    <Text style={styles.optionText}>Ver</Text>
+                    <Text style={styles.optionText}>Ver (EnPruebas)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.option} onPress={() => shareFile(field.item?.path)}>
+                    <Ionicons name="share-social-outline" size={24} color="#888" />
+                    <Text style={styles.optionText}>Compartir</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.option} onPress={() => downloadFile(field.item?.path, field.item?.name)}>
                     <Ionicons name="download-outline" size={24} color="#888" />

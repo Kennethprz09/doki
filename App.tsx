@@ -10,10 +10,12 @@ import useNetInfo from './src/hook/useNetInfo';
 import { useUserStore } from './src/store/userStore';
 import { MainNavigator } from './src/navigation/BottomTap';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useDocumentsSync from './src/hook/useDocumentsSync';
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
   useNetInfo();
+  useDocumentsSync();
 
   const { loadUser } = useUserStore();
 

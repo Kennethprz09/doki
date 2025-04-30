@@ -1,0 +1,32 @@
+++++++++++++++++++++++++++++++++++++++++++++Pendiente++++++++++++++++++++++++++++++++++++++++++++++++++++
+    1- Login y registro ponerlos de fondo negreo y cambiar el logo de negro
+
+++++++++++++++++++++++++++++++++++++++++++++Preguntas++++++++++++++++++++++++++++++++++++++++++++++++++++
+    Funcion global que valide cuanto espacio esta ocupando en archivos el usuario (Pendiente banner, Pendiente limite maximo y Pendiente limite individual)
+    Tarjeta de credito y debito eso no es como que muy inseguro subir eso?
+    Que pasa si se borra una carpeta que pasa con los items dentro (de momento si se borra una carpeta no se borran lo archivos quedan sin carpeta)
+    Que pasa si marco un archivo en favorito dentro de una carpeta pero la carpeta no la tengo en favoritos
+
+
+// Para .pdf (Probado Ver y Descargar)
+// Para .doc (Probado Ver y Descargar)
+// Para .docx (Probado Ver y Descargar)
+// Para .xls (Probado Ver y Descargar)
+// Para .xlsx (Probado Ver y Descargar)
+// Para .ppt (Probado Ver y Descargar)
+// Para .pptx (Probado Ver y Descargar)
+// Para .png (Probado Ver y Descargar)
+// Para .jpeg (Probado Ver y Descargar).
+// Para .jpg (Probado Ver y Descargar)
+
+
+cd android
+./gradlew clean
+./gradlew assembleRelease
+
+cd android && ./gradlew clean && ./gradlew assembleRelease && cd ..
+
+adb uninstall com.dokiapp
+
+build.gradle
+

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, Dimensions, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { format } from 'date-fns';
 import ActionDrawer from './ActionDrawer';
 import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { formatDate } from 'date-fns';
 import { Document, RootStackParamList } from '../types';
-import { listDocuments } from '../../utils/actions';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -52,7 +51,7 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
     </Text>
     {item.updated_at && (
       <Text style={styles.fileDetails}>
-        Modificado {formatDate(new Date(item.updated_at), 'dd MMM yyyy')}
+        Modificado {format(new Date(item.updated_at), 'dd MMM yyyy')}
       </Text>
     )}
     {showMoreButton && (
@@ -64,7 +63,7 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
 );
 
 interface ListDesignGridProps {
-  documents: Document[] | undefined;
+  documents: Document[];
   folder?: Document;
 }
 
@@ -106,8 +105,7 @@ const ListDesignGrid: React.FC<ListDesignGridProps> = ({ documents, folder }) =>
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await listDocuments({ folder_id_Null: 1 });
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   return (
