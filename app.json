@@ -18,6 +18,12 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
-    }
+    },
+    "permissions": [
+      {
+        "name": "camera",
+        "description": "Permitir el acceso a la cámara para escanear documentos"
+      }
+    ]
   }
 }

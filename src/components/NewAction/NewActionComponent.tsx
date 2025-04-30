@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
-import CreateFolderModal from './CreateFolderModal';
-import { Buffer } from 'buffer';
+import { View, Alert, StyleSheet } from 'react-native';
 import { useUserStore } from '../../store/userStore';
 import { useGlobalStore } from '../../store/globalStore';
 import { useDocumentsStore } from '../../store/documentsStore';
 import { checkInternetConnection } from '../../utils/actions';
-import { Document } from '../types';
+import { Document as DocType } from '../types';
 import { supabase } from '../../supabase/supabaseClient';
+import NewButton from './NewButton';
+import OptionsModal from './OptionsModal';
+import CameraModal from './CameraModal';
+import PreviewModal from './PreviewModal';
+import CreateFolderModal from './CreateFolderModal';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import { Buffer } from 'buffer';
+import * as Print from 'expo-print';
+import { Camera } from 'expo-camera';
 
 interface NewActionComponentProps {
-  folder?: { folder?: Partial<Document> };
+  folder?: { folder?: Partial<DocType> };
 }
 
 const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) => {
@@ -22,8 +27,22 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
   const { addDocument } = useDocumentsStore();
   const [showOptions, setShowOptions] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isCameraModalVisible, setCameraModalVisible] = useState(false);
+  const [isPreviewModalVisible, setPreviewModalVisible] = useState(false);
+  const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
+  const [backPhoto, setBackPhoto] = useState<string | null>(null);
+  const [isCapturingBack, setIsCapturingBack] = useState(false);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado', 'Se necesita acceso a la cámara para escanear documentos.');
+      return false;
+    }
+    return true;
+  };
 
   const handleFileUpload = async () => {
     const isOffline = await checkInternetConnection();
@@ -63,23 +82,17 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
 
       const file = pickedFile.assets[0];
 
-      // Validar tamaño del archivo
       if (file.size && file.size > MAX_FILE_SIZE) {
         throw new Error('El archivo excede el límite de 10MB.');
       }
 
-      // Leer archivo como Base64
       const fileContent = await FileSystem.readAsStringAsync(file.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Generar ruta única
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-
-      // Convertir Base64 a Uint8Array usando Buffer
       const fileData = Buffer.from(fileContent, 'base64');
 
-      // Subir archivo a Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, fileData, {
@@ -90,7 +103,6 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
         throw uploadError;
       }
 
-      // Insertar metadatos en la tabla documents
       const { data, error: insertError } = await supabase
         .from('documents')
         .insert([
@@ -111,7 +123,6 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
         throw insertError;
       }
 
-      // Agregar al store
       addDocument({
         id: data.id,
         name: data.name,
@@ -133,45 +144,179 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
     }
   };
 
-  const activeDrawer = () => {
+  const handleScanDocument = async () => {
     setShowOptions(false);
-    setModalVisible(true);
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+
+    setFrontPhoto(null);
+    setBackPhoto(null);
+    setIsCapturingBack(false);
+    setCameraModalVisible(true);
   };
 
-  const onCloseFolderModal = async () => {
-    setShowOptions(false);
-    setModalVisible(false);
+  const handleTakePicture = (photoUri: string) => {
+    if (isCapturingBack) {
+      setBackPhoto(photoUri);
+      setCameraModalVisible(false);
+      setPreviewModalVisible(true);
+    } else {
+      setFrontPhoto(photoUri);
+      Alert.alert(
+        '¿Tomar foto trasera?',
+        '¿Deseas tomar una foto de la parte trasera del documento?',
+        [
+          {
+            text: 'No',
+            onPress: () => {
+              setCameraModalVisible(false);
+              setPreviewModalVisible(true);
+            },
+          },
+          {
+            text: 'Sí',
+            onPress: () => setIsCapturingBack(true),
+          },
+        ]
+      );
+    }
+  };
+
+  const saveAsPDF = async () => {
+    if (!frontPhoto) {
+      Alert.alert('Error', 'La foto frontal es obligatoria.');
+      return;
+    }
+
+    const isOffline = await checkInternetConnection();
+    if (isOffline) {
+      Alert.alert('Sin conexión', 'Por favor, verifica tu conexión a internet.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const htmlContent = `
+        <html>
+          <body style="margin: 0; padding: 20px;">
+            <h1>Documento Escaneado</h1>
+            <img src="${frontPhoto}" style="width: 100%; max-width: 500px;" />
+            ${backPhoto ? `<img src="${backPhoto}" style="width: 100%; max-width: 500px;" />` : ''}
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({
+        html: htmlContent,
+        base64: true,
+      });
+
+      const fileContent = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const fileName = `scanned_document_${Date.now()}.pdf`;
+      const filePath = `${user!.id}/${fileName}`;
+      const fileData = Buffer.from(fileContent, 'base64');
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, fileData, {
+          contentType: 'application/pdf',
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data, error: insertError } = await supabase
+        .from('documents')
+        .insert([
+          {
+            name: fileName,
+            size: fileContent.length,
+            ext: 'application/pdf',
+            user_id: user!.id,
+            folder_id: folder?.folder?.id || null,
+            is_folder: false,
+            path: filePath,
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      addDocument({
+        id: data.id,
+        name: data.name,
+        folder_id: data.folder_id,
+        is_favorite: false,
+        is_folder: data.is_folder,
+        path: data.path,
+        size: data.size,
+        ext: data.ext,
+        user_id: data.user_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      });
+
+      setPreviewModalVisible(false);
+      Alert.alert('Éxito', 'Documento escaneado y guardado como PDF.');
+    } catch (error) {
+      console.error('Error al generar o guardar el PDF:', error);
+      Alert.alert('Error', error.message || 'No se pudo guardar el documento.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetakeFront = () => {
+    setFrontPhoto(null);
+    setIsCapturingBack(false);
+    setPreviewModalVisible(false);
+    setCameraModalVisible(true);
+  };
+
+  const handleRetakeBack = () => {
+    setBackPhoto(null);
+    setIsCapturingBack(true);
+    setPreviewModalVisible(false);
+    setCameraModalVisible(true);
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.newButton} onPress={() => setShowOptions(true)}>
-        <Text style={styles.plusSign}>+</Text>
-        <Text style={styles.newText}>Nuevo</Text>
-      </TouchableOpacity>
-      <Modal visible={showOptions} transparent onRequestClose={() => setShowOptions(false)}>
-        <TouchableWithoutFeedback onPress={() => setShowOptions(false)}>
-          <View style={styles.modalContainer}>
-            <View style={styles.optionsContainer}>
-              {!folder?.folder?.id && (
-                <TouchableOpacity style={styles.option} onPress={activeDrawer}>
-                  <View style={styles.circle}>
-                    <Ionicons name="folder-outline" size={30} color="#888" />
-                  </View>
-                  <Text style={styles.optionText}>Carpeta</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.option} onPress={handleFileUpload}>
-                <View style={styles.circle}>
-                  <Ionicons name="cloud-upload-outline" size={30} color="#888" />
-                </View>
-                <Text style={styles.optionText}>Archivo</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-      <CreateFolderModal isVisible={isModalVisible} onClose={onCloseFolderModal} />
+      <NewButton onPress={() => setShowOptions(true)} />
+      <OptionsModal
+        visible={showOptions}
+        onClose={() => setShowOptions(false)}
+        onCreateFolder={() => {
+          setShowOptions(false);
+          setModalVisible(true);
+        }}
+        onUploadFile={handleFileUpload}
+        onScanDocument={handleScanDocument}
+        showFolderOption={!folder?.folder?.id}
+      />
+      <CameraModal
+        visible={isCameraModalVisible}
+        onClose={() => setCameraModalVisible(false)}
+        onTakePicture={handleTakePicture}
+      />
+      <PreviewModal
+        visible={isPreviewModalVisible}
+        onClose={() => setPreviewModalVisible(false)}
+        frontPhoto={frontPhoto}
+        backPhoto={backPhoto}
+        onRetakeFront={handleRetakeFront}
+        onRetakeBack={handleRetakeBack}
+        onSave={saveAsPDF}
+      />
+      {CreateFolderModal && <CreateFolderModal isVisible={isModalVisible} onClose={() => setModalVisible(false)} />}
     </View>
   );
 };
@@ -180,66 +325,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 0.17,
     backgroundColor: '#fff',
-  },
-  newButton: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ff8c00',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-  plusSign: {
-    fontSize: 24,
-    fontFamily: 'Karla-Bold',
-    color: '#fff',
-    marginRight: 10,
-  },
-  newText: {
-    fontSize: 16,
-    fontFamily: 'Karla-Bold',
-    color: '#fff',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    backgroundColor: '#ffffff',
-    paddingVertical: 20,
-    borderRadius: 15,
-    width: '100%',
-  },
-  option: {
-    alignItems: 'center',
-  },
-  circle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  optionText: {
-    fontSize: 12,
-    fontFamily: 'Karla-SemiBold',
-    color: '#444',
   },
 });
 
