@@ -197,15 +197,37 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
     setLoading(true);
 
     try {
+      // Leer imágenes como Base64
+      const frontPhotoBase64 = await FileSystem.readAsStringAsync(frontPhoto, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const backPhotoBase64 = backPhoto
+        ? await FileSystem.readAsStringAsync(backPhoto, {
+          encoding: FileSystem.EncodingType.Base64,
+        })
+        : null;
+
+      // Validar tamaño aproximado
+      const estimatedSize = frontPhotoBase64.length + (backPhotoBase64 ? backPhotoBase64.length : 0);
+      if (estimatedSize > MAX_FILE_SIZE * 0.75) {
+        Alert.alert('Error', 'El tamaño de las imágenes excede el límite permitido. Intenta capturar nuevamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Crear HTML con imágenes incrustadas
       const htmlContent = `
-        <html>
-          <body style="margin: 0; padding: 20px;">
-            <h1>Documento Escaneado</h1>
-            <img src="${frontPhoto}" style="width: 100%; max-width: 500px;" />
-            ${backPhoto ? `<img src="${backPhoto}" style="width: 100%; max-width: 500px;" />` : ''}
-          </body>
-        </html>
-      `;
+      <html>
+        <body style="margin: 0; padding: 20px;">
+          <h1>Documento Escaneado</h1>
+          <img src="data:image/jpeg;base64,${frontPhotoBase64}" style="width: 100%; max-width: 400px;" />
+          ${backPhotoBase64
+          ? `<img src="data:image/jpeg;base64,${backPhotoBase64}" style="width: 100%; max-width: 400px;" />`
+          : ''
+        }
+        </body>
+      </html>
+    `;
 
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
@@ -215,6 +237,11 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
       const fileContent = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
+
+      // Validar tamaño del PDF
+      if (fileContent.length > MAX_FILE_SIZE) {
+        throw new Error('El PDF generado excede el límite de 1MB.');
+      }
 
       const fileName = `scanned_document_${Date.now()}.pdf`;
       const filePath = `${user!.id}/${fileName}`;
@@ -279,6 +306,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
     setIsCapturingBack(false);
     setPreviewModalVisible(false);
     setCameraModalVisible(true);
+    setIsCapturingBack(false);
   };
 
   const handleRetakeBack = () => {
@@ -286,6 +314,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
     setIsCapturingBack(true);
     setPreviewModalVisible(false);
     setCameraModalVisible(true);
+    setIsCapturingBack(true);
   };
 
   return (

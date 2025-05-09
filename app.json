@@ -11,7 +11,9 @@
     },
     "android": {
       "package": "com.kennethprz09.doki",
-      "permissions": ["WRITE_EXTERNAL_STORAGE"]
+      "permissions": [
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.kennethprz09.doki",
@@ -24,6 +26,9 @@
         "name": "camera",
         "description": "Permitir el acceso a la cámara para escanear documentos"
       }
+    ],
+    "plugins": [
+      "expo-font"
     ]
   }
 }

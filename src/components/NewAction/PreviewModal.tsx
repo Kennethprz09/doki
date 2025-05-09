@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface PreviewModalProps {
   visible: boolean;
@@ -78,10 +78,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewImage: {
-    width: width * 0.8,
-    height: height * 0.3,
-    resizeMode: 'contain',
-    borderRadius: 10,
+    width: 220,
+    height: 250,
+    transform: [{ rotate: '90deg' }],
+    borderRadius: 2,
   },
   retakeButton: {
     marginTop: 10,
