@@ -10,13 +10,13 @@
       }
     },
     "android": {
-      "package": "com.kennethprz09.doki",
+      "package": "com.app.doki",
       "permissions": [
         "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.kennethprz09.doki",
+      "bundleIdentifier": "com.app.doki",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
