@@ -183,6 +183,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
   };
 
   const saveAsPDF = async () => {
+    setPreviewModalVisible(false);
     if (!frontPhoto) {
       Alert.alert('Error', 'La foto frontal es obligatoria.');
       return;
@@ -243,7 +244,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
         throw new Error('El PDF generado excede el límite de 1MB.');
       }
 
-      const fileName = `scanned_document_${Date.now()}.pdf`;
+      const fileName = `scanned_${Date.now()}.pdf`;
       const filePath = `${user!.id}/${fileName}`;
       const fileData = Buffer.from(fileContent, 'base64');
 
@@ -291,7 +292,6 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) 
         updated_at: data.updated_at,
       });
 
-      setPreviewModalVisible(false);
       Alert.alert('Éxito', 'Documento escaneado y guardado como PDF.');
     } catch (error) {
       console.error('Error al generar o guardar el PDF:', error);

@@ -7,6 +7,7 @@ import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Document, RootStackParamList } from '../types';
+import useDocumentsSync from 'src/hook/useDocumentsSync';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -65,14 +66,16 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
 interface ListDesignGridProps {
   documents: Document[];
   folder?: Document;
+  handleReload?: () => Promise<void>;
 }
 
-const ListDesignGrid: React.FC<ListDesignGridProps> = ({ documents, folder }) => {
+const ListDesignGrid: React.FC<ListDesignGridProps> = ({ documents, folder, handleReload }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [actionDrawerField, setActionDrawerField] = useState({});
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { fetchDocuments } = useDocumentsSync();
 
   const activeDrawer = (item: Document) => {
     setActionDrawerField({ visible: true, item });
@@ -105,7 +108,14 @@ const ListDesignGrid: React.FC<ListDesignGridProps> = ({ documents, folder }) =>
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
+    
+    if (folder && folder.id != undefined) {
+      await handleReload();
+    } else {
+      await fetchDocuments();
+    }
+
+    setRefreshing(false);
   };
 
   return (

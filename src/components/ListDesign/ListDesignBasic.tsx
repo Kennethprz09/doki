@@ -7,6 +7,7 @@ import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Document, RootStackParamList } from '../types';
+import useDocumentsSync from 'src/hook/useDocumentsSync';
 
 interface FileItemProps {
   item: Document;
@@ -62,14 +63,16 @@ const FileItem: React.FC<FileItemProps> = ({ item, activeDrawer, onLongPress, on
 interface ListDesignBasicProps {
   documents: Document[]; // Recibe documentos filtrados
   folder?: Document; // Mantenemos folder para ActionMoveModal
+  handleReload?: () => Promise<void>;
 }
 
-const ListDesignBasic: React.FC<ListDesignBasicProps> = ({ documents, folder }) => {
+const ListDesignBasic: React.FC<ListDesignBasicProps> = ({ documents, folder, handleReload }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [actionDrawerField, setActionDrawerField] = useState({});
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { fetchDocuments } = useDocumentsSync();
 
   const activeDrawer = (item: Document) => {
     setActionDrawerField({ visible: true, item });
@@ -102,7 +105,14 @@ const ListDesignBasic: React.FC<ListDesignBasicProps> = ({ documents, folder }) 
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
+    
+    if (folder && folder.id != undefined) {
+      await handleReload();
+    } else {
+      await fetchDocuments();
+    }
+
+    setRefreshing(false);
   };
 
   return (

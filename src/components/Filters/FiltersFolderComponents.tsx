@@ -134,9 +134,9 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
       </View>
 
       {typeList ? (
-        <ListDesignBasic documents={filteredDocuments} folder={folder} />
+        <ListDesignBasic documents={filteredDocuments} folder={folder} handleReload={handleOnlineSearch} />
       ) : (
-        <ListDesignGrid documents={filteredDocuments} folder={folder} />
+        <ListDesignGrid documents={filteredDocuments} folder={folder} handleReload={handleOnlineSearch} />
       )}
 
       <ProfileModal isVisible={isModalVisible} onClose={toggleModal} />

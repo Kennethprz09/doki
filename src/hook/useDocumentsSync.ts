@@ -8,34 +8,35 @@ const useDocumentsSync = () => {
   const user = useUserStore((state) => state.user);
   const { setDocuments, setDocumentsFavorite, addDocument, updateDocument, deleteDocument } = useDocumentsStore();
 
+  // Cargar documentos iniciales
+  const fetchDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .is('folder_id', null)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        return;
+      }
+
+      // Asegúrate de que data sea un array
+      const documents = Array.isArray(data) ? data : [];
+      setDocuments(documents);
+      const favorites = documents.filter((doc: Document) => doc.is_favorite) || [];
+      setDocumentsFavorite(favorites);
+    } catch (error) {
+      console.error('Error in fetchDocuments:', error);
+      setDocuments([]);
+      setDocumentsFavorite([]);
+    }
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
-    // Cargar documentos iniciales
-    const fetchDocuments = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .is('folder_id', null)
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error fetching documents:', error);
-          return;
-        }
-
-        // Asegúrate de que data sea un array
-        const documents = Array.isArray(data) ? data : [];
-        setDocuments(documents);
-        const favorites = documents.filter((doc: Document) => doc.is_favorite) || [];
-        setDocumentsFavorite(favorites);
-      } catch (error) {
-        console.error('Error in fetchDocuments:', error);
-        setDocuments([]);
-        setDocumentsFavorite([]);
-      }
-    };
 
     fetchDocuments();
 
@@ -93,7 +94,7 @@ const useDocumentsSync = () => {
     };
   }, [user?.id]);
 
-  return null;
+  return { fetchDocuments };
 };
 
 export default useDocumentsSync;
