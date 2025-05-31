@@ -120,6 +120,33 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         throw profileError;
       }
 
+      // Crear carpetas predeterminadas
+
+      const folderdDefaults = [
+        { name: 'Cedula o tarjeta de id' },
+        { name: 'Tarjeta de propiedad carro o moto' },
+        { name: 'Pase de conduccion' },
+        { name: 'Pasaporte' },
+        { name: 'Tarjeta profesional' },
+        { name: 'Carnet EPS' },
+        { name: 'Otros' },
+      ];
+
+      for (const folder of folderdDefaults) {
+        const { error: folderError } = await supabase.from('documents').insert([
+          {
+            name: folder.name.trim(),
+            user_id: user.id,
+            is_folder: true,
+            icon: 'folder-outline',
+          },
+        ]);
+
+        if (folderError) {
+          throw folderError;
+        }
+      }
+
       // Almacenar datos del usuario y sesión
       const userData: User = {
         id: user.id,
@@ -128,8 +155,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         surname,
       };
       setUser(userData);
-      await AsyncStorage.setItem('accessToken', data.session?.access_token || '');
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      // await AsyncStorage.setItem('accessToken', data.session?.access_token || '');
+      // await AsyncStorage.setItem('user', JSON.stringify(userData));
 
       setLoading(false);
       navigation.navigate('MainRoutes');

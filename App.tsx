@@ -11,6 +11,7 @@ import { useUserStore } from './src/store/userStore';
 import { MainNavigator } from './src/navigation/BottomTap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useDocumentsSync from './src/hook/useDocumentsSync';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -58,7 +59,9 @@ const App = () => {
     <SafeAreaView style={{ flex: 1 }}>
       <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle={'dark-content'} />
 
-      <AppContent />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AppContent />
+      </GestureHandlerRootView>
     </SafeAreaView>
   );
 };
