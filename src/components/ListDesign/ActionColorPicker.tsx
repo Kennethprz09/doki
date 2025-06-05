@@ -40,6 +40,8 @@ const ActionColorPicker: React.FC<ActionColorPickerProps> = ({ field, onClose })
   };
 
   const handleColorSelection = async (color: string) => {
+    setShowVisible(false);
+
     const isOffline = await checkInternetConnection();
     if (isOffline) {
       return;
@@ -52,7 +54,6 @@ const ActionColorPicker: React.FC<ActionColorPickerProps> = ({ field, onClose })
     setLoading(true);
 
     try {
-      // Actualiza el color en Supabase
       const { error } = await supabase
         .from('documents')
         .update({ color })
@@ -63,9 +64,7 @@ const ActionColorPicker: React.FC<ActionColorPickerProps> = ({ field, onClose })
         throw error;
       }
 
-      // Actualiza el documento en el store
       updateDocument({ id: field.item.id, changes: { color } });
-
       handleClose();
     } catch (error) {
       console.error('Error al procesar el color seleccionado:', error);
@@ -82,43 +81,48 @@ const ActionColorPicker: React.FC<ActionColorPickerProps> = ({ field, onClose })
 
   return (
     <Modal visible={showVisible} transparent animationType="fade" onRequestClose={handleClose}>
-      <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.overlay}>
-          <View style={styles.modal}>
-            <Text style={styles.title}>Seleccionar un color</Text>
-            <View style={styles.grid}>
-              {colors.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[styles.colorCircle, { backgroundColor: color }]}
-                  onPress={() => setSelectedColor(color)}
-                >
-                  {selectedColor === color && (
-                    <Ionicons name="checkmark-outline" size={24} color="white" style={styles.checkIcon} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={[styles.confirmButton, !selectedColor && styles.disabledButton]}
-              onPress={handleConfirmColor}
-              disabled={!selectedColor}
-            >
-              <Text style={styles.buttonText}>Continuar</Text>
-            </TouchableOpacity>
+      <View style={styles.overlayContainer}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.overlayBackground} />
+        </TouchableWithoutFeedback>
+        <View style={styles.modal}>
+          <Text style={styles.title}>Seleccionar un color</Text>
+          <View style={styles.grid}>
+            {colors.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[styles.colorCircle, { backgroundColor: color }]}
+                onPress={() => setSelectedColor(color)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {selectedColor === color && (
+                  <Ionicons name="checkmark-outline" size={24} color="white" />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
+          <TouchableOpacity
+            style={[styles.confirmButton, !selectedColor && styles.disabledButton]}
+            onPress={handleConfirmColor}
+            disabled={!selectedColor}
+          >
+            <Text style={styles.buttonText}>Continuar</Text>
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  overlayContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semitransparente
+  },
+  overlayBackground: {
+    ...StyleSheet.absoluteFillObject, // Ocupa todo el espacio del contenedor padre
   },
   modal: {
     backgroundColor: 'white',
@@ -145,12 +149,6 @@ const styles = StyleSheet.create({
     marginHorizontal: '1%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  checkIcon: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -12 }, { translateY: -12 }],
   },
   confirmButton: {
     marginTop: 20,

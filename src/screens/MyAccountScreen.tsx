@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../store/userStore';
@@ -20,7 +21,7 @@ const MyAccountScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
-  const setLoading = useGlobalStore((state) => state.setLoading);
+  const { loading, setLoading } = useGlobalStore();
 
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
@@ -57,23 +58,24 @@ const MyAccountScreen = () => {
     setLoading(true);
 
     try {
-      // Actualizar correo y contraseña en Supabase Auth (si se proporcionan)
-      const authUpdate: { email?: string; password?: string } = {};
-      if (email && email !== user.email) {
-        authUpdate.email = email;
-      }
+      const displayName = `${name.trim()} ${surname.trim()}`.trim();
+      const authUpdate = {
+        data: {
+          display_name: displayName,
+          name: name.trim(),
+          surname: surname.trim(),
+        },
+      };
+
       if (password.trim()) {
         authUpdate.password = password;
       }
 
-      if (Object.keys(authUpdate).length > 0) {
-        const { error: authError } = await supabase.auth.updateUser(authUpdate);
-        if (authError) {
-          throw authError;
-        }
+      const { error: authError } = await supabase.auth.updateUser(authUpdate);
+      if (authError) {
+        throw new Error(`Error al actualizar autenticación: ${authError.message}`);
       }
 
-      // Actualizar nombre y apellido en la tabla profiles
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert(
@@ -81,27 +83,31 @@ const MyAccountScreen = () => {
             id: user.id,
             name: name.trim(),
             surname: surname.trim(),
+            email: user.email,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' }
         );
 
       if (profileError) {
-        throw profileError;
+        throw new Error(`Error al actualizar perfil: ${profileError.message}`);
       }
 
-      // Actualizar el estado del usuario en el store
       setUser({
         ...user,
-        name: name.trim(),
-        surname: surname.trim(),
-        email: authUpdate.email || user.email,
+        email: user.email,
+        user_metadata: {
+          ...user.user_metadata,
+          name: name.trim(),
+          surname: surname.trim(),
+          display_name: displayName,
+        },
       });
 
       Alert.alert('Éxito', 'Cambios guardados correctamente.');
     } catch (error) {
       console.error('Error saving changes:', error);
-      Alert.alert('Error', 'No se pudieron guardar los cambios.');
+      Alert.alert('Error', error.message || 'No se pudieron guardar los cambios.');
     } finally {
       setLoading(false);
     }
@@ -112,6 +118,9 @@ const MyAccountScreen = () => {
   };
 
   const togglePasswordField = () => {
+    if (isPasswordFieldVisible) {
+      setPassword('');
+    }
     setIsPasswordFieldVisible((prev) => !prev);
 
     Animated.timing(passwordFieldHeight, {
@@ -123,9 +132,10 @@ const MyAccountScreen = () => {
 
   useEffect(() => {
     if (user) {
-      setName(user.name || '');
-      setSurname(user.surname || '');
+      setName(user.user_metadata?.name || '');
+      setSurname(user.user_metadata?.surname || '');
       setEmail(user.email || '');
+      console.log('User data loaded:', user);
     }
   }, [user]);
 
@@ -140,7 +150,7 @@ const MyAccountScreen = () => {
 
       <View style={styles.inputContainer}>
         <Ionicons
-          name="person-circle-outline"
+          name="person-outline"
           size={20}
           color="#8293ac"
           style={styles.icon}
@@ -156,13 +166,14 @@ const MyAccountScreen = () => {
           placeholder="Nombre"
           autoCapitalize="none"
           placeholderTextColor="#a3a3a3"
+          accessibilityLabel="Nombre"
         />
       </View>
       {errors.name && <Text style={styles.errorMessage}>{errors.name}</Text>}
 
       <View style={styles.inputContainer}>
         <Ionicons
-          name="person-circle-outline"
+          name="person-outline"
           size={20}
           color="#8293ac"
           style={styles.icon}
@@ -178,6 +189,7 @@ const MyAccountScreen = () => {
           placeholder="Apellido"
           autoCapitalize="none"
           placeholderTextColor="#a3a3a3"
+          accessibilityLabel="Apellido"
         />
       </View>
       {errors.surname && <Text style={styles.errorMessage}>{errors.surname}</Text>}
@@ -189,6 +201,7 @@ const MyAccountScreen = () => {
           value={email}
           editable={false}
           selectTextOnFocus={false}
+          accessibilityLabel="Correo electrónico (solo lectura)"
         />
       </View>
 
@@ -214,7 +227,6 @@ const MyAccountScreen = () => {
               color="#8293ac"
             />
           </TouchableOpacity>
-
           <TextInput
             style={styles.input}
             value={password}
@@ -223,12 +235,21 @@ const MyAccountScreen = () => {
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             placeholderTextColor="#a3a3a3"
+            accessibilityLabel="Nueva contraseña"
           />
         </Animated.View>
       )}
 
-      <TouchableOpacity style={styles.button} onPress={handleSaveChanges}>
-        <Text style={styles.buttonText}>Guardar Cambios</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleSaveChanges}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Guardar Cambios</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -288,6 +309,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginTop: 20,
     elevation: 5,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#ffa733',
   },
   buttonText: {
     color: 'white',

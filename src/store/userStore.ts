@@ -3,9 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id: string;
-  name?: string;
-  surname?: string;
   email?: string;
+  user_metadata?: {
+    name?: string;
+    surname?: string;
+    display_name?: string;
+    email?: string;
+    email_verified?: boolean;
+    phone_verified?: boolean;
+    sub?: string;
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 

@@ -12,6 +12,7 @@ import { MainNavigator } from './src/navigation/BottomTap';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useDocumentsSync from './src/hook/useDocumentsSync';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SupabaseSubscriptionProvider } from './src/contexts/SupabaseSubscriptionContext'; // Asegúrate de que la ruta sea correcta
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -60,7 +61,9 @@ const App = () => {
       <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle={'dark-content'} />
 
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <AppContent />
+        <SupabaseSubscriptionProvider>
+          <AppContent />
+        </SupabaseSubscriptionProvider>
       </GestureHandlerRootView>
     </SafeAreaView>
   );

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   View,
   Text,
   TextInput,
   StyleSheet,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -83,7 +86,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // Registrar usuario con Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -104,7 +106,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         throw new Error('No se pudo crear el usuario');
       }
 
-      // Insertar perfil en la tabla profiles
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -119,8 +120,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       if (profileError) {
         throw profileError;
       }
-
-      // Crear carpetas predeterminadas
 
       const folderdDefaults = [
         { name: 'Cedula o tarjeta de id' },
@@ -147,7 +146,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         }
       }
 
-      // Almacenar datos del usuario y sesión
       const userData: User = {
         id: user.id,
         email: user.email || email,
@@ -155,8 +153,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         surname,
       };
       setUser(userData);
-      // await AsyncStorage.setItem('accessToken', data.session?.access_token || '');
-      // await AsyncStorage.setItem('user', JSON.stringify(userData));
 
       setLoading(false);
       navigation.navigate('MainRoutes');
@@ -179,153 +175,158 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logo}>
-        <Image
-          source={require('../../assets/logo/logoDark.png')}
-          style={styles.image}
-          resizeMode="contain"
-        />
-        <Text style={styles.label}>Crea tu cuenta</Text>
-      </View>
-
-      <View style={{ width: '100%' }}>
-        <View style={styles.inputContainer}>
-          <Ionicons
-            name="person-circle-outline"
-            size={20}
-            color="#8293ac"
-            style={styles.icon}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.logo}>
+          <Image
+            source={require('../../assets/logo/logoDark.png')}
+            style={styles.image}
+            resizeMode="contain"
           />
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              setErrors((prevErrors) => ({ ...prevErrors, name: '' }));
-            }}
-            placeholder="Nombre"
-            autoCapitalize="none"
-            placeholderTextColor="#a3a3a3"
-          />
+          <Text style={styles.label}>Crea tu cuenta</Text>
         </View>
-        {errors.name && (
-          <View style={{ marginBottom: 10 }}>
-            <Text style={styles.errorMessage}>{errors.name}</Text>
-          </View>
-        )}
 
-        <View style={styles.inputContainer}>
-          <Ionicons
-            name="person-circle-outline"
-            size={20}
-            color="#8293ac"
-            style={styles.icon}
-          />
-          <TextInput
-            style={styles.input}
-            value={surname}
-            onChangeText={(text) => {
-              setSurname(text);
-              setErrors((prevErrors) => ({ ...prevErrors, surname: '' }));
-            }}
-            placeholder="Apellido"
-            autoCapitalize="none"
-            placeholderTextColor="#a3a3a3"
-          />
-        </View>
-        {errors.surname && (
-          <View style={{ marginBottom: 10 }}>
-            <Text style={styles.errorMessage}>{errors.surname}</Text>
-          </View>
-        )}
-
-        <View style={styles.inputContainer}>
-          <Ionicons
-            name="mail-outline"
-            size={20}
-            color="#8293ac"
-            style={styles.icon}
-          />
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setErrors((prevErrors) => ({ ...prevErrors, email: '' }));
-            }}
-            placeholder="Correo electrónico"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#a3a3a3"
-          />
-        </View>
-        {errors.email && (
-          <View style={{ marginBottom: 10 }}>
-            <Text style={styles.errorMessage}>{errors.email}</Text>
-          </View>
-        )}
-
-        <View style={styles.inputContainer}>
-          <Ionicons
-            name="lock-closed-outline"
-            size={20}
-            color="#8293ac"
-            style={styles.icon}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.iconRight}
-          >
+        <View style={{ width: '100%' }}>
+          <View style={styles.inputContainer}>
             <Ionicons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              name="person-circle-outline"
               size={20}
               color="#8293ac"
+              style={styles.icon}
             />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
-            }}
-            placeholder="Contraseña"
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            placeholderTextColor="#a3a3a3"
-          />
-        </View>
-        {errors.password && (
-          <View style={{ marginBottom: 10 }}>
-            <Text style={styles.errorMessage}>{errors.password}</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                setErrors((prevErrors) => ({ ...prevErrors, name: '' }));
+              }}
+              placeholder="Nombre"
+              autoCapitalize="none"
+              placeholderTextColor="#a3a3a3"
+            />
           </View>
-        )}
+          {errors.name && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={styles.errorMessage}>{errors.name}</Text>
+            </View>
+          )}
 
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Continuar</Text>
-        </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="person-circle-outline"
+              size={20}
+              color="#8293ac"
+              style={styles.icon}
+            />
+            <TextInput
+              style={styles.input}
+              value={surname}
+              onChangeText={(text) => {
+                setSurname(text);
+                setErrors((prevErrors) => ({ ...prevErrors, surname: '' }));
+              }}
+              placeholder="Apellido"
+              autoCapitalize="none"
+              placeholderTextColor="#a3a3a3"
+            />
+          </View>
+          {errors.surname && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={styles.errorMessage}>{errors.surname}</Text>
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={{
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: 20,
-          }}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-            Iniciar Sesión
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="mail-outline"
+              size={20}
+              color="#8293ac"
+              style={styles.icon}
+            />
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrors((prevErrors) => ({ ...prevErrors, email: '' }));
+              }}
+              placeholder="Correo electrónico"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#a3a3a3"
+            />
+          </View>
+          {errors.email && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={styles.errorMessage}>{errors.email}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={20}
+              color="#8293ac"
+              style={styles.icon}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.iconRight}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="#8293ac"
+              />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
+              }}
+              placeholder="Contraseña"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              placeholderTextColor="#a3a3a3"
+            />
+          </View>
+          {errors.password && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={styles.errorMessage}>{errors.password}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <Text style={styles.buttonText}>Continuar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: 20,
+            }}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
+              Iniciar Sesión
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1, // Cambiado de flex: 1 a flexGrow: 1 para ScrollView
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
