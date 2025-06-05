@@ -13,6 +13,7 @@
         "buildType": "apk"
       },
       "ios": {
+        "autoIncrement": true,
         "simulator": false
       }
     },
