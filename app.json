@@ -19,7 +19,6 @@
     "ios": {
       "usesIcloudStorage": true,
       "bundleIdentifier": "com.app.doki",
-      "iCloudContainerEnvironment": "Production",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Permitir el acceso a la cámara para escanear documentos",
