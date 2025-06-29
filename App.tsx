@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { StatusBar } from 'react-native';
-import Toast from 'react-native-toast-message';
-import toastConfig from './src/components/Template/toastConfig';
-import Loader from './src/components/Template/Loader';
-import { useGlobalStore } from './src/store/globalStore';
-import * as Font from 'expo-font';
-import useNetInfo from './src/hook/useNetInfo';
-import { useUserStore } from './src/store/userStore';
-import { MainNavigator } from './src/navigation/BottomTap';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import useDocumentsSync from './src/hook/useDocumentsSync';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SupabaseSubscriptionProvider } from './src/contexts/SupabaseSubscriptionContext'; // Asegúrate de que la ruta sea correcta
+import React, { useEffect, useState } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { StatusBar } from "react-native";
+import Toast from "react-native-toast-message";
+import toastConfig from "./src/components/Template/toastConfig";
+import Loader from "./src/components/Template/Loader";
+import { useGlobalStore } from "./src/store/globalStore";
+import * as Font from "expo-font";
+import useNetInfo from "./src/hook/useNetInfo";
+import { useUserStore } from "./src/store/userStore";
+import { MainNavigator } from "./src/navigation/BottomTap";
+import { SafeAreaView } from "react-native-safe-area-context";
+import useDocumentsSync from "./src/hook/useDocumentsSync";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext"; // Asegúrate de que la ruta sea correcta
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -26,10 +26,22 @@ const AppContent = () => {
     loadUser();
   }, [loadUser]);
 
+  const linking = {
+    prefixes: ["com.app.doki://"],
+    config: {
+      screens: {
+        ResetPassword: "reset-password",
+        Login: "login",
+        Register: "register",
+        ForgotPassword: "forgot-password",
+      },
+    },
+  };
+
   return (
     <>
       {isLoading && <Loader />}
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <MainNavigator />
         <Toast config={toastConfig} />
       </NavigationContainer>
@@ -43,9 +55,9 @@ const App = () => {
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
-        'Karla-Bold': require('./assets/fonts/Karla-Bold.ttf'),
-        'Karla-Regular': require('./assets/fonts/Karla-Regular.ttf'),
-        'Karla-SemiBold': require('./assets/fonts/Karla-SemiBold.ttf'),
+        "Karla-Bold": require("./assets/fonts/Karla-Bold.ttf"),
+        "Karla-Regular": require("./assets/fonts/Karla-Regular.ttf"),
+        "Karla-SemiBold": require("./assets/fonts/Karla-SemiBold.ttf"),
       });
       setFontsLoaded(true);
     }
@@ -57,9 +69,12 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle={'dark-content'} />
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
+      <StatusBar
+        translucent={false}
+        backgroundColor={"#ffffff"}
+        barStyle={"dark-content"}
+      />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SupabaseSubscriptionProvider>
           <AppContent />

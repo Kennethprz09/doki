@@ -135,7 +135,6 @@ const MyAccountScreen = () => {
       setName(user.user_metadata?.name || '');
       setSurname(user.user_metadata?.surname || '');
       setEmail(user.email || '');
-      console.log('User data loaded:', user);
     }
   }, [user]);
 

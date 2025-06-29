@@ -7,7 +7,7 @@ import ActionMoveModal from './ActionMoveModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Document, RootStackParamList } from '../types';
-import useDocumentsSync from 'src/hook/useDocumentsSync';
+import useDocumentsSync from '../../hook/useDocumentsSync';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;

@@ -17,13 +17,13 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
 
   useEffect(() => {
     const authenticateUser = async () => {
-      // const { data: { session } } = await supabase.auth.getSession();
-      // if (session) {
-      //   await syncUser(); // Sincronizar datos del usuario
-      //   navigation.navigate('MainRoutes');
-      // } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await syncUser(); // Sincronizar datos del usuario
+        navigation.navigate('MainRoutes');
+      } else {
         navigation.navigate('Login');
-      // }
+      }
       setTimeout(() => {
         setIsLoading(false);
       }, 1000);

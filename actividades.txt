@@ -1,34 +1,11 @@
-++++++++++++++++++++++++++++++++++++++++++++Pendiente++++++++++++++++++++++++++++++++++++++++++++++++++++
-    3- Busqueda por fuera y dentro de carpetas.
-    4- Revisar mi cuenta.
-    5- Generar logos y nombre de la app.
-
-++++++++++++++++++++++++++++++++++++++++++++Preguntas++++++++++++++++++++++++++++++++++++++++++++++++++++
-    Funcion global que valide cuanto espacio esta ocupando en archivos el usuario (Pendiente banner, Pendiente limite maximo y Pendiente limite individual)
-    Tarjeta de credito y debito eso no es como que muy inseguro subir eso?
-    Que pasa si se borra una carpeta que pasa con los items dentro (de momento si se borra una carpeta no se borran lo archivos quedan sin carpeta)
-    Que pasa si marco un archivo en favorito dentro de una carpeta pero la carpeta no la tengo en favoritos
+- Que cada que ingrese solicite la clave. Listo
+- Revisar las pantalla de inicio de sesión y crear cuenta que el teclado tapa los campos. Listo
+- Cambiar color a la carpeta. Listo
+- Subir archivos en ios. Listo
+- Solicitar permisos para acceder a los ducumentos (INVESTIGAR). Listo
+que pasa que estos permisos se declaran en la configuracion y por eso no se solicita permisos dentro de la app en teoria en produccion si lo hara.
 
 
-// Para .pdf (Probado Ver y Descargar)
-// Para .doc (Probado Ver y Descargar)
-// Para .docx (Probado Ver y Descargar)
-// Para .xls (Probado Ver y Descargar)
-// Para .xlsx (Probado Ver y Descargar)
-// Para .ppt (Probado Ver y Descargar)
-// Para .pptx (Probado Ver y Descargar)
-// Para .png (Probado Ver y Descargar)
-// Para .jpeg (Probado Ver y Descargar).
-// Para .jpg (Probado Ver y Descargar)
 
-
-cd android
-./gradlew clean
-./gradlew assembleRelease
-
-cd android && ./gradlew clean && ./gradlew assembleRelease && cd ..
-
-adb uninstall com.dokiapp
-
-build.gradle
-
+- El escáner voltea la imagen y el área de la foto la toma completa. Revisar con cliente nueva forma de scanner
+Que el scanner pueda recortar. No se puede

@@ -83,8 +83,6 @@ const CameraModal: React.FC<CameraModalProps> = ({ visible, onClose, onTakePictu
       cropWidth = Math.min(cropWidth, imageWidth - cropX);
       cropHeight = Math.min(cropHeight, imageHeight - cropY);
 
-      console.log('Crop coordinates:', cropX, cropY, cropWidth, cropHeight);
-
       const croppedImage = await ImageManipulator.manipulateAsync(
         photo.uri,
         [
@@ -113,12 +111,7 @@ const CameraModal: React.FC<CameraModalProps> = ({ visible, onClose, onTakePictu
     <Modal visible={visible} transparent={false}>
       <View style={styles.cameraContainer}>
         <CameraView style={styles.camera} autoFocus={true} type="back" ref={cameraRef} ratio="4:3" />
-        <View style={[styles.overlay, {
-          left: overlayLeft,
-          top: overlayTop,
-          width: overlayWidth,
-          height: overlayHeight,
-        }]} />
+
         <View style={styles.cameraControlsHeader}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Ionicons name="close" size={30} color="#FFF" />
@@ -144,13 +137,6 @@ const styles = StyleSheet.create({
   camera: {
     width: '100%',
     height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: 'white',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
   },
   cameraControlsHeader: {
     position: 'absolute',

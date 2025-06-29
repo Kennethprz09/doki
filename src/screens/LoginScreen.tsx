@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View, Text, TextInput, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useGlobalStore } from '../store/globalStore';
@@ -69,132 +79,146 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: 'black' }}
+      behavior={'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <View style={styles.container}>
-        <View style={styles.logo}>
-          <Image
-            source={require('../../assets/logo/logoDark.png')}
-            style={styles.image}
-            resizeMode="contain"
-          />
-          <Text style={styles.label}>Iniciar sesión en tu cuenta</Text>
-        </View>
-
-        <View style={{ width: '100%' }}>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="mail-outline"
-              size={20}
-              color="#8293ac"
-              style={styles.icon}
+      <ScrollView style={{ flex: 1, backgroundColor: 'black' }} contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <View style={styles.logo}>
+            <Image
+              source={require('../../assets/logo/logoDark.png')}
+              style={styles.image}
+              resizeMode="contain"
             />
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrors((prevErrors) => ({ ...prevErrors, email: '' }));
-              }}
-              placeholder="Correo electrónico"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor="#cccccc"
-            />
+            <Text style={styles.label}>Iniciar sesión en tu cuenta</Text>
           </View>
 
-          {errors.email && (
-            <View style={{ marginBottom: 10 }}>
-              <Text style={styles.errorMessage}>{errors.email}</Text>
-            </View>
-          )}
-
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color="#8293ac"
-              style={styles.icon}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.iconRight}
-            >
+          <View style={{ width: '100%' }}>
+            <View style={styles.inputContainer}>
               <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                name="mail-outline"
                 size={20}
                 color="#8293ac"
+                style={styles.icon}
               />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrors((prevErrors) => ({ ...prevErrors, email: '' }));
+                }}
+                placeholder="Correo electrónico"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#cccccc"
+              />
+            </View>
+
+            {errors.email && (
+              <View style={{ marginBottom: 10 }}>
+                <Text style={styles.errorMessage}>{errors.email}</Text>
+              </View>
+            )}
+
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#8293ac"
+                style={styles.icon}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.iconRight}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#8293ac"
+                />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
+                }}
+                placeholder="Contraseña"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                placeholderTextColor="#cccccc"
+              />
+            </View>
+
+            {errors.password && (
+              <View style={{ marginBottom: 10 }}>
+                <Text style={styles.errorMessage}>{errors.password}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={{ alignSelf: 'flex-end', marginBottom: 20 }}
+              onPress={() => navigation.navigate('ForgotPassword')}
+            >
+              <Text style={{ color: '#ffffff', fontFamily: 'Karla-SemiBold', fontSize: 14 }}>
+                Olvidé mi contraseña
+              </Text>
             </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
+
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: 20,
               }}
-              placeholder="Contraseña"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              placeholderTextColor="#cccccc"
-            />
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
+                Crear Cuenta
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: 20,
+              }}
+              onPress={() => setPrivacyModalVisible(true)}
+            >
+              <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
+                Políticas de privacidad
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {errors.password && (
-            <View style={{ marginBottom: 10 }}>
-              <Text style={styles.errorMessage}>{errors.password}</Text>
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 20,
-            }}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-              Crear Cuenta
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 20,
-            }}
-            onPress={() => setPrivacyModalVisible(true)}
-          >
-            <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-              Políticas de privacidad
-            </Text>
-          </TouchableOpacity>
+          <PrivacyPoliciesModal
+            visible={isPrivacyModalVisible}
+            onClose={() => setPrivacyModalVisible(false)}
+          />
         </View>
-
-        <PrivacyPoliciesModal
-          visible={isPrivacyModalVisible}
-          onClose={() => setPrivacyModalVisible(false)}
-        />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-// Estilos (sin cambios)
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
     backgroundColor: 'black',
+  },
+  container: {
+    width: '100%',
   },
   iconContainer: {
     position: 'absolute',

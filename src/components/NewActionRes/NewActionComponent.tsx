@@ -1,29 +1,27 @@
-import React, { useState } from "react";
-import { View, Alert, StyleSheet } from "react-native";
-import { useUserStore } from "../../store/userStore";
-import { useGlobalStore } from "../../store/globalStore";
-import { useDocumentsStore } from "../../store/documentsStore";
-import { checkInternetConnection } from "../../utils/actions";
-import { Document as DocType } from "../types";
-import { supabase } from "../../supabase/supabaseClient";
-import NewButton from "./NewButton";
-import OptionsModal from "./OptionsModal";
-import CameraModal from "./CameraModal";
-import PreviewModal from "./PreviewModal";
-import CreateFolderModal from "./CreateFolderModal";
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
-import { Buffer } from "buffer";
-import * as Print from "expo-print";
-import { Camera } from "expo-camera";
+import React, { useState } from 'react';
+import { View, Alert, StyleSheet } from 'react-native';
+import { useUserStore } from '../../store/userStore';
+import { useGlobalStore } from '../../store/globalStore';
+import { useDocumentsStore } from '../../store/documentsStore';
+import { checkInternetConnection } from '../../utils/actions';
+import { Document as DocType } from '../types';
+import { supabase } from '../../supabase/supabaseClient';
+import NewButton from './NewButton';
+import OptionsModal from './OptionsModal';
+import CameraModal from './CameraModal';
+import PreviewModal from './PreviewModal';
+import CreateFolderModal from './CreateFolderModal';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import { Buffer } from 'buffer';
+import * as Print from 'expo-print';
+import { Camera } from 'expo-camera';
 
 interface NewActionComponentProps {
   folder?: { folder?: Partial<DocType> };
 }
 
-const NewActionComponent: React.FC<NewActionComponentProps> = ({
-  folder = {},
-}) => {
+const NewActionComponent: React.FC<NewActionComponentProps> = ({ folder = {} }) => {
   const user = useUserStore((state) => state.user);
   const setLoading = useGlobalStore((state) => state.setLoading);
   const { addDocument } = useDocumentsStore();
@@ -39,11 +37,8 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
 
   const requestCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permiso denegado",
-        "Se necesita acceso a la cámara para escanear documentos."
-      );
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado', 'Se necesita acceso a la cámara para escanear documentos.');
       return false;
     }
     return true;
@@ -52,15 +47,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
   const handleFileUpload = async () => {
     const isOffline = await checkInternetConnection();
     if (isOffline) {
-      Alert.alert(
-        "Sin conexión",
-        "Por favor, verifica tu conexión a internet."
-      );
+      Alert.alert('Sin conexión', 'Por favor, verifica tu conexión a internet.');
       return;
     }
 
     if (!user?.id) {
-      Alert.alert("Error", "Usuario no autenticado.");
+      Alert.alert('Error', 'Usuario no autenticado.');
       return;
     }
 
@@ -70,16 +62,16 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
     try {
       const pickedFile = await DocumentPicker.getDocumentAsync({
         type: [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "application/vnd.ms-excel",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "application/vnd.ms-powerpoint",
-          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-          "image/jpeg",
-          "image/jpg",
-          "image/png",
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
         ],
         copyToCacheDirectory: true,
       });
@@ -91,7 +83,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       const file = pickedFile.assets[0];
 
       if (file.size && file.size > MAX_FILE_SIZE) {
-        throw new Error("El archivo excede el límite de 10MB.");
+        throw new Error('El archivo excede el límite de 10MB.');
       }
 
       const fileContent = await FileSystem.readAsStringAsync(file.uri, {
@@ -99,12 +91,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       });
 
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      const fileData = Buffer.from(fileContent, "base64");
+      const fileData = Buffer.from(fileContent, 'base64');
 
       const { error: uploadError } = await supabase.storage
-        .from("documents")
+        .from('documents')
         .upload(filePath, fileData, {
-          contentType: file.mimeType || "application/octet-stream",
+          contentType: file.mimeType || 'application/octet-stream',
         });
 
       if (uploadError) {
@@ -112,12 +104,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       }
 
       const { data, error: insertError } = await supabase
-        .from("documents")
+        .from('documents')
         .insert([
           {
             name: file.name,
             size: file.size || 0,
-            ext: file.mimeType || "application/octet-stream",
+            ext: file.mimeType || 'application/octet-stream',
             user_id: user.id,
             folder_id: folder?.folder?.id || null,
             is_folder: false,
@@ -145,8 +137,8 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
         updated_at: data.updated_at,
       });
     } catch (error) {
-      console.error("Error al seleccionar o enviar el archivo:", error);
-      Alert.alert("Error", error.message || "No se pudo subir el archivo.");
+      console.error('Error al seleccionar o enviar el archivo:', error);
+      Alert.alert('Error', error.message || 'No se pudo subir el archivo.');
     } finally {
       setLoading(false);
     }
@@ -171,18 +163,18 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
     } else {
       setFrontPhoto(photoUri);
       Alert.alert(
-        "¿Tomar foto trasera?",
-        "¿Deseas tomar una foto de la parte trasera del documento?",
+        '¿Tomar foto trasera?',
+        '¿Deseas tomar una foto de la parte trasera del documento?',
         [
           {
-            text: "No",
+            text: 'No',
             onPress: () => {
               setCameraModalVisible(false);
               setPreviewModalVisible(true);
             },
           },
           {
-            text: "Sí",
+            text: 'Sí',
             onPress: () => setIsCapturingBack(true),
           },
         ]
@@ -193,16 +185,13 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
   const saveAsPDF = async () => {
     setPreviewModalVisible(false);
     if (!frontPhoto) {
-      Alert.alert("Error", "La foto frontal es obligatoria.");
+      Alert.alert('Error', 'La foto frontal es obligatoria.');
       return;
     }
 
     const isOffline = await checkInternetConnection();
     if (isOffline) {
-      Alert.alert(
-        "Sin conexión",
-        "Por favor, verifica tu conexión a internet."
-      );
+      Alert.alert('Sin conexión', 'Por favor, verifica tu conexión a internet.');
       return;
     }
 
@@ -215,19 +204,14 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       });
       const backPhotoBase64 = backPhoto
         ? await FileSystem.readAsStringAsync(backPhoto, {
-            encoding: FileSystem.EncodingType.Base64,
-          })
+          encoding: FileSystem.EncodingType.Base64,
+        })
         : null;
 
       // Validar tamaño aproximado
-      const estimatedSize =
-        frontPhotoBase64.length +
-        (backPhotoBase64 ? backPhotoBase64.length : 0);
+      const estimatedSize = frontPhotoBase64.length + (backPhotoBase64 ? backPhotoBase64.length : 0);
       if (estimatedSize > MAX_FILE_SIZE * 0.75) {
-        Alert.alert(
-          "Error",
-          "El tamaño de las imágenes excede el límite permitido. Intenta capturar nuevamente."
-        );
+        Alert.alert('Error', 'El tamaño de las imágenes excede el límite permitido. Intenta capturar nuevamente.');
         setLoading(false);
         return;
       }
@@ -238,11 +222,10 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
         <body style="margin: 0; padding: 20px;">
           <h1>Documento Escaneado</h1>
           <img src="data:image/jpeg;base64,${frontPhotoBase64}" style="width: 100%; max-width: 400px;" />
-          ${
-            backPhotoBase64
-              ? `<img src="data:image/jpeg;base64,${backPhotoBase64}" style="width: 100%; max-width: 400px;" />`
-              : ""
-          }
+          ${backPhotoBase64
+          ? `<img src="data:image/jpeg;base64,${backPhotoBase64}" style="width: 100%; max-width: 400px;" />`
+          : ''
+        }
         </body>
       </html>
     `;
@@ -258,17 +241,17 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
 
       // Validar tamaño del PDF
       if (fileContent.length > MAX_FILE_SIZE) {
-        throw new Error("El PDF generado excede el límite de 1MB.");
+        throw new Error('El PDF generado excede el límite de 1MB.');
       }
 
       const fileName = `scanned_${Date.now()}.pdf`;
       const filePath = `${user!.id}/${fileName}`;
-      const fileData = Buffer.from(fileContent, "base64");
+      const fileData = Buffer.from(fileContent, 'base64');
 
       const { error: uploadError } = await supabase.storage
-        .from("documents")
+        .from('documents')
         .upload(filePath, fileData, {
-          contentType: "application/pdf",
+          contentType: 'application/pdf',
         });
 
       if (uploadError) {
@@ -276,12 +259,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       }
 
       const { data, error: insertError } = await supabase
-        .from("documents")
+        .from('documents')
         .insert([
           {
             name: fileName,
             size: fileContent.length,
-            ext: "application/pdf",
+            ext: 'application/pdf',
             user_id: user!.id,
             folder_id: folder?.folder?.id || null,
             is_folder: false,
@@ -309,10 +292,10 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
         updated_at: data.updated_at,
       });
 
-      Alert.alert("Éxito", "Documento escaneado y guardado como PDF.");
+      Alert.alert('Éxito', 'Documento escaneado y guardado como PDF.');
     } catch (error) {
-      console.error("Error al generar o guardar el PDF:", error);
-      Alert.alert("Error", error.message || "No se pudo guardar el documento.");
+      console.error('Error al generar o guardar el PDF:', error);
+      Alert.alert('Error', error.message || 'No se pudo guardar el documento.');
     } finally {
       setLoading(false);
     }
@@ -332,14 +315,6 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
     setPreviewModalVisible(false);
     setCameraModalVisible(true);
     setIsCapturingBack(true);
-  };
-
-  const handleUpdateFrontPhoto = (uri: string) => {
-    setFrontPhoto(uri);
-  };
-
-  const handleUpdateBackPhoto = (uri: string) => {
-    setBackPhoto(uri);
   };
 
   return (
@@ -369,15 +344,8 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
         onRetakeFront={handleRetakeFront}
         onRetakeBack={handleRetakeBack}
         onSave={saveAsPDF}
-        onUpdateFrontPhoto={handleUpdateFrontPhoto}
-        onUpdateBackPhoto={handleUpdateBackPhoto}
       />
-      {CreateFolderModal && (
-        <CreateFolderModal
-          isVisible={isModalVisible}
-          onClose={() => setModalVisible(false)}
-        />
-      )}
+      {CreateFolderModal && <CreateFolderModal isVisible={isModalVisible} onClose={() => setModalVisible(false)} />}
     </View>
   );
 };
@@ -385,7 +353,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 0.17,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
 });
 

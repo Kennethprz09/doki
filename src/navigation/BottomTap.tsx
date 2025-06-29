@@ -1,18 +1,19 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { TransitionPresets } from '@react-navigation/stack';
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import SplashScreen from '../screens/SplashScreen';
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import HighlightsScreen from '../screens/HighlightsScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import OpenFolderScreen from '../screens/OpenFolderScreen';
-import MyAccountScreen from '../screens/MyAccountScreen';
-import { RootStackParamList } from '../components/types';
-
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TransitionPresets } from "@react-navigation/stack";
+import React from "react";
+import { StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import SplashScreen from "../screens/SplashScreen";
+import LoginScreen from "../screens/LoginScreen";
+import HomeScreen from "../screens/HomeScreen";
+import HighlightsScreen from "../screens/HighlightsScreen";
+import RegisterScreen from "../screens/RegisterScreen";
+import OpenFolderScreen from "../screens/OpenFolderScreen";
+import MyAccountScreen from "../screens/MyAccountScreen";
+import { RootStackParamList } from "../components/types";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 
 const Tab = createBottomTabNavigator<RootStackParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +37,16 @@ export const MainNavigator = () => {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ResetPassword"
+        component={ResetPasswordScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="MainRoutes"
         component={BottomTab}
         options={{ headerShown: false }}
@@ -51,23 +62,23 @@ export const BottomTab = () => {
         tabBarHideOnKeyboard: true,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: string;
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Highlights') {
-            iconName = focused ? 'star' : 'star-outline';
+          if (route.name === "Home") {
+            iconName = focused ? "home" : "home-outline";
+          } else if (route.name === "Highlights") {
+            iconName = focused ? "star" : "star-outline";
           } else {
-            iconName = 'help';
+            iconName = "help";
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#000',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: "#000",
+        tabBarInactiveTintColor: "gray",
         headerShown: false,
         tabBarLabelStyle: {
-          fontFamily: 'Karla-Bold',
+          fontFamily: "Karla-Bold",
         },
         tabBarStyle: {
-          position: 'absolute',
+          position: "absolute",
           bottom: 0,
           left: 0,
           elevation: 0,
@@ -80,15 +91,15 @@ export const BottomTab = () => {
         name="Home"
         component={HomeStackScreen}
         options={{
-          tabBarLabel: 'Inicio',
-          initialRouteName: 'Home',
+          tabBarLabel: "Inicio",
+          initialRouteName: "Home",
         }}
       />
       <Tab.Screen
         name="Highlights"
         component={HighlightsStackScreen}
         options={{
-          tabBarLabel: 'Destacado',
+          tabBarLabel: "Destacado",
         }}
       />
     </Tab.Navigator>
@@ -103,9 +114,9 @@ function HomeStackScreen() {
         options={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS,
-          animation: 'slide_from_right',
-          title: 'Home',
-          headerTitleAlign: 'center',
+          animation: "slide_from_right",
+          title: "Home",
+          headerTitleAlign: "center",
           headerTitleStyle: styles.headerTitleStyle,
         }}
         name="HomePage"
@@ -115,9 +126,9 @@ function HomeStackScreen() {
         options={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS,
-          animation: 'slide_from_right',
-          title: 'Abrir Carpeta',
-          headerTitleAlign: 'center',
+          animation: "slide_from_right",
+          title: "Abrir Carpeta",
+          headerTitleAlign: "center",
           headerTitleStyle: styles.headerTitleStyle,
         }}
         name="OpenFolderPage"
@@ -127,9 +138,9 @@ function HomeStackScreen() {
         options={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS,
-          animation: 'slide_from_right',
-          title: 'Mi cuenta',
-          headerTitleAlign: 'center',
+          animation: "slide_from_right",
+          title: "Mi cuenta",
+          headerTitleAlign: "center",
           headerTitleStyle: styles.headerTitleStyle,
         }}
         name="MyAccountPage"
@@ -147,9 +158,9 @@ function HighlightsStackScreen() {
         options={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS,
-          animation: 'slide_from_right',
-          title: 'Highlights',
-          headerTitleAlign: 'center',
+          animation: "slide_from_right",
+          title: "Highlights",
+          headerTitleAlign: "center",
           headerTitleStyle: styles.headerTitleStyle,
         }}
         name="HighlightsPage"
@@ -159,9 +170,9 @@ function HighlightsStackScreen() {
         options={{
           headerShown: false,
           ...TransitionPresets.SlideFromRightIOS,
-          animation: 'slide_from_right',
-          title: 'Abrir Carpeta',
-          headerTitleAlign: 'center',
+          animation: "slide_from_right",
+          title: "Abrir Carpeta",
+          headerTitleAlign: "center",
           headerTitleStyle: styles.headerTitleStyle,
         }}
         name="OpenFolderPage"
@@ -173,16 +184,16 @@ function HighlightsStackScreen() {
 
 const styles = StyleSheet.create({
   notificationButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 90,
     right: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 25,
     padding: 10,
     elevation: 5,
   },
   headerTitleStyle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

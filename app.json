@@ -3,6 +3,7 @@
     "newArchEnabled": true,
     "name": "Doki",
     "slug": "doki",
+    "scheme": "com.app.doki",
     "owner": "kennethprz09",
     "extra": {
       "eas": {
@@ -16,19 +17,21 @@
       ]
     },
     "ios": {
+      "usesIcloudStorage": true,
       "bundleIdentifier": "com.app.doki",
+      "iCloudContainerEnvironment": "Production",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Permitir el acceso a la cámara para escanear documentos",
+        "NSPhotoLibraryUsageDescription": "Permitir el acceso a la galería para seleccionar imágenes",
+        "NSPhotoLibraryAddUsageDescription": "Permitir guardar imágenes en la galería"
       }
     },
-    "permissions": [
-      {
-        "name": "camera",
-        "description": "Permitir el acceso a la cámara para escanear documentos"
-      }
-    ],
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-document-picker",
+      "expo-camera",
+      "expo-file-system"
     ]
   }
 }

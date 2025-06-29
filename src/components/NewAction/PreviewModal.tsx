@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import SimpleCropper from './SimpleCropper';
-import * as ImageManipulator from 'expo-image-manipulator';
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import SimpleCropper from "./SimpleCropper";
+import * as ImageManipulator from "expo-image-manipulator";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 interface PreviewModalProps {
   visible: boolean;
@@ -13,6 +22,8 @@ interface PreviewModalProps {
   onRetakeFront: () => void;
   onRetakeBack: () => void;
   onSave: () => void;
+  onUpdateFrontPhoto: (uri: string) => void;
+  onUpdateBackPhoto: (uri: string) => void;
 }
 
 const PreviewModal: React.FC<PreviewModalProps> = ({
@@ -23,128 +34,126 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
   onRetakeFront,
   onRetakeBack,
   onSave,
+  onUpdateFrontPhoto,
+  onUpdateBackPhoto,
 }) => {
   const [showCropper, setShowCropper] = useState(false);
-  const [cropTarget, setCropTarget] = useState<'front' | 'back' | null>(null);
-  const [front, setFront] = useState(frontPhoto);
-  const [back, setBack] = useState(backPhoto);
+  const [cropTarget, setCropTarget] = useState<"front" | "back" | null>(null);
+  const [front, setFront] = useState<string | null>(frontPhoto);
+  const [back, setBack] = useState<string | null>(backPhoto);
 
-  // Actualiza las fotos si cambian las props
-  React.useEffect(() => {
+  useEffect(() => {
     setFront(frontPhoto);
     setBack(backPhoto);
   }, [frontPhoto, backPhoto]);
 
-  // Función para rotar la imagen
-  const rotateImage = async (target: 'front' | 'back', angle: number) => {
-    const uri = target === 'front' ? front : back;
+  const rotateImage = async (target: "front" | "back", angle: number) => {
+    const uri = target === "front" ? front : back;
     if (!uri) return;
     const result = await ImageManipulator.manipulateAsync(
       uri,
       [{ rotate: angle }],
       { compress: 1, format: ImageManipulator.SaveFormat.PNG }
     );
-    if (target === 'front') setFront(result.uri);
-    else setBack(result.uri);
+    target === "front" ? setFront(result.uri) : setBack(result.uri);
   };
 
-  // Función para manejar el recorte
-  const handleCrop = async (cropRect: { originX: number; originY: number; width: number; height: number }) => {
-    const uri = cropTarget === 'front' ? front : back;
-    if (!uri) return;
-    const result = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ crop: cropRect }],
-      { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-    );
-    if (cropTarget === 'front') setFront(result.uri);
-    else setBack(result.uri);
+const handleCrop = (croppedUri: string) => {
+  if (cropTarget === "front") {
+    setFront(croppedUri);
+    onUpdateFrontPhoto(croppedUri);
+  } else if (cropTarget === "back") {
+    setBack(croppedUri);
+    onUpdateBackPhoto(croppedUri);
+  }
+  setShowCropper(false);
+  setCropTarget(null);
+};
+
+  const handleCancelCrop = () => {
     setShowCropper(false);
     setCropTarget(null);
   };
 
+  const renderPhotoSection = (
+    label: string,
+    uri: string | null,
+    onRetake: () => void,
+    key: "front" | "back"
+  ) => {
+    if (!uri) return null;
+    return (
+      <View style={styles.photoSection}>
+        <Text style={styles.imageLabel}>{label}</Text>
+        <Image source={{ uri }} style={styles.previewImage} />
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.retakeBtn} onPress={onRetake}>
+            <Text style={styles.retakeText}>Repetir</Text>
+          </TouchableOpacity>
+
+          <View style={styles.iconGroup}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => {
+                setCropTarget(key);
+                setShowCropper(true);
+              }}
+            >
+              <Ionicons name="crop-outline" size={24} color="#007bff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => rotateImage(key, -90)}
+            >
+              <Ionicons name="arrow-undo-sharp" size={24} color="#28a745" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => rotateImage(key, 90)}
+            >
+              <Ionicons name="arrow-redo-sharp" size={24} color="#28a745" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <Modal visible={visible} transparent onRequestClose={onClose}>
-      <View style={styles.previewContainer}>
-        <Text style={styles.previewTitle}>Previsualización del Documento</Text>
-        {showCropper && cropTarget && (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      statusBarTranslucent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.fullContainer}>
+        <Text style={styles.title}>Previsualización del Documento</Text>
+
+        {showCropper && cropTarget ? (
           <SimpleCropper
-            imageUri={cropTarget === 'front' ? front! : back!}
+            imageUri={cropTarget === "front" ? front! : back!}
             onCrop={handleCrop}
+            onCancel={handleCancelCrop}
           />
-        )}
-        {!showCropper && (
+        ) : (
           <>
-            {front && (
-              <View style={styles.previewImageContainer}>
-                <Text style={styles.imageLabel}>Foto Frontal</Text>
-                <Image source={{ uri: front }} style={styles.previewImage} />
-                <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.retakeButton} onPress={onRetakeFront}>
-                    <Text style={styles.retakeText}>Repetir</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.cropButton}
-                    onPress={() => {
-                      setShowCropper(true);
-                      setCropTarget('front');
-                    }}
-                  >
-                    <Text style={styles.cropText}>Recortar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rotateButton}
-                    onPress={() => rotateImage('front', -90)}
-                  >
-                    <Text style={styles.rotateText}>Rotar Izq</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rotateButton}
-                    onPress={() => rotateImage('front', 90)}
-                  >
-                    <Text style={styles.rotateText}>Rotar Der</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-            {back && (
-              <View style={styles.previewImageContainer}>
-                <Text style={styles.imageLabel}>Foto Trasera</Text>
-                <Image source={{ uri: back }} style={styles.previewImage} />
-                <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.retakeButton} onPress={onRetakeBack}>
-                    <Text style={styles.retakeText}>Repetir</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.cropButton}
-                    onPress={() => {
-                      setShowCropper(true);
-                      setCropTarget('back');
-                    }}
-                  >
-                    <Text style={styles.cropText}>Recortar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rotateButton}
-                    onPress={() => rotateImage('back', -90)}
-                  >
-                    <Text style={styles.rotateText}>Rotar Izq</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rotateButton}
-                    onPress={() => rotateImage('back', 90)}
-                  >
-                    <Text style={styles.rotateText}>Rotar Der</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-            <View style={styles.previewButtons}>
-              <TouchableOpacity style={[styles.previewButton, styles.cancelButton]} onPress={onClose}>
-                <Text style={styles.previewButtonText}>Cancelar</Text>
+            {renderPhotoSection("Foto Frontal", front, onRetakeFront, "front")}
+            {renderPhotoSection("Foto Trasera", back, onRetakeBack, "back")}
+
+            <View style={styles.footerBtns}>
+              <TouchableOpacity
+                style={[styles.footerBtn, styles.cancelBtn]}
+                onPress={onClose}
+              >
+                <Text style={styles.footerText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.previewButton, styles.saveButton]} onPress={onSave}>
-                <Text style={styles.previewButtonText}>Guardar</Text>
+              <TouchableOpacity
+                style={[styles.footerBtn, styles.saveBtn]}
+                onPress={onSave}
+              >
+                <Text style={styles.footerText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -155,88 +164,77 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  previewContainer: {
+  fullContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 10,
   },
-  previewTitle: {
-    fontSize: 20,
-    fontFamily: 'Karla-Bold',
-    marginBottom: 20,
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 16,
   },
-  previewImageContainer: {
-    alignItems: 'center',
+  photoSection: {
     marginBottom: 20,
+    alignItems: "center",
   },
   imageLabel: {
     fontSize: 16,
-    fontFamily: 'Karla-SemiBold',
-    marginBottom: 10,
+    fontWeight: "600",
+    marginBottom: 8,
   },
   previewImage: {
-    width: 220,
-    height: 250,
-    borderRadius: 2,
+    width: "100%",
+    height: 300,
+    borderRadius: 4,
+    backgroundColor: "#eee",
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    width: "100%",
+    justifyContent: "space-between",
   },
-  retakeButton: {
-    padding: 10,
-    backgroundColor: '#ff4444',
-    borderRadius: 5,
+  retakeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#ff4444",
+    borderRadius: 4,
   },
   retakeText: {
-    color: '#fff',
-    fontFamily: 'Karla-SemiBold',
+    color: "#fff",
+    fontWeight: "600",
   },
-  cropButton: {
-    padding: 10,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+  iconGroup: {
+    flexDirection: "row",
   },
-  cropText: {
-    color: '#fff',
-    fontFamily: 'Karla-SemiBold',
+  iconBtn: {
+    marginLeft: 12,
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: "rgba(0,0,0,0.05)",
   },
-  rotateButton: {
-    padding: 10,
-    backgroundColor: '#28a745',
-    borderRadius: 5,
+  footerBtns: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  rotateText: {
-    color: '#fff',
-    fontFamily: 'Karla-SemiBold',
-  },
-  previewButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-  },
-  previewButton: {
+  footerBtn: {
     flex: 1,
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginHorizontal: 10,
+    paddingVertical: 12,
+    borderRadius: 4,
+    alignItems: "center",
+    marginHorizontal: 5,
   },
-  cancelButton: {
-    backgroundColor: '#ccc',
-  },
-  saveButton: {
-    backgroundColor: '#ff8c00',
-  },
-  previewButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Karla-Bold',
+  cancelBtn: { backgroundColor: "#ccc" },
+  saveBtn: { backgroundColor: "#ff8c00" },
+  footerText: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });
 
 export default PreviewModal;
+
