@@ -223,14 +223,14 @@ const NewActionComponent: React.FC<NewActionComponentProps> = ({
       const estimatedSize =
         frontPhotoBase64.length +
         (backPhotoBase64 ? backPhotoBase64.length : 0);
-      if (estimatedSize > MAX_FILE_SIZE * 0.75) {
-        Alert.alert(
-          "Error",
-          "El tamaño de las imágenes excede el límite permitido. Intenta capturar nuevamente."
-        );
-        setLoading(false);
-        return;
-      }
+      // if (estimatedSize > MAX_FILE_SIZE * 0.75) {
+      //   Alert.alert(
+      //     "Error",
+      //     "El tamaño de las imágenes excede el límite permitido. Intenta capturar nuevamente."
+      //   );
+      //   setLoading(false);
+      //   return;
+      // }
 
       // Crear HTML con imágenes incrustadas
       const htmlContent = `

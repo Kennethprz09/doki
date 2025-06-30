@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SimpleCropper from "./SimpleCropper";
@@ -58,17 +59,17 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
     target === "front" ? setFront(result.uri) : setBack(result.uri);
   };
 
-const handleCrop = (croppedUri: string) => {
-  if (cropTarget === "front") {
-    setFront(croppedUri);
-    onUpdateFrontPhoto(croppedUri);
-  } else if (cropTarget === "back") {
-    setBack(croppedUri);
-    onUpdateBackPhoto(croppedUri);
-  }
-  setShowCropper(false);
-  setCropTarget(null);
-};
+  const handleCrop = (croppedUri: string) => {
+    if (cropTarget === "front") {
+      setFront(croppedUri);
+      onUpdateFrontPhoto(croppedUri);
+    } else if (cropTarget === "back") {
+      setBack(croppedUri);
+      onUpdateBackPhoto(croppedUri);
+    }
+    setShowCropper(false);
+    setCropTarget(null);
+  };
 
   const handleCancelCrop = () => {
     setShowCropper(false);
@@ -129,35 +130,37 @@ const handleCrop = (croppedUri: string) => {
       onRequestClose={onClose}
     >
       <View style={styles.fullContainer}>
-        <Text style={styles.title}>Previsualización del Documento</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.title}>Previsualización del Documento</Text>
 
-        {showCropper && cropTarget ? (
-          <SimpleCropper
-            imageUri={cropTarget === "front" ? front! : back!}
-            onCrop={handleCrop}
-            onCancel={handleCancelCrop}
-          />
-        ) : (
-          <>
-            {renderPhotoSection("Foto Frontal", front, onRetakeFront, "front")}
-            {renderPhotoSection("Foto Trasera", back, onRetakeBack, "back")}
+          {showCropper && cropTarget ? (
+            <SimpleCropper
+              imageUri={cropTarget === "front" ? front! : back!}
+              onCrop={handleCrop}
+              onCancel={handleCancelCrop}
+            />
+          ) : (
+            <>
+              {renderPhotoSection("Foto Frontal", front, onRetakeFront, "front")}
+              {renderPhotoSection("Foto Trasera", back, onRetakeBack, "back")}
 
-            <View style={styles.footerBtns}>
-              <TouchableOpacity
-                style={[styles.footerBtn, styles.cancelBtn]}
-                onPress={onClose}
-              >
-                <Text style={styles.footerText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.footerBtn, styles.saveBtn]}
-                onPress={onSave}
-              >
-                <Text style={styles.footerText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+              <View style={styles.footerBtns}>
+                <TouchableOpacity
+                  style={[styles.footerBtn, styles.cancelBtn]}
+                  onPress={onClose}
+                >
+                  <Text style={styles.footerText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.footerBtn, styles.saveBtn]}
+                  onPress={onSave}
+                >
+                  <Text style={styles.footerText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -169,6 +172,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     marginTop: 10,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   title: {
     fontSize: 18,
@@ -237,4 +243,3 @@ const styles = StyleSheet.create({
 });
 
 export default PreviewModal;
-
