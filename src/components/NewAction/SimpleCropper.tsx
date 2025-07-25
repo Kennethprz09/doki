@@ -15,7 +15,7 @@ export default function SimpleCropper({
     <ImageEditor
       isVisible={true}
       imageUri={imageUri}
-      fixedAspectRatio={1.585}
+      fixedAspectRatio={1}
       minimumCropDimensions={{ width: 0, height: 0 }}
       onEditingCancel={onCancel}
       onEditingComplete={(image) => {

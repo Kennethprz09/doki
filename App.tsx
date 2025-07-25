@@ -12,7 +12,7 @@ import { MainNavigator } from "./src/navigation/BottomTap";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useDocumentsSync from "./src/hook/useDocumentsSync";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext"; // Asegúrate de que la ruta sea correcta
+import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext";
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -26,22 +26,10 @@ const AppContent = () => {
     loadUser();
   }, [loadUser]);
 
-  const linking = {
-    prefixes: ["com.app.doki://"],
-    config: {
-      screens: {
-        ResetPassword: "reset-password",
-        Login: "login",
-        Register: "register",
-        ForgotPassword: "forgot-password",
-      },
-    },
-  };
-
   return (
     <>
       {isLoading && <Loader />}
-      <NavigationContainer linking={linking}>
+      <NavigationContainer >
         <MainNavigator />
         <Toast config={toastConfig} />
       </NavigationContainer>

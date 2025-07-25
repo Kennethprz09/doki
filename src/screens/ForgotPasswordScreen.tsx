@@ -10,10 +10,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
-import { supabase } from '../supabase/supabaseClient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../components/types';
+import { resetPassword } from '../supabase/auth';
 
 interface ForgotPasswordScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -30,6 +29,11 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
       setError('El correo electrónico es obligatorio');
       return false;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Por favor, ingresa un correo electrónico válido');
+      return false;
+    }
     setError('');
     return true;
   };
@@ -41,14 +45,16 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     setMessage('');
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'com.app.doki://reset-password',
-      });
-      if (error) throw error;
-      setMessage('Si la cuenta existe, se ha enviado un enlace de restablecimiento a tu correo.');
-      setTimeout(() => navigation.navigate('Login'), 500);
+      const { success, message, errorMessage } = await resetPassword(email);
+
+      if (!success) {
+        throw new Error(errorMessage || 'Error al procesar la solicitud');
+      }
+
+      setMessage(message || 'Se ha enviado una nueva contraseña a tu correo.');
+      setTimeout(() => navigation.navigate('Login'), 1000);
     } catch (error: any) {
-      setError(error.message || 'Error al enviar el enlace de restablecimiento.');
+      setError(error.message || 'Error al enviar la nueva contraseña.');
     } finally {
       setLoading(false);
     }
@@ -64,7 +70,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         <View style={styles.container}>
           <View style={styles.logo}>
             <Text style={styles.title}>Recuperar Contraseña</Text>
-            <Text style={styles.label}>Ingresa tu correo para recibir un enlace de restablecimiento</Text>
+            <Text style={styles.label}>Ingresa tu correo para recibir una nueva contraseña</Text>
           </View>
 
           <View style={{ width: '100%' }}>
@@ -106,7 +112,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               onPress={handleResetPassword}
               disabled={loading}
             >
-              <Text style={styles.buttonText}>{loading ? 'Enviando...' : 'Enviar Enlace'}</Text>
+              <Text style={styles.buttonText}>{loading ? 'Enviando...' : 'Enviar Nueva Contraseña'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

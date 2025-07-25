@@ -11,6 +11,7 @@ import { checkInternetConnection } from '../../utils/actions';
 import { supabase } from '../../supabase/supabaseClient';
 import { useDocumentsStore } from '../../store/documentsStore';
 import { shallow } from 'zustand/shallow';
+import { useGlobalStore } from '../../store/globalStore';
 
 interface FiltersFolderComponentsProps {
   folder: Document | null;
@@ -25,6 +26,7 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
   const [isModalVisible, setModalVisible] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const setDocumentsFolder = useDocumentsStore((state) => state.setDocumentsFolder);
+  const loading = useGlobalStore((state) => state.loading);
 
 
   // Selector estabilizado con useMemo
@@ -78,7 +80,7 @@ const FiltersFolderComponents: React.FC<FiltersFolderComponentsProps> = ({ folde
   // Ejecutar búsqueda solo cuando cambian search u order
   useEffect(() => {
     handleOnlineSearch();
-  }, [search, order, folder?.id]);
+  }, [search, order, folder?.id, loading]);
 
   const toggleModal = () => setModalVisible(!isModalVisible);
   const toggleSortOrder = () => {

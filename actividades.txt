@@ -1,11 +1,4 @@
-- Que cada que ingrese solicite la clave. Listo
-- Revisar las pantalla de inicio de sesión y crear cuenta que el teclado tapa los campos. Listo
-- Cambiar color a la carpeta. Listo
-- Subir archivos en ios. Listo
-- Solicitar permisos para acceder a los ducumentos (INVESTIGAR). Listo
-que pasa que estos permisos se declaran en la configuracion y por eso no se solicita permisos dentro de la app en teoria en produccion si lo hara.
-
-
-
-- El escáner voltea la imagen y el área de la foto la toma completa. Revisar con cliente nueva forma de scanner
-Que el scanner pueda recortar. No se puede
+- al restablecer contraseña se genere una aleatoria. Listo
+- al recortar una imagen en el scanner que sea libre no formato ci. Listo
+- cuando agrega un docuemento a la carpeta que se refrescque la lista debido a que toca entrar y salir para que aparezca el nuevo docuemento. Listo
+- Logo android y ios.
