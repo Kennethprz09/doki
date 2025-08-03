@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { View, Text, StyleSheet, ScrollView } from "react-native"
 import LoadingButton from "../common/LoadingButton"
 import type { ModalProps } from "../types"

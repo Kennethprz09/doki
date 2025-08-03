@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { createContext, useContext, useEffect, useRef, useCallback } from "react"
 import { AppState, type AppStateStatus } from "react-native"
 import type { RealtimeChannel } from "@supabase/supabase-js"

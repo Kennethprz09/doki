@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo } from "react"
 import { View, StyleSheet, Text } from "react-native"
 import { type RouteProp, useRoute } from "@react-navigation/native"

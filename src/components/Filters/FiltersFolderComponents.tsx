@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo } from "react"
 import type { Document } from "../types"
 import FiltersFolderScreen from "../../screens/FiltersFolderScreen"

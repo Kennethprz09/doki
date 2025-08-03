@@ -1,12 +1,11 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo, useRef, useState, useCallback } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { CameraView } from "expo-camera"
 import * as ImageManipulator from "expo-image-manipulator"
-import BaseModal from "../common/BaseModal"
 
 interface CameraModalProps {
   visible: boolean
@@ -14,12 +13,10 @@ interface CameraModalProps {
   onCapture: (photoUri: string) => void
 }
 
-// Optimización 1: Modal de cámara optimizado
 const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture }) => {
   const cameraRef = useRef<CameraView>(null)
   const [capturing, setCapturing] = useState(false)
 
-  // Optimización 2: Función para tomar foto
   const takePicture = useCallback(async () => {
     if (!cameraRef.current || capturing) return
 
@@ -36,15 +33,10 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
         return
       }
 
-      // Optimización 3: Procesar imagen para optimizar tamaño
-      const processedImage = await ImageManipulator.manipulateAsync(
-        photo.uri,
-        [{ resize: { width: 1200 } }], // Redimensionar para optimizar
-        {
-          compress: 0.8,
-          format: ImageManipulator.SaveFormat.JPEG,
-        },
-      )
+      const processedImage = await ImageManipulator.manipulateAsync(photo.uri, [{ resize: { width: 1200 } }], {
+        compress: 0.8,
+        format: ImageManipulator.SaveFormat.JPEG,
+      })
 
       onCapture(processedImage.uri)
     } catch (error) {
@@ -56,7 +48,13 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
   }, [capturing, onCapture])
 
   return (
-    <BaseModal visible={visible} onClose={onClose} animationType="slide">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle="fullScreen"
+      statusBarTranslucent
+    >
       <View style={styles.container}>
         <CameraView style={styles.camera} ref={cameraRef} facing="back" />
 
@@ -82,7 +80,7 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
         {/* Feedback de captura */}
         {capturing && <Text style={styles.capturingText}>Procesando imagen...</Text>}
       </View>
-    </BaseModal>
+    </Modal>
   )
 })
 
@@ -104,6 +102,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-start",
     paddingHorizontal: 20,
+    zIndex: 1,
   },
   closeButton: {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
@@ -118,6 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1,
   },
   captureButton: {
     backgroundColor: "#ff8c00",
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    zIndex: 1,
   },
 })
 

@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useCallback } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"

@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo, useState, useEffect, useCallback } from "react"
 import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Dimensions } from "react-native"
 import BaseModal from "../common/BaseModal"

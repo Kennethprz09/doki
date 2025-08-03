@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo, useCallback, useState } from "react"
 import { FlatList, RefreshControl, StyleSheet, Text, View, Dimensions } from "react-native"
 import type { Document } from "../types"

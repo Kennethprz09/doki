@@ -1,14 +1,16 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useMemo, useCallback } from "react"
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native"
+import { View, TouchableOpacity, FlatList, StyleSheet, Dimensions, Text } from "react-native" // Import Dimensions
 import { Ionicons } from "@expo/vector-icons"
 import BaseModal from "../common/BaseModal"
 import LoadingButton from "../common/LoadingButton"
 import { useDocumentsStore } from "../../store/documentsStore"
 import { useDocumentActions } from "../../hooks/useDocumentActions"
 import type { Document, ModalProps } from "../types"
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window") // Get screen dimensions
 
 interface ActionMoveModalProps extends ModalProps {
   selectedItems: string[]
@@ -102,7 +104,7 @@ const ActionMoveModal: React.FC<ActionMoveModalProps> = ({
   )
 
   return (
-    <BaseModal visible={visible} onClose={onClose}>
+    <BaseModal visible={visible} onClose={onClose} fullScreen={true}>
       <View style={styles.modalContent}>
         <View style={styles.header}>
           <Ionicons name="folder-open-outline" size={24} color="#ff8c00" />
@@ -130,17 +132,20 @@ const ActionMoveModal: React.FC<ActionMoveModalProps> = ({
 
 const styles = StyleSheet.create({
   modalContent: {
-    width: "90%",
-    maxWidth: 400,
-    maxHeight: "70%",
+    width: screenWidth, // ⭐ Ocupar todo el ancho de la pantalla
+    height: screenHeight, // ⭐ Ocupar toda la altura de la pantalla
+    maxWidth: screenWidth, // ⭐ Anular maxWidth
+    maxHeight: screenHeight, // ⭐ Anular maxHeight
     backgroundColor: "white",
-    borderRadius: 16,
+    borderRadius: 0, // ⭐ Quitar borderRadius para fullscreen
     padding: 20,
+    justifyContent: "space-between", // ⭐ Ajustar para distribuir contenido
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
+    paddingTop: 30, // Ajustar padding para statusBar
   },
   modalTitle: {
     fontSize: 18,
@@ -155,7 +160,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   folderList: {
-    maxHeight: 300,
+    flex: 1, // ⭐ Permitir que la lista crezca
     marginBottom: 16,
   },
   folderItem: {

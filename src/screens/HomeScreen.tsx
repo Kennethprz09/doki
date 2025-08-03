@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { memo } from "react"
 import { View, StyleSheet } from "react-native"
 import FiltersComponents from "../components/Filters/FiltersComponents"

@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 // Optimización 1: Tipos más específicos y completos
 export interface Document {
   id: string

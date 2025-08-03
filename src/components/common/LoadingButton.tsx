@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, type TouchableOpacityProps } from "react-native"
 
 interface LoadingButtonProps extends TouchableOpacityProps {

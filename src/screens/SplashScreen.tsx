@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 import { useEffect, useCallback } from "react";
 import { View, StyleSheet, SafeAreaView } from "react-native";
 import * as Animatable from "react-native-animatable";

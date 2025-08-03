@@ -1,12 +1,13 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { memo, useState, useCallback } from "react"
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import * as ImageManipulator from "expo-image-manipulator"
 import BaseModal from "../common/BaseModal"
 import LoadingButton from "../common/LoadingButton"
+import SimpleCropper from "./SimpleCropper"
 
 interface PhotoPreviewModalProps {
   visible: boolean
@@ -20,7 +21,6 @@ interface PhotoPreviewModalProps {
   onUpdateBackPhoto: (uri: string) => void
 }
 
-// Optimización 1: Modal de previsualización optimizado
 const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
   ({
     visible,
@@ -34,8 +34,10 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     onUpdateBackPhoto,
   }) => {
     const [saving, setSaving] = useState(false)
+    const [showCropper, setShowCropper] = useState(false)
+    const [cropTarget, setCropTarget] = useState<"front" | "back" | null>(null)
 
-    // Optimización 2: Función para rotar imagen
+    // Función para rotar imagen
     const rotateImage = useCallback(
       async (target: "front" | "back", angle: number) => {
         const uri = target === "front" ? frontPhoto : backPhoto
@@ -60,7 +62,36 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
       [frontPhoto, backPhoto, onUpdateFrontPhoto, onUpdateBackPhoto],
     )
 
-    // Optimización 3: Función para guardar
+    // Función para iniciar recorte
+    const startCrop = useCallback((target: "front" | "back") => {
+      setCropTarget(target)
+      setShowCropper(true)
+    }, [])
+
+    // Función para completar recorte
+    const handleCropComplete = useCallback(
+      (croppedUri: string) => {
+        if (!cropTarget) return
+
+        if (cropTarget === "front") {
+          onUpdateFrontPhoto(croppedUri)
+        } else {
+          onUpdateBackPhoto(croppedUri)
+        }
+
+        setShowCropper(false)
+        setCropTarget(null)
+      },
+      [cropTarget, onUpdateFrontPhoto, onUpdateBackPhoto],
+    )
+
+    // Función para cancelar recorte
+    const handleCropCancel = useCallback(() => {
+      setShowCropper(false)
+      setCropTarget(null)
+    }, [])
+
+    // Función para guardar
     const handleSave = useCallback(async () => {
       setSaving(true)
       const success = await onSave()
@@ -69,56 +100,83 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
       if (success) {
         onClose()
       }
+      return success
     }, [onSave, onClose])
 
-    // Optimización 4: Render de sección de foto
+    // Render de sección de foto mejorada
     const renderPhotoSection = useCallback(
       (label: string, uri: string | null, onRetake: () => void, target: "front" | "back") => {
         if (!uri) return null
 
         return (
           <View style={styles.photoSection}>
-            <Text style={styles.photoLabel}>{label}</Text>
-            <Image source={{ uri }} style={styles.previewImage} />
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.retakeButton} onPress={onRetake}>
-                <Text style={styles.retakeText}>Repetir</Text>
-              </TouchableOpacity>
-
-              <View style={styles.editActions}>
+            <View style={styles.photoHeader}>
+              <Text style={styles.photoLabel}>{label}</Text>
+              <View style={styles.photoActions}>
                 <TouchableOpacity
-                  style={styles.editButton}
+                  style={styles.actionButton}
                   onPress={() => rotateImage(target, -90)}
                   accessibilityLabel="Rotar izquierda"
                 >
-                  <Ionicons name="arrow-undo-sharp" size={20} color="#007bff" />
+                  <Ionicons name="refresh-outline" size={18} color="#666" />
                 </TouchableOpacity>
-
                 <TouchableOpacity
-                  style={styles.editButton}
+                  style={styles.actionButton}
                   onPress={() => rotateImage(target, 90)}
                   accessibilityLabel="Rotar derecha"
                 >
-                  <Ionicons name="arrow-redo-sharp" size={20} color="#007bff" />
+                  <Ionicons name="refresh-outline" size={18} color="#666" style={{ transform: [{ scaleX: -1 }] }} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.imageContainer}>
+              <Image source={{ uri }} style={styles.previewImage} resizeMode="cover" />
+              <View style={styles.imageOverlay}>
+                <TouchableOpacity style={styles.overlayButton} onPress={onRetake}>
+                  <Ionicons name="camera-outline" size={20} color="#fff" />
+                  <Text style={styles.overlayButtonText}>Repetir</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.overlayButton} onPress={() => startCrop(target)}>
+                  <Ionicons name="crop-outline" size={20} color="#fff" />
+                  <Text style={styles.overlayButtonText}>Recortar</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         )
       },
-      [rotateImage],
+      [rotateImage, startCrop],
     )
 
+    // Si está mostrando el cropper, renderizar solo eso
+    if (showCropper && cropTarget) {
+      const imageUri = cropTarget === "front" ? frontPhoto : backPhoto
+      if (!imageUri) return null
+
+      return (
+        <SimpleCropper imageUri={imageUri} onCrop={handleCropComplete} onCancel={handleCropCancel} />
+      )
+    }
+
     return (
-      <BaseModal visible={visible} onClose={onClose} animationType="slide">
+      <BaseModal visible={visible} onClose={onClose} animationType="slide" fullScreen={true}>
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>Previsualización del Documento</Text>
+            {/* Header mejorado */}
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+              <Text style={styles.title}>Previsualización</Text>
+              <View style={styles.placeholder} />
+            </View>
 
+            {/* Secciones de fotos */}
             {renderPhotoSection("Foto Frontal", frontPhoto, onRetakeFront, "front")}
             {renderPhotoSection("Foto Trasera", backPhoto, onRetakeBack, "back")}
 
+            {/* Footer mejorado */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                 <Text style={styles.cancelText}>Cancelar</Text>
@@ -145,82 +203,127 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    borderRadius: 20,
+    overflow: "hidden",
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
-  title: {
-    fontSize: 20,
-    fontFamily: "Karla-Bold",
-    textAlign: "center",
-    marginBottom: 20,
-    color: "#333",
-  },
-  photoSection: {
-    marginBottom: 24,
-  },
-  photoLabel: {
-    fontSize: 16,
-    fontFamily: "Karla-Bold",
-    color: "#333",
-    marginBottom: 8,
-  },
-  previewImage: {
-    width: "100%",
-    height: 250,
-    borderRadius: 8,
-    backgroundColor: "#f8f9fa",
-    marginBottom: 12,
-  },
-  actionRow: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginTop: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    width: "100%",
   },
-  retakeButton: {
-    backgroundColor: "#dc3545",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
   },
-  retakeText: {
-    color: "#fff",
-    fontSize: 14,
-    fontFamily: "Karla-SemiBold",
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
   },
-  editActions: {
+  placeholder: {
+    width: 40,
+  },
+  photoSection: {
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  photoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  photoLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  photoActions: {
     flexDirection: "row",
     gap: 8,
   },
-  editButton: {
-    backgroundColor: "#f8f9fa",
+  actionButton: {
     padding: 8,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: "#f8f9fa",
     borderWidth: 1,
     borderColor: "#e9ecef",
+  },
+  imageContainer: {
+    position: "relative",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  previewImage: {
+    width: "100%",
+    height: 280,
+    backgroundColor: "#f8f9fa",
+  },
+  imageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingVertical: 12,
+  },
+  overlayButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    gap: 6,
+  },
+  overlayButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
+    marginHorizontal: 20,
     gap: 16,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
     alignItems: "center",
-    backgroundColor: "transparent",
-    borderRadius: 8,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   cancelText: {
     color: "#666",
     fontSize: 16,
-    fontFamily: "Karla-SemiBold",
+    fontWeight: "600",
   },
   saveButton: {
     flex: 2,
+    borderRadius: 12,
   },
 })
 

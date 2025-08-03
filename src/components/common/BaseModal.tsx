@@ -1,7 +1,9 @@
 "use client"
-import type React from "react"
+import React from "react"
 import { useCallback, useEffect, useState } from "react"
-import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler } from "react-native"
+import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler, Dimensions } from "react-native"
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
 
 interface ModalProps {
   visible: boolean
@@ -15,6 +17,7 @@ interface BaseModalProps extends ModalProps {
   backdropOpacity?: number
   children: React.ReactNode
   position?: "center" | "bottom"
+  fullScreen?: boolean // ⭐ Nueva prop
 }
 
 const BaseModal: React.FC<BaseModalProps> = ({
@@ -26,6 +29,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
   backdropOpacity = 0.5,
   children,
   position = "center",
+  fullScreen = false, // ⭐ Valor por defecto
 }) => {
   const [modalVisible, setModalVisible] = useState(visible)
   const fadeAnim = useState(new Animated.Value(0))[0]
@@ -108,6 +112,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
         },
       ],
     },
+    fullScreen && styles.fullScreenContainer, // ⭐ Aplicar estilo fullScreen
   ]
 
   return (
@@ -137,6 +142,13 @@ const styles = StyleSheet.create({
   container: {
     maxWidth: "90%",
     maxHeight: "80%",
+  },
+  fullScreenContainer: {
+    width: screenWidth, // ⭐ Ocupar todo el ancho
+    height: screenHeight, // ⭐ Ocupar toda la altura
+    maxWidth: screenWidth, // ⭐ Anular maxWidth
+    maxHeight: screenHeight, // ⭐ Anular maxHeight
+    borderRadius: 0, // ⭐ Quitar borderRadius si lo tiene
   },
 })
 
