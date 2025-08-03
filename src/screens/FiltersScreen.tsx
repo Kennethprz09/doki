@@ -4,12 +4,12 @@ import type React from "react"
 import { memo, useState, useCallback } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native"
 import { useUserStore } from "../store/userStore"
-import { useDocumentsStore } from "../store/documentsStore" // Importar useDocumentsStore
+import { useDocumentsStore } from "../store/documentsStore"
 import { useDocumentFilters } from "../hooks/useDocumentFilters"
 import FilterControls from "../components/common/FilterControls"
 import DocumentList from "../components/common/DocumentList"
 import ProfileModal from "../components/modals/ProfileModal"
-import ActionMenuModal from "../components/modals/ActionMenuModal" // Importar el nuevo modal
+import ActionMenuModal from "../components/modals/ActionMenuModal"
 import type { Document } from "../components/types"
 import useDocumentsSync from "../hooks/useDocumentsSync"
 
@@ -126,7 +126,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFF",
-    paddingHorizontal: 16,
   },
   searchContainer: {
     flexDirection: "row",

@@ -5,13 +5,13 @@ import { memo, useState, useCallback } from "react"
 import { View, StyleSheet } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NavigationProp, Document } from "../components/types"
-import { useFolderDocuments } from "../hooks/useFolderDocuments" // Importar el hook de carpeta
-import { useDocumentFilters } from "../hooks/useDocumentFilters" // Importar el hook de filtros genérico
+import { useFolderDocuments } from "../hooks/useFolderDocuments"
+import { useDocumentFilters } from "../hooks/useDocumentFilters"
 import SearchHeader from "../components/common/SearchHeader"
 import FilterControls from "../components/common/FilterControls"
 import DocumentList from "../components/common/DocumentList"
 import ProfileModal from "../components/modals/ProfileModal"
-import ActionMenuModal from "../components/modals/ActionMenuModal" // Importar el nuevo modal
+import ActionMenuModal from "../components/modals/ActionMenuModal"
 
 interface FiltersFolderScreenProps {
   folder: Document | null
@@ -91,7 +91,7 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
         renderMode={viewMode}
         folder={folder}
         emptyMessage="No hay documentos en esta carpeta."
-        onItemActionPress={handleItemActionPress} // Pasar la función para abrir el modal de acciones
+        onItemActionPress={handleItemActionPress}
       />
 
       <ProfileModal visible={isProfileModalVisible} onClose={handleToggleProfile} />
@@ -101,7 +101,8 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
         visible={isActionMenuVisible}
         onClose={handleActionMenuClose}
         document={selectedDocumentForActions}
-        onActionComplete={handleActionMenuClose} // Cerrar el modal después de cualquier acción
+        onActionComplete={handleActionMenuClose}
+        folder={folder}
       />
     </View>
   )

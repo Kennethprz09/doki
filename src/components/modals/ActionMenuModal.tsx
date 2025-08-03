@@ -15,12 +15,13 @@ import CreateFolderModal from "./CreateFolderModal";
 
 interface ActionMenuModalProps extends ModalProps {
   document: Document | null;
-  onActionComplete: () => void; // Callback para cuando una acción se completa y se debe cerrar el modal principal
+  onActionComplete: () => void;
+  folder?: Document;
 }
 
 // Optimización 1: Modal de menú de acciones para documentos/carpetas
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
-  ({ visible, onClose, document, onActionComplete }) => {
+  ({ visible, onClose, document, onActionComplete, folder }) => {
     const {
       toggleFavorite,
       deleteDocumentWithConfirmation,
@@ -208,7 +209,7 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
           onClose={() => setShowMoveModal(false)}
           selectedItems={document ? [document.id] : []}
           onMoveComplete={handleMoveComplete}
-          folder={document.is_folder ? document : null} // Si es una carpeta, se puede mover dentro de ella
+          folder={folder}
         />
       </>
     );
