@@ -15,43 +15,58 @@ interface UseFolderManagerProps {
   onError?: (error: string) => void
 }
 
-// Optimización 1: Hook para manejo de carpetas
 export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps = {}) => {
   const user = useUserStore((state) => state.user)
   const { addDocument, updateDocument } = useDocumentsStore()
   const { setLoading } = useGlobalStore()
   const [processing, setProcessing] = useState(false)
 
-  // Optimización 2: Crear nueva carpeta
-  const createFolder = useCallback(
-    async (name: string) => {
-      if (!name.trim()) {
-        const errorMsg = "El nombre de la carpeta es obligatorio"
+  // Función auxiliar para validar entrada
+  const validateInput = useCallback(
+    (name: string) => {
+      const trimmedName = name.trim()
+      if (!trimmedName) {
+        const errorMsg = "El nombre es obligatorio"
         onError?.(errorMsg)
         Alert.alert("Error", errorMsg)
-        return false
+        return null
       }
+      return trimmedName
+    },
+    [onError],
+  )
+
+  // Función auxiliar para verificar conectividad y usuario
+  const validatePrerequisites = useCallback(async () => {
+    const isOffline = await checkInternetConnection()
+    if (isOffline) {
+      const errorMsg = "No hay conexión a internet"
+      onError?.(errorMsg)
+      Toast.show({
+        type: "error",
+        text1: "Sin conexión",
+        text2: "Por favor, verifica tu conexión a internet.",
+      })
+      return false
+    }
+
+    if (!user?.id) {
+      const errorMsg = "Usuario no autenticado"
+      onError?.(errorMsg)
+      Alert.alert("Error", errorMsg)
+      return false
+    }
+
+    return true
+  }, [user?.id, onError])
+
+  const createFolder = useCallback(
+    async (name: string) => {
+      const validatedName = validateInput(name)
+      if (!validatedName) return false
 
       try {
-        // Verificar conectividad
-        const isOffline = await checkInternetConnection()
-        if (isOffline) {
-          const errorMsg = "No hay conexión a internet"
-          onError?.(errorMsg)
-          Toast.show({
-            type: "error",
-            text1: "Sin conexión",
-            text2: "Por favor, verifica tu conexión a internet.",
-          })
-          return false
-        }
-
-        if (!user?.id) {
-          const errorMsg = "Usuario no autenticado"
-          onError?.(errorMsg)
-          Alert.alert("Error", errorMsg)
-          return false
-        }
+        if (!(await validatePrerequisites())) return false
 
         setProcessing(true)
         setLoading(true)
@@ -60,8 +75,8 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
           .from("documents")
           .insert([
             {
-              name: name.trim(),
-              user_id: user.id,
+              name: validatedName,
+              user_id: user!.id,
               is_folder: true,
               icon: "folder-outline",
             },
@@ -71,7 +86,6 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
 
         if (error) throw error
 
-        // Crear documento para el store
         const newFolder: Document = {
           id: data.id,
           name: data.name,
@@ -89,7 +103,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
         Toast.show({
           type: "success",
           text1: "Carpeta creada",
-          text2: `La carpeta "${name}" se ha creado correctamente`,
+          text2: `La carpeta "${validatedName}" se ha creado correctamente`,
         })
 
         return true
@@ -104,55 +118,31 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
         setLoading(false)
       }
     },
-    [user?.id, addDocument, setLoading, onSuccess, onError],
+    [user, addDocument, setLoading, onSuccess, onError, validateInput, validatePrerequisites],
   )
 
-  // Optimización 3: Editar carpeta/documento
   const editItem = useCallback(
     async (itemId: string, newName: string) => {
-      if (!newName.trim()) {
-        const errorMsg = "El nombre es obligatorio"
-        onError?.(errorMsg)
-        Alert.alert("Error", errorMsg)
-        return false
-      }
+      const validatedName = validateInput(newName)
+      if (!validatedName) return false
 
       try {
-        // Verificar conectividad
-        const isOffline = await checkInternetConnection()
-        if (isOffline) {
-          const errorMsg = "No hay conexión a internet"
-          onError?.(errorMsg)
-          Toast.show({
-            type: "error",
-            text1: "Sin conexión",
-            text2: "Por favor, verifica tu conexión a internet.",
-          })
-          return false
-        }
-
-        if (!user?.id) {
-          const errorMsg = "Usuario no autenticado"
-          onError?.(errorMsg)
-          Alert.alert("Error", errorMsg)
-          return false
-        }
+        if (!(await validatePrerequisites())) return false
 
         setProcessing(true)
         setLoading(true)
 
         const { error } = await supabase
           .from("documents")
-          .update({ name: newName.trim() })
+          .update({ name: validatedName })
           .eq("id", itemId)
-          .eq("user_id", user.id)
+          .eq("user_id", user!.id)
 
         if (error) throw error
 
-        // Actualizar en el store
         updateDocument({
           id: itemId,
-          changes: { name: newName.trim() },
+          changes: { name: validatedName },
         })
 
         Toast.show({
@@ -173,7 +163,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
         setLoading(false)
       }
     },
-    [user?.id, updateDocument, setLoading, onError],
+    [user, updateDocument, setLoading, onError, validateInput, validatePrerequisites],
   )
 
   return {

@@ -1,18 +1,17 @@
-"use client"
-
-import type React from "react"
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native"
-import { BlurView } from "expo-blur"
+"use client";
+import type React from "react";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import BaseModal from "../common/BaseModal";
 
 interface LoaderProps {
-  mensaje?: string
-  size?: "small" | "large"
-  color?: string
-  overlay?: boolean
-  blur?: boolean
+  mensaje?: string;
+  size?: "small" | "large";
+  color?: string;
+  overlay?: boolean;
+  blur?: boolean;
 }
 
-// Optimización 1: Loader más flexible y con mejor UX
 const Loader: React.FC<LoaderProps> = ({
   mensaje = "Cargando, por favor espere...",
   size = "large",
@@ -20,19 +19,22 @@ const Loader: React.FC<LoaderProps> = ({
   overlay = true,
   blur = false,
 }) => {
-  const containerStyle = overlay ? styles.overlayContainer : styles.inlineContainer
-
+  const containerStyle = overlay
+    ? styles.overlayContainer
+    : styles.inlineContainer;
   const LoaderContent = () => (
-    <View style={styles.loaderContent}>
-      <ActivityIndicator size={size} color={color} />
-      <Text style={[styles.loaderText, { color: overlay ? "#333" : color }]}>{mensaje}</Text>
-    </View>
-  )
-
+    <BaseModal visible={true} onClose={() => {}}>
+      <View style={styles.loaderContent}>
+        <ActivityIndicator size={size} color={color} />
+        <Text style={[styles.loaderText, { color: overlay ? "#333" : color }]}>
+          {mensaje}
+        </Text>
+      </View>
+    </BaseModal>
+  );
   if (!overlay) {
-    return <LoaderContent />
+    return <LoaderContent />;
   }
-
   return (
     <View style={containerStyle}>
       {blur ? (
@@ -45,8 +47,8 @@ const Loader: React.FC<LoaderProps> = ({
         </View>
       )}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   overlayContainer: {
@@ -55,7 +57,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000,
+    zIndex: 99999,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -63,6 +65,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    zIndex: 99999,
   },
   backgroundContainer: {
     flex: 1,
@@ -70,11 +73,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    zIndex: 99999,
   },
   blurContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 99999,
   },
   loaderContent: {
     alignItems: "center",
@@ -91,9 +96,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: "center",
     fontSize: 16,
-    fontFamily: "Karla-SemiBold",
     maxWidth: 200,
   },
-})
+});
 
-export default Loader
+export default Loader;

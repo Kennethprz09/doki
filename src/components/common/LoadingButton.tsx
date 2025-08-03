@@ -13,7 +13,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   title,
   loading = false,
   variant = "primary",
-  size = "medium",
+  size = "small",
   style,
   disabled,
   ...touchableProps

@@ -1,9 +1,12 @@
 "use client"
-
 import type React from "react"
 import { useCallback, useEffect, useState } from "react"
 import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler } from "react-native"
-import type { ModalProps } from "../types"
+
+interface ModalProps {
+  visible: boolean
+  onClose: () => void
+}
 
 interface BaseModalProps extends ModalProps {
   animationType?: "none" | "slide" | "fade"
@@ -11,10 +14,9 @@ interface BaseModalProps extends ModalProps {
   onBackdropPress?: () => void
   backdropOpacity?: number
   children: React.ReactNode
-  position?: "center" | "bottom" // Nueva prop para controlar la posición
+  position?: "center" | "bottom"
 }
 
-// Optimización 1: Modal base reutilizable con animaciones mejoradas y posicionamiento
 const BaseModal: React.FC<BaseModalProps> = ({
   visible,
   onClose,
@@ -23,13 +25,12 @@ const BaseModal: React.FC<BaseModalProps> = ({
   onBackdropPress,
   backdropOpacity = 0.5,
   children,
-  position = "center", // Valor por defecto
+  position = "center",
 }) => {
   const [modalVisible, setModalVisible] = useState(visible)
   const fadeAnim = useState(new Animated.Value(0))[0]
-  const slideAnim = useState(new Animated.Value(position === "bottom" ? 300 : 0))[0] // Para animación de slide desde abajo
+  const slideAnim = useState(new Animated.Value(position === "bottom" ? 300 : 0))[0]
 
-  // Optimización 2: Manejo del botón de retroceso en Android
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
       if (visible) {
@@ -38,11 +39,9 @@ const BaseModal: React.FC<BaseModalProps> = ({
       }
       return false
     })
-
     return () => backHandler.remove()
   }, [visible, onClose])
 
-  // Optimización 3: Animaciones suaves
   useEffect(() => {
     if (visible) {
       setModalVisible(true)
@@ -53,7 +52,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
-          toValue: 0, // Mover a la posición final (0 offset)
+          toValue: 0,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -66,7 +65,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
-          toValue: position === "bottom" ? 300 : 0, // Mover hacia abajo si es bottom, o mantener en 0 si es center
+          toValue: position === "bottom" ? 300 : 0,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -89,7 +88,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
     {
       backgroundColor: `rgba(0, 0, 0, ${backdropOpacity})`,
       opacity: fadeAnim,
-      justifyContent: position === "bottom" ? "flex-end" : "center", // Posicionar al final si es 'bottom'
+      justifyContent: position === "bottom" ? "flex-end" : "center",
     },
   ]
 
@@ -105,7 +104,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
           }),
         },
         {
-          translateY: slideAnim, // Aplicar la animación de slide
+          translateY: slideAnim,
         },
       ],
     },

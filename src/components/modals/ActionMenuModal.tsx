@@ -1,190 +1,226 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { memo, useCallback, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import BaseModal from "../common/BaseModal";
-import LoadingButton from "../common/LoadingButton";
-import ColorPicker from "../common/ColorPicker";
-import ActionMoveModal from "./ActionMoveModal";
-import { useDocumentActions } from "../../hooks/useDocumentActions";
-import { useFolderManager } from "../../hooks/useFolderManager";
-import type { Document, ModalProps } from "../types";
-import CreateFolderModal from "./CreateFolderModal";
+import type React from "react"
+import { memo, useCallback, useState } from "react"
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import BaseModal from "../common/BaseModal"
+import LoadingButton from "../common/LoadingButton"
+import ColorPicker from "../common/ColorPicker"
+import ActionMoveModal from "./ActionMoveModal"
+import CreateFolderModal from "./CreateFolderModal"
+import { useDocumentActions } from "../../hooks/useDocumentActions"
+import { useFolderManager } from "../../hooks/useFolderManager"
+import { useFileOperations } from "../../hooks/useFileOperations"
+import type { Document, ModalProps } from "../types"
+// Agregar el import del nuevo hook:
+import { useImageViewer } from "../../hooks/useImageViewer"
 
 interface ActionMenuModalProps extends ModalProps {
-  document: Document | null;
-  onActionComplete: () => void;
-  folder?: Document;
+  document: Document | null
+  onActionComplete: () => void
+  folder?: Document
 }
 
-// Optimización 1: Modal de menú de acciones para documentos/carpetas
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
   ({ visible, onClose, document, onActionComplete, folder }) => {
-    const {
-      toggleFavorite,
-      deleteDocumentWithConfirmation,
-      updateDocumentColor,
-      moveDocuments,
-    } = useDocumentActions();
-    const { editItem, processing } = useFolderManager();
+    const { toggleFavorite, deleteDocumentWithConfirmation, updateDocumentColor, moveDocuments } = useDocumentActions()
 
-    const [showColorPicker, setShowColorPicker] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [showMoveModal, setShowMoveModal] = useState(false);
+    const { editItem, processing } = useFolderManager()
+    const { viewFile, shareFile, downloadFile } = useFileOperations()
+    // Dentro del componente, agregar el hook:
+    const { viewImage } = useImageViewer()
 
-    // Optimización 2: Manejar acción de favorito
+    const [showColorPicker, setShowColorPicker] = useState(false)
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [showMoveModal, setShowMoveModal] = useState(false)
+
+    // Handlers optimizados
     const handleToggleFavorite = useCallback(async () => {
-      if (!document) return;
-      const success = await toggleFavorite(document.id, document.is_favorite);
+      if (!document) return
+      const success = await toggleFavorite(document.id, document.is_favorite)
       if (success) {
-        onActionComplete();
+        onActionComplete()
       }
-    }, [document, toggleFavorite, onActionComplete]);
+    }, [document, toggleFavorite, onActionComplete])
 
-    // Optimización 3: Manejar acción de eliminar
+    // Función auxiliar para detectar si es imagen:
+    const isImageFile = useCallback((ext?: string) => {
+      if (!ext) return false
+      const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"]
+      return imageExtensions.includes(ext.toLowerCase().replace(".", ""))
+    }, [])
+
+    // Reemplazar handleViewFile:
+    const handleViewFile = useCallback(async () => {
+      if (!document) return
+      onClose() // Cerrar modal antes de la operación
+
+      // Si es imagen, usar el visor específico
+      if (isImageFile(document.ext)) {
+        await viewImage(document.path, document.name)
+      } else {
+        await viewFile(document.path, document.ext, document.name)
+      }
+    }, [document, viewFile, viewImage, isImageFile, onClose])
+
+    const handleShareFile = useCallback(async () => {
+      if (!document) return
+      onClose() // Cerrar modal antes de la operación
+      await shareFile(document.path, document.name)
+    }, [document, shareFile, onClose])
+
+    const handleDownloadFile = useCallback(async () => {
+      if (!document) return
+      onClose() // Cerrar modal antes de la operación
+      await downloadFile(document.path, document.name, document.ext)
+    }, [document, downloadFile, onClose])
+
     const handleDelete = useCallback(async () => {
-      if (!document) return;
-      const success = await deleteDocumentWithConfirmation(
-        document.id,
-        document.name
-      );
+      if (!document) return
+      const success = await deleteDocumentWithConfirmation(document.id, document.name)
       if (success) {
-        onActionComplete();
+        onActionComplete()
       }
-    }, [document, deleteDocumentWithConfirmation, onActionComplete]);
+    }, [document, deleteDocumentWithConfirmation, onActionComplete])
 
-    // Optimización 4: Manejar acción de editar
     const handleEdit = useCallback(() => {
-      setShowEditModal(true);
-    }, []);
+      setShowEditModal(true)
+    }, [])
 
     const handleEditSubmit = useCallback(
       async (newName: string) => {
-        if (!document) return false;
-        const success = await editItem(document.id, newName);
+        if (!document) return false
+        const success = await editItem(document.id, newName)
         if (success) {
-          onActionComplete();
+          onActionComplete()
         }
-        return success;
+        return success
       },
-      [document, editItem, onActionComplete]
-    );
+      [document, editItem, onActionComplete],
+    )
 
-    // Optimización 5: Manejar acción de cambiar color
     const handleChangeColor = useCallback(() => {
-      setShowColorPicker(true);
-    }, []);
+      setShowColorPicker(true)
+    }, [])
 
     const handleColorSelect = useCallback(
       async (color: string) => {
-        if (!document) return false;
-        const success = await updateDocumentColor(document.id, color);
+        if (!document) return false
+        const success = await updateDocumentColor(document.id, color)
         if (success) {
-          onActionComplete();
+          onActionComplete()
         }
-        return success;
+        return success
       },
-      [document, updateDocumentColor, onActionComplete]
-    );
+      [document, updateDocumentColor, onActionComplete],
+    )
 
-    // Optimización 6: Manejar acción de mover
     const handleMove = useCallback(() => {
-      setShowMoveModal(true);
-    }, []);
+      setShowMoveModal(true)
+    }, [])
 
     const handleMoveComplete = useCallback(() => {
-      setShowMoveModal(false);
-      onActionComplete();
-    }, [onActionComplete]);
+      setShowMoveModal(false)
+      onActionComplete()
+    }, [onActionComplete])
 
     if (!document) {
-      return null; // No renderizar si no hay documento
+      return null
     }
+
+    // Configuración de opciones del menú
+    const menuOptions = [
+      {
+        key: "favorite",
+        icon: document.is_favorite ? "star" : "star-outline",
+        iconColor: document.is_favorite ? "#ff8c00" : "#666",
+        text: document.is_favorite ? "Remover de favoritos" : "Marcar como favorito",
+        onPress: handleToggleFavorite,
+        show: true,
+      },
+      {
+        key: "view",
+        icon: "eye-outline",
+        iconColor: "#666",
+        text: "Ver",
+        onPress: handleViewFile,
+        show: !document.is_folder,
+      },
+      {
+        key: "share",
+        icon: "share-social-outline",
+        iconColor: "#666",
+        text: "Compartir",
+        onPress: handleShareFile,
+        show: !document.is_folder,
+      },
+      {
+        key: "download",
+        icon: "download-outline",
+        iconColor: "#666",
+        text: "Descargar",
+        onPress: handleDownloadFile,
+        show: !document.is_folder,
+      },
+      {
+        key: "edit",
+        icon: "create-outline",
+        iconColor: "#666",
+        text: "Editar nombre",
+        onPress: handleEdit,
+        show: true,
+      },
+      {
+        key: "color",
+        icon: "color-palette-outline",
+        iconColor: "#666",
+        text: "Cambiar color",
+        onPress: handleChangeColor,
+        show: true,
+      },
+      {
+        key: "move",
+        icon: "folder-open-outline",
+        iconColor: "#666",
+        text: "Mover",
+        onPress: handleMove,
+        show: !document.is_folder,
+      },
+      {
+        key: "delete",
+        icon: "trash-outline",
+        iconColor: "#dc3545",
+        text: "Eliminar",
+        onPress: handleDelete,
+        show: true,
+        isDestructive: true,
+      },
+    ]
 
     return (
       <>
-        <BaseModal
-          visible={visible}
-          onClose={onClose}
-          backdropOpacity={0.6}
-          position="bottom"
-        >
+        <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.6} position="bottom">
           <View style={styles.modalContent}>
-            <Text style={styles.title}>{document.name}</Text>
+            <Text style={styles.title} numberOfLines={2}>
+              {document.name}
+            </Text>
 
-            {/* Opciones comunes */}
-            <TouchableOpacity
-              style={styles.option}
-              onPress={handleToggleFavorite}
-            >
-              <Ionicons
-                name={document.is_favorite ? "star" : "star-outline"}
-                size={24}
-                color={document.is_favorite ? "#ff8c00" : "#666"}
-                style={styles.optionIcon}
-              />
-              <Text style={styles.optionText}>
-                {document.is_favorite
-                  ? "Remover de favoritos"
-                  : "Marcar como favorito"}
-              </Text>
-            </TouchableOpacity>
+            {menuOptions
+              .filter((option) => option.show)
+              .map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.option, option.isDestructive && styles.deleteOption]}
+                  onPress={option.onPress}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name={option.icon as any} size={24} color={option.iconColor} style={styles.optionIcon} />
+                  <Text style={[styles.optionText, option.isDestructive && styles.deleteText]}>{option.text}</Text>
+                </TouchableOpacity>
+              ))}
 
-            <TouchableOpacity style={styles.option} onPress={handleEdit}>
-              <Ionicons
-                name="create-outline"
-                size={24}
-                color="#666"
-                style={styles.optionIcon}
-              />
-              <Text style={styles.optionText}>Editar nombre</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.option} onPress={handleChangeColor}>
-              <Ionicons
-                name="color-palette-outline"
-                size={24}
-                color="#666"
-                style={styles.optionIcon}
-              />
-              <Text style={styles.optionText}>Cambiar color</Text>
-            </TouchableOpacity>
-
-            {!document.is_folder && ( // Solo para documentos, no carpetas
-              <TouchableOpacity style={styles.option} onPress={handleMove}>
-                <Ionicons
-                  name="folder-open-outline"
-                  size={24}
-                  color="#666"
-                  style={styles.optionIcon}
-                />
-                <Text style={styles.optionText}>Mover</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[styles.option, styles.deleteOption]}
-              onPress={handleDelete}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={24}
-                color="#dc3545"
-                style={styles.optionIcon}
-              />
-              <Text style={[styles.optionText, styles.deleteText]}>
-                Eliminar
-              </Text>
-            </TouchableOpacity>
-
-            <LoadingButton
-              title="Cerrar"
-              onPress={onClose}
-              variant="ghost"
-              style={styles.closeButton}
-            />
+            <LoadingButton title="Cerrar" onPress={onClose} variant="ghost" style={styles.closeButton} />
           </View>
         </BaseModal>
 
@@ -212,11 +248,11 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
           folder={folder}
         />
       </>
-    );
-  }
-);
+    )
+  },
+)
 
-ActionMenuModal.displayName = "ActionMenuModal";
+ActionMenuModal.displayName = "ActionMenuModal"
 
 const styles = StyleSheet.create({
   modalContent: {
@@ -238,17 +274,15 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "center",
     marginBottom: 20,
-    paddingHorizontal: 10,
   },
   option: {
-    width: "90%",
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 10,
-    marginHorizontal: 10,
-    marginBottom: 8,
+    marginBottom: 4,
     backgroundColor: "#f8f9fa",
   },
   optionIcon: {
@@ -270,6 +304,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 10,
   },
-});
+})
 
-export default ActionMenuModal;
+export default ActionMenuModal

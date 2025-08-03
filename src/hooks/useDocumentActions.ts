@@ -8,32 +8,49 @@ import { useDocumentsStore } from "../store/documentsStore"
 import { checkInternetConnection } from "../utils/actions"
 import { supabase } from "../supabase/supabaseClient"
 
-// Optimización 1: Hook reutilizable para acciones de documentos
 export const useDocumentActions = () => {
   const { setLoading } = useGlobalStore()
   const { updateDocument, deleteDocument } = useDocumentsStore()
 
-  // Optimización 2: Función para alternar favoritos
+  // Función auxiliar para obtener el usuario actual
+  const getCurrentUser = useCallback(async () => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+    if (error || !user) {
+      throw new Error("Usuario no autenticado")
+    }
+    return user
+  }, [])
+
+  // Función auxiliar para verificar conectividad
+  const checkConnectivity = useCallback(async () => {
+    const isOffline = await checkInternetConnection()
+    if (isOffline) {
+      Toast.show({
+        type: "error",
+        text1: "Sin conexión",
+        text2: "No se puede realizar la operación sin conexión a internet",
+      })
+      return false
+    }
+    return true
+  }, [])
+
   const toggleFavorite = useCallback(
     async (id: string, currentStatus: boolean) => {
       try {
-        const isOffline = await checkInternetConnection()
-        if (isOffline) {
-          Toast.show({
-            type: "error",
-            text1: "Sin conexión",
-            text2: "No se puede actualizar sin conexión a internet",
-          })
-          return false
-        }
+        if (!(await checkConnectivity())) return false
 
         setLoading(true)
+        const user = await getCurrentUser()
 
         const { error } = await supabase
           .from("documents")
           .update({ is_favorite: !currentStatus })
           .eq("id", id)
-          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+          .eq("user_id", user.id)
 
         if (error) throw error
 
@@ -57,10 +74,9 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument],
+    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
   )
 
-  // Optimización 3: Función para eliminar documento con confirmación
   const deleteDocumentWithConfirmation = useCallback(
     async (id: string, name: string) => {
       return new Promise<boolean>((resolve) => {
@@ -78,24 +94,15 @@ export const useDocumentActions = () => {
               style: "destructive",
               onPress: async () => {
                 try {
-                  const isOffline = await checkInternetConnection()
-                  if (isOffline) {
-                    Toast.show({
-                      type: "error",
-                      text1: "Sin conexión",
-                      text2: "No se puede eliminar sin conexión a internet",
-                    })
+                  if (!(await checkConnectivity())) {
                     resolve(false)
                     return
                   }
 
                   setLoading(true)
+                  const user = await getCurrentUser()
 
-                  const { error } = await supabase
-                    .from("documents")
-                    .delete()
-                    .eq("id", id)
-                    .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+                  const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id)
 
                   if (error) throw error
 
@@ -125,30 +132,18 @@ export const useDocumentActions = () => {
         )
       })
     },
-    [setLoading, deleteDocument],
+    [setLoading, deleteDocument, checkConnectivity, getCurrentUser],
   )
 
-  // Optimización 4: Función para actualizar color
   const updateDocumentColor = useCallback(
     async (id: string, color: string) => {
       try {
-        const isOffline = await checkInternetConnection()
-        if (isOffline) {
-          Toast.show({
-            type: "error",
-            text1: "Sin conexión",
-            text2: "No se puede actualizar sin conexión a internet",
-          })
-          return false
-        }
+        if (!(await checkConnectivity())) return false
 
         setLoading(true)
+        const user = await getCurrentUser()
 
-        const { error } = await supabase
-          .from("documents")
-          .update({ color })
-          .eq("id", id)
-          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        const { error } = await supabase.from("documents").update({ color }).eq("id", id).eq("user_id", user.id)
 
         if (error) throw error
 
@@ -172,30 +167,22 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument],
+    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
   )
 
-  // Optimización 5: Función para mover documentos
   const moveDocuments = useCallback(
     async (documentIds: string[], targetFolderId: string | null) => {
       try {
-        const isOffline = await checkInternetConnection()
-        if (isOffline) {
-          Toast.show({
-            type: "error",
-            text1: "Sin conexión",
-            text2: "No se pueden mover documentos sin conexión a internet",
-          })
-          return false
-        }
+        if (!(await checkConnectivity())) return false
 
         setLoading(true)
+        const user = await getCurrentUser()
 
         const { error } = await supabase
           .from("documents")
           .update({ folder_id: targetFolderId })
           .in("id", documentIds)
-          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+          .eq("user_id", user.id)
 
         if (error) throw error
 
@@ -223,7 +210,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument],
+    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
   )
 
   return {
