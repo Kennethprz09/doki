@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import {
   View,
   Text,
@@ -24,7 +24,6 @@ import { useFormValidation, commonValidationRules } from "../hooks/useFormValida
 import FormInput from "../components/common/FormInput"
 import LoadingButton from "../components/common/LoadingButton"
 
-// Optimización 1: Componente optimizado con mejor UX
 const MyAccountScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user, setUser } = useUserStore()
@@ -39,15 +38,13 @@ const MyAccountScreen: React.FC = () => {
   const [isPasswordFieldVisible, setIsPasswordFieldVisible] = useState(false)
   const passwordFieldHeight = useState(new Animated.Value(0))[0]
 
-  // Optimización 2: Validación con reglas personalizadas
   const { errors, validateForm, clearError } = useFormValidation({
     name: commonValidationRules.name,
     surname: commonValidationRules.surname,
     password: {
-      required: false, // Password es opcional
-      minLength: 6,
+      required: false,
       custom: (value: string) => {
-        if (value && value.length > 0 && value.length < 6) {
+        if (value && value.length >= 6) {
           return "La contraseña debe tener al menos 6 caracteres"
         }
         return null
@@ -55,7 +52,6 @@ const MyAccountScreen: React.FC = () => {
     },
   })
 
-  // Optimización 3: Función de actualización de campos optimizada
   const updateField = useCallback(
     (field: keyof typeof formData) => (value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }))
@@ -64,7 +60,6 @@ const MyAccountScreen: React.FC = () => {
     [clearError],
   )
 
-  // Optimización 4: Función para alternar campo de contraseña con animación
   const togglePasswordField = useCallback(() => {
     const newVisibility = !isPasswordFieldVisible
 
@@ -75,16 +70,14 @@ const MyAccountScreen: React.FC = () => {
     setIsPasswordFieldVisible(newVisibility)
 
     Animated.timing(passwordFieldHeight, {
-      toValue: newVisibility ? 70 : 0,
+      toValue: newVisibility ? 70 : 0, // Altura del FormInput
       duration: 300,
       useNativeDriver: false,
     }).start()
   }, [isPasswordFieldVisible, passwordFieldHeight])
 
-  // Optimización 5: Función de guardado mejorada con mejor manejo de errores
   const handleSaveChanges = useCallback(async () => {
     try {
-      // Validar solo los campos requeridos (name y surname)
       const requiredFields = { name: formData.name, surname: formData.surname }
       if (!validateForm(requiredFields)) {
         return
@@ -103,7 +96,6 @@ const MyAccountScreen: React.FC = () => {
 
       const displayName = `${formData.name.trim()} ${formData.surname.trim()}`.trim()
 
-      // Preparar datos de actualización
       const authUpdate: any = {
         data: {
           display_name: displayName,
@@ -112,18 +104,15 @@ const MyAccountScreen: React.FC = () => {
         },
       }
 
-      // Solo incluir password si se proporcionó
       if (formData.password.trim()) {
         authUpdate.password = formData.password
       }
 
-      // Actualizar autenticación
       const { error: authError } = await supabase.auth.updateUser(authUpdate)
       if (authError) {
         throw new Error(`Error al actualizar autenticación: ${authError.message}`)
       }
 
-      // Actualizar perfil en la base de datos
       const { error: profileError } = await supabase.from("profiles").upsert(
         {
           id: user.id,
@@ -139,7 +128,6 @@ const MyAccountScreen: React.FC = () => {
         throw new Error(`Error al actualizar perfil: ${profileError.message}`)
       }
 
-      // Actualizar store local
       setUser({
         ...user,
         user_metadata: {
@@ -156,7 +144,6 @@ const MyAccountScreen: React.FC = () => {
         text2: "Cambios guardados correctamente.",
       })
 
-      // Limpiar campo de contraseña después de guardar
       if (formData.password) {
         setFormData((prev) => ({ ...prev, password: "" }))
         togglePasswordField()
@@ -173,7 +160,6 @@ const MyAccountScreen: React.FC = () => {
     }
   }, [formData, validateForm, user, setUser, setLoading, togglePasswordField])
 
-  // Optimización 6: Cargar datos del usuario al montar
   useEffect(() => {
     if (user) {
       setFormData({
@@ -185,6 +171,31 @@ const MyAccountScreen: React.FC = () => {
     }
   }, [user])
 
+  // ⭐ Nueva función para obtener iniciales del usuario
+  const getUserInitials = useMemo(() => {
+    if (user?.user_metadata?.name && user?.user_metadata?.surname) {
+      return `${user.user_metadata.name[0]}${user.user_metadata.surname[0]}`.toUpperCase()
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name[0].toUpperCase()
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase()
+    }
+    return "U"
+  }, [user])
+
+  // ⭐ Nueva función para obtener nombre completo del usuario
+  const getFullName = useMemo(() => {
+    if (user?.user_metadata?.name && user?.user_metadata?.surname) {
+      return `${user.user_metadata.name} ${user.user_metadata.surname}`
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name
+    }
+    return "Usuario"
+  }, [user])
+
   return (
     <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
@@ -194,9 +205,19 @@ const MyAccountScreen: React.FC = () => {
               <Ionicons name="arrow-back" size={24} color="#333" />
             </TouchableOpacity>
             <Text style={styles.title}>Mi cuenta</Text>
+            <View style={styles.placeholder} />
+          </View>
+
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>{getUserInitials}</Text>
+            </View>
+            <Text style={styles.profileName}>{getFullName}</Text>
+            <Text style={styles.profileEmail}>{user?.email || "Sin correo"}</Text>
           </View>
 
           <View style={styles.formContainer}>
+            <Text style={styles.sectionTitle}>Información Personal</Text>
             <FormInput
               iconName="person-outline"
               placeholder="Nombre"
@@ -226,14 +247,19 @@ const MyAccountScreen: React.FC = () => {
               inputStyle={styles.disabledInput}
             />
 
-            <TouchableOpacity onPress={togglePasswordField} style={styles.changePasswordLink}>
-              <Text style={styles.changePasswordText}>
-                {isPasswordFieldVisible ? "Cancelar cambio de contraseña" : "Cambiar Contraseña"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.passwordSection}>
+              <TouchableOpacity onPress={togglePasswordField} style={styles.changePasswordLink}>
+                <Text style={styles.changePasswordText}>
+                  {isPasswordFieldVisible ? "Cancelar cambio de contraseña" : "Cambiar Contraseña"}
+                </Text>
+                <Ionicons
+                  name={isPasswordFieldVisible ? "chevron-up-outline" : "chevron-down-outline"}
+                  size={18}
+                  color="#ff8c00"
+                />
+              </TouchableOpacity>
 
-            {isPasswordFieldVisible && (
-              <Animated.View style={[styles.passwordContainer, { height: passwordFieldHeight }]}>
+              <Animated.View style={[styles.passwordInputContainer, { height: passwordFieldHeight }]}>
                 <FormInput
                   iconName="lock-closed-outline"
                   placeholder="Nueva Contraseña"
@@ -245,7 +271,7 @@ const MyAccountScreen: React.FC = () => {
                   theme="light"
                 />
               </Animated.View>
-            )}
+            </View>
 
             <LoadingButton
               title="Guardar Cambios"
@@ -263,56 +289,127 @@ const MyAccountScreen: React.FC = () => {
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#f8f9fa", // Fondo más claro
   },
   scrollView: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 20,
+    paddingBottom: 40, // Más padding al final
   },
   container: {
     flex: 1,
-    justifyContent: "center",
+    alignItems: "center", // Centrar contenido
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 30,
-    position: "relative",
+    justifyContent: "space-between", // Espacio entre elementos
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 50 : 20, // Ajuste para iOS status bar
+    paddingBottom: 20,
+    backgroundColor: "#fff", // Fondo blanco para el header
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
   backButton: {
-    position: "absolute",
-    left: 0,
     padding: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22, // Título ligeramente más pequeño
     fontFamily: "Karla-Bold",
     color: "#333",
   },
-  formContainer: {
+  placeholder: {
+    width: 24 + 10, // Ancho del icono + padding para centrar
+  },
+  // ⭐ Estilos para la sección de perfil
+  profileSection: {
+    alignItems: "center",
+    paddingVertical: 30,
     width: "100%",
+    backgroundColor: "#fff",
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  avatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#ff8c00", // Color de acento
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarText: {
+    color: "#fff",
+    fontSize: 32, // Tamaño de fuente más grande
+    fontFamily: "Karla-Bold",
+  },
+  profileName: {
+    fontSize: 20,
+    fontFamily: "Karla-Bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  profileEmail: {
+    fontSize: 15,
+    fontFamily: "Karla-Regular",
+    color: "#666",
+  },
+  formContainer: {
+    width: "90%", // Ancho fijo para el formulario
+    maxWidth: 500, // Máximo para pantallas grandes
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: "Karla-Bold",
+    color: "#333",
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    paddingBottom: 10,
   },
   disabledInput: {
-    opacity: 0.5,
+    opacity: 0.7, // Menos opacidad para indicar deshabilitado
+  },
+  passwordSection: {
+    marginTop: 10, // Espacio antes de la sección de contraseña
+    marginBottom: 20,
   },
   changePasswordLink: {
-    marginVertical: 20,
+    flexDirection: "row", // Para alinear texto e icono
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 10,
+    marginBottom: 10,
   },
   changePasswordText: {
     color: "#ff8c00",
     fontSize: 16,
     fontFamily: "Karla-SemiBold",
   },
-  passwordContainer: {
+  passwordInputContainer: {
     overflow: "hidden",
   },
   saveButton: {
-    marginTop: 20,
+    marginTop: 10, // Espacio antes del botón de guardar
   },
 })
 

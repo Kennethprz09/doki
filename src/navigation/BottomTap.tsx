@@ -178,6 +178,18 @@ function HighlightsStackScreen() {
         name="OpenFolderPage"
         component={OpenFolderScreen}
       />
+      <HighlightsStack.Screen
+        options={{
+          headerShown: false,
+          ...TransitionPresets.SlideFromRightIOS,
+          animation: "slide_from_right",
+          title: "Mi cuenta",
+          headerTitleAlign: "center",
+          headerTitleStyle: styles.headerTitleStyle,
+        }}
+        name="MyAccountPage"
+        component={MyAccountScreen}
+      />
     </HighlightsStack.Navigator>
   );
 }
