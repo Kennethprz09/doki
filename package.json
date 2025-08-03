@@ -20,6 +20,7 @@
     "buffer": "^6.0.3",
     "date-fns": "^4.1.0",
     "expo": "53.0.13",
+    "expo-blur": "^14.1.5",
     "expo-camera": "~16.1.9",
     "expo-crop-image": "^0.2.1",
     "expo-document-picker": "~13.1.6",

@@ -1,4 +1,1 @@
-- al restablecer contraseña se genere una aleatoria. Listo
-- al recortar una imagen en el scanner que sea libre no formato ci. Listo
-- cuando agrega un docuemento a la carpeta que se refrescque la lista debido a que toca entrar y salir para que aparezca el nuevo docuemento. Listo
 - Logo android y ios.

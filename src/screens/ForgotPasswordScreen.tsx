@@ -1,204 +1,192 @@
-import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../components/types';
-import { resetPassword } from '../supabase/auth';
+"use client"
+
+import type React from "react"
+import { useState, useCallback } from "react"
+import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
+import Toast from "react-native-toast-message"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../components/types"
+import { resetPassword } from "../supabase/auth"
+import { useFormValidation, commonValidationRules } from "../hooks/useFormValidation"
+import FormInput from "../components/common/FormInput"
+import LoadingButton from "../components/common/LoadingButton"
 
 interface ForgotPasswordScreenProps {
-  navigation: NativeStackNavigationProp<RootStackParamList>;
+  navigation: NativeStackNavigationProp<RootStackParamList>
 }
 
+// Optimización 1: Componente optimizado con hooks reutilizables
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
-  const validateForm = () => {
-    if (email.trim() === '') {
-      setError('El correo electrónico es obligatorio');
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Por favor, ingresa un correo electrónico válido');
-      return false;
-    }
-    setError('');
-    return true;
-  };
+  // Optimización 2: Usar hook de validación reutilizable
+  const { errors, validateForm, clearError } = useFormValidation({
+    email: commonValidationRules.email,
+  })
 
-  const handleResetPassword = async () => {
-    if (!validateForm()) return;
+  // Optimización 3: Función de actualización de email optimizada
+  const updateEmail = useCallback(
+    (value: string) => {
+      setEmail(value)
+      clearError("email")
+      setSuccessMessage("") // Limpiar mensaje de éxito al cambiar email
+    },
+    [clearError],
+  )
 
-    setLoading(true);
-    setMessage('');
-
+  // Optimización 4: Función de reset mejorada con mejor UX
+  const handleResetPassword = useCallback(async () => {
     try {
-      const { success, message, errorMessage } = await resetPassword(email);
-
-      if (!success) {
-        throw new Error(errorMessage || 'Error al procesar la solicitud');
+      if (!validateForm({ email })) {
+        return
       }
 
-      setMessage(message || 'Se ha enviado una nueva contraseña a tu correo.');
-      setTimeout(() => navigation.navigate('Login'), 1000);
+      setLoading(true)
+      setSuccessMessage("")
+
+      const { success, message, errorMessage } = await resetPassword(email)
+
+      if (!success) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: errorMessage || "Error al procesar la solicitud",
+        })
+        return
+      }
+
+      const successMsg = message || "Se ha enviado una nueva contraseña a tu correo."
+      setSuccessMessage(successMsg)
+
+      Toast.show({
+        type: "success",
+        text1: "Éxito",
+        text2: successMsg,
+      })
+
+      // Navegar después de un delay para que el usuario vea el mensaje
+      setTimeout(() => navigation.navigate("Login"), 2000)
     } catch (error: any) {
-      setError(error.message || 'Error al enviar la nueva contraseña.');
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Error al enviar la nueva contraseña.",
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [email, validateForm, navigation])
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: 'black' }}
-      behavior={'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      style={styles.keyboardView}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={{ flex: 1, backgroundColor: 'black' }} contentContainerStyle={styles.scrollContainer}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          <View style={styles.logo}>
+          <View style={styles.header}>
             <Text style={styles.title}>Recuperar Contraseña</Text>
-            <Text style={styles.label}>Ingresa tu correo para recibir una nueva contraseña</Text>
+            <Text style={styles.subtitle}>Ingresa tu correo para recibir una nueva contraseña</Text>
           </View>
 
-          <View style={{ width: '100%' }}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#8293ac"
-                style={styles.icon}
-              />
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                placeholder="Correo electrónico"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor="#cccccc"
-              />
-            </View>
+          <View style={styles.formContainer}>
+            <FormInput
+              iconName="mail-outline"
+              placeholder="Correo electrónico"
+              value={email}
+              onChangeText={updateEmail}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              theme="dark"
+            />
 
-            {error && (
-              <View style={{ marginBottom: 10 }}>
-                <Text style={styles.errorMessage}>{error}</Text>
+            {successMessage && (
+              <View style={styles.successContainer}>
+                <Text style={styles.successMessage}>{successMessage}</Text>
               </View>
             )}
 
-            {message && (
-              <View style={{ marginBottom: 10 }}>
-                <Text style={styles.successMessage}>{message}</Text>
-              </View>
-            )}
+            <LoadingButton title="Enviar Nueva Contraseña" onPress={handleResetPassword} loading={loading} />
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleResetPassword}
-              disabled={loading}
+              style={styles.linkButton}
+              onPress={() => navigation.navigate("Login")}
+              accessibilityLabel="Volver al inicio de sesión"
             >
-              <Text style={styles.buttonText}>{loading ? 'Enviando...' : 'Enviar Nueva Contraseña'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ justifyContent: 'center', alignItems: 'center', marginTop: 20 }}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-                Volver al inicio de sesión
-              </Text>
+              <Text style={styles.linkText}>Volver al inicio de sesión</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: "black",
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: "black",
+  },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 30,
-    backgroundColor: 'black',
+    backgroundColor: "black",
   },
   container: {
-    width: '100%',
+    width: "100%",
   },
-  logo: {
-    alignItems: 'center',
-    marginBottom: 20,
+  header: {
+    alignItems: "center",
+    marginBottom: 30,
   },
   title: {
-    fontFamily: 'Karla-Bold',
+    fontFamily: "Karla-Bold",
     fontSize: 24,
-    color: '#ffffff',
+    color: "#ffffff",
     marginBottom: 10,
   },
-  label: {
-    fontFamily: 'Karla-Regular',
-    color: '#ffffff',
+  subtitle: {
+    fontFamily: "Karla-Regular",
+    color: "#ffffff",
     fontSize: 14,
+    textAlign: "center",
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#333333',
-    borderRadius: 10,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    height: 50,
+  formContainer: {
+    width: "100%",
   },
-  input: {
-    flex: 1,
-    fontFamily: 'Karla-Regular',
-    height: '100%',
-    color: '#ffffff',
-  },
-  icon: {
-    marginRight: 10,
-    color: '#cccccc',
-  },
-  button: {
-    backgroundColor: '#ff8c00',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    elevation: 5,
-  },
-  buttonDisabled: {
-    backgroundColor: '#cccccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Karla-Bold',
-    textAlign: 'center',
-  },
-  errorMessage: {
-    color: '#ff4d4d',
-    fontSize: 12,
+  successContainer: {
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: "rgba(40, 167, 69, 0.1)",
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#28a745",
   },
   successMessage: {
-    color: '#28a745',
-    fontSize: 12,
+    color: "#28a745",
+    fontSize: 14,
+    fontFamily: "Karla-Regular",
   },
-});
+  linkButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  linkText: {
+    fontFamily: "Karla-SemiBold",
+    color: "#ffffff",
+  },
+})
 
-export default ForgotPasswordScreen;
+export default ForgotPasswordScreen

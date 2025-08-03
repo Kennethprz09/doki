@@ -1,292 +1,227 @@
-import React, { useState } from 'react';
+import type React from "react"
+import { useState, useCallback } from "react"
 import {
   KeyboardAvoidingView,
   Platform,
   View,
   Text,
-  TextInput,
   StyleSheet,
   Image,
   TouchableOpacity,
   ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
-import { useGlobalStore } from '../store/globalStore';
-import { checkInternetConnection } from '../utils/actions';
-import PrivacyPoliciesModal from '../components/PrivacyPoliciesModal';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../components/types';
-import { login } from '../supabase/auth';
+} from "react-native"
+import Toast from "react-native-toast-message"
+import { useGlobalStore } from "../store/globalStore"
+import { checkInternetConnection } from "../utils/actions"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../components/types"
+import { login } from "../supabase/auth"
+import { useFormValidation, commonValidationRules } from "../hooks/useFormValidation"
+import FormInput from "../components/common/FormInput"
+import LoadingButton from "../components/common/LoadingButton"
+import PrivacyPoliciesModal from "../components/modals/PrivacyPoliciesModal"
 
 interface LoginScreenProps {
-  navigation: NativeStackNavigationProp<RootStackParamList>;
+  navigation: NativeStackNavigationProp<RootStackParamList>
 }
 
+// Optimización 1: Componente optimizado con hooks reutilizables
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const setLoading = useGlobalStore((state) => state.setLoading);
+  const { loading, setLoading } = useGlobalStore()
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [isPrivacyModalVisible, setPrivacyModalVisible] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  })
+  const [isPrivacyModalVisible, setPrivacyModalVisible] = useState(false)
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-    if (email.trim() === '') {
-      newErrors.email = 'El correo electrónico es obligatorio';
+  // Optimización 2: Usar hook de validación reutilizable
+  const { errors, validateForm, clearError } = useFormValidation({
+    email: commonValidationRules.email,
+    password: commonValidationRules.password,
+  })
+
+  // Optimización 3: Función de actualización de campos optimizada
+  const updateField = useCallback(
+    (field: keyof typeof formData) => (value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+      clearError(field)
+    },
+    [clearError],
+  )
+
+  // Optimización 4: Función de login mejorada
+  const handleLogin = useCallback(async () => {
+    try {
+      const isOffline = await checkInternetConnection()
+      if (isOffline) {
+        Toast.show({
+          type: "error",
+          text1: "Sin conexión",
+          text2: "Por favor, verifica tu conexión a internet.",
+        })
+        return
+      }
+
+      if (!validateForm(formData)) {
+        return
+      }
+
+      setLoading(true)
+
+      const { success, errorMessage } = await login(formData.email, formData.password)
+
+      if (success) {
+        navigation.replace("MainRoutes")
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error al iniciar sesión",
+          text2: errorMessage || "Por favor, inténtalo de nuevo.",
+        })
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Ocurrió un error inesperado.",
+      })
+    } finally {
+      setLoading(false)
     }
-    if (password.trim() === '') {
-      newErrors.password = 'La contraseña es obligatoria';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleLogin = async () => {
-    const isOffline = await checkInternetConnection();
-    if (isOffline) {
-      showToast('Sin conexión a internet. Por favor, verifica tu conexión.');
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-
-    const { success, errorMessage } = await login(email, password);
-
-    setLoading(false);
-
-    if (success) {
-      navigation.navigate('MainRoutes');
-    } else {
-      showToast(errorMessage || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.');
-    }
-  };
-
-  const showToast = (mensaje: string) => {
-    Toast.show({
-      type: 'error',
-      text1: 'Error al iniciar sesión',
-      text2: mensaje,
-    });
-  };
+  }, [formData, validateForm, setLoading, navigation])
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: 'black' }}
-      behavior={'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      style={styles.keyboardView}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={{ flex: 1, backgroundColor: 'black' }} contentContainerStyle={styles.scrollContainer}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <View style={styles.logo}>
             <Image
-              source={require('../../assets/logo/logoDark.png')}
+              source={require("../../assets/logo/logoDark.png")}
               style={styles.image}
               resizeMode="contain"
+              accessibilityLabel="Logo de la aplicación"
             />
             <Text style={styles.label}>Iniciar sesión en tu cuenta</Text>
           </View>
 
-          <View style={{ width: '100%' }}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#8293ac"
-                style={styles.icon}
-              />
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrors((prevErrors) => ({ ...prevErrors, email: '' }));
-                }}
-                placeholder="Correo electrónico"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor="#cccccc"
-              />
-            </View>
+          <View style={styles.formContainer}>
+            <FormInput
+              iconName="mail-outline"
+              placeholder="Correo electrónico"
+              value={formData.email}
+              onChangeText={updateField("email")}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              theme="dark"
+            />
 
-            {errors.email && (
-              <View style={{ marginBottom: 10 }}>
-                <Text style={styles.errorMessage}>{errors.email}</Text>
-              </View>
-            )}
-
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#8293ac"
-                style={styles.icon}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.iconRight}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="#8293ac"
-                />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrors((prevErrors) => ({ ...prevErrors, password: '' }));
-                }}
-                placeholder="Contraseña"
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                placeholderTextColor="#cccccc"
-              />
-            </View>
-
-            {errors.password && (
-              <View style={{ marginBottom: 10 }}>
-                <Text style={styles.errorMessage}>{errors.password}</Text>
-              </View>
-            )}
+            <FormInput
+              iconName="lock-closed-outline"
+              placeholder="Contraseña"
+              value={formData.password}
+              onChangeText={updateField("password")}
+              error={errors.password}
+              isPassword
+              autoCapitalize="none"
+              autoComplete="password"
+              theme="dark"
+            />
 
             <TouchableOpacity
-              style={{ alignSelf: 'flex-end', marginBottom: 20 }}
-              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotPasswordLink}
+              onPress={() => navigation.navigate("ForgotPassword")}
+              accessibilityLabel="Olvidé mi contraseña"
             >
-              <Text style={{ color: '#ffffff', fontFamily: 'Karla-SemiBold', fontSize: 14 }}>
-                Olvidé mi contraseña
-              </Text>
+              <Text style={styles.forgotPasswordText}>Olvidé mi contraseña</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
-            </TouchableOpacity>
+            <LoadingButton title="Iniciar Sesión" onPress={handleLogin} loading={loading} />
 
             <TouchableOpacity
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 20,
-              }}
-              onPress={() => navigation.navigate('Register')}
+              style={styles.linkButton}
+              onPress={() => navigation.navigate("Register")}
+              accessibilityLabel="Crear cuenta nueva"
             >
-              <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-                Crear Cuenta
-              </Text>
+              <Text style={styles.linkText}>Crear Cuenta</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 20,
-              }}
+              style={styles.linkButton}
               onPress={() => setPrivacyModalVisible(true)}
+              accessibilityLabel="Ver políticas de privacidad"
             >
-              <Text style={{ fontFamily: 'Karla-SemiBold', color: '#ffffff' }}>
-                Políticas de privacidad
-              </Text>
+              <Text style={styles.linkText}>Políticas de privacidad</Text>
             </TouchableOpacity>
           </View>
 
-          <PrivacyPoliciesModal
-            visible={isPrivacyModalVisible}
-            onClose={() => setPrivacyModalVisible(false)}
-          />
+          <PrivacyPoliciesModal visible={isPrivacyModalVisible} onClose={() => setPrivacyModalVisible(false)} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: "black",
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: "black",
+  },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 30,
-    backgroundColor: 'black',
+    backgroundColor: "black",
   },
   container: {
-    width: '100%',
-  },
-  iconContainer: {
-    position: 'absolute',
-    right: 10,
-    backgroundColor: 'red',
-  },
-  labelTitle: {
-    marginBottom: 5,
-    fontSize: 25,
-    fontFamily: 'Karla-Bold',
-  },
-  button: {
-    backgroundColor: '#ff8c00',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    elevation: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Karla-Bold',
-    textAlign: 'center',
+    width: "100%",
   },
   logo: {
-    fontFamily: 'Karla-Bold',
-    alignItems: 'center',
+    alignItems: "center",
+    marginBottom: 30,
   },
   image: {
     width: 290,
     height: 190,
   },
   label: {
-    fontFamily: 'Karla-Regular',
-    color: '#ffffff',
+    fontFamily: "Karla-Regular",
+    color: "#ffffff",
     marginBottom: 15,
     fontSize: 14,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#333333',
-    borderRadius: 10,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    height: 50,
+  formContainer: {
+    width: "100%",
   },
-  input: {
-    flex: 1,
-    fontFamily: 'Karla-Regular',
-    height: '100%',
-    color: '#ffffff',
+  forgotPasswordLink: {
+    alignSelf: "flex-end",
+    marginBottom: 20,
   },
-  icon: {
-    marginRight: 10,
-    color: '#cccccc',
+  forgotPasswordText: {
+    color: "#ffffff",
+    fontFamily: "Karla-SemiBold",
+    fontSize: 14,
   },
-  iconRight: {
-    marginRight: 10,
-    position: 'absolute',
-    right: 10,
-    zIndex: 1,
-    color: '#cccccc',
+  linkButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
   },
-  errorMessage: {
-    color: '#ff4d4d',
-    fontSize: 12,
+  linkText: {
+    fontFamily: "Karla-SemiBold",
+    color: "#ffffff",
   },
-});
+})
 
-export default LoginScreen;
+export default LoginScreen

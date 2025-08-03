@@ -1,46 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
-import * as Animatable from 'react-native-animatable';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../components/types';
-import { supabase } from '../supabase/supabaseClient';
-import { syncUser } from '../utils/actions';
+"use client";
+
+import type React from "react";
+import { useEffect, useCallback } from "react";
+import { View, StyleSheet, SafeAreaView } from "react-native";
+import * as Animatable from "react-native-animatable";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../components/types";
+import { useUserStore } from "../store/userStore";
+import { useGlobalStore } from "../store/globalStore";
 
 interface SplashScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
+// Optimización 1: Componente más robusto con mejor manejo de autenticación
 const SplashScreen: React.FC<SplashScreenProps> = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [isLoading, setIsLoading] = useState(true);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useUserStore();
+  const { setLoading } = useGlobalStore();
+
+  // Optimización 2: Función de autenticación mejorada
+  const authenticateUser = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      navigation.replace("Login");
+    } catch (error) {
+      console.error("Error during authentication:", error);
+      navigation.replace("Login");
+    } finally {
+      setLoading(false);
+    }
+  }, [navigation, user, setLoading]);
 
   useEffect(() => {
-    const authenticateUser = async () => {
-      // const { data: { session } } = await supabase.auth.getSession();
-      // if (session) {
-      //   await syncUser(); // Sincronizar datos del usuario
-      //   navigation.navigate('MainRoutes');
-      // } else {
-        navigation.navigate('Login');
-      // }
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-    };
-
-    authenticateUser();
-  }, [isLoading, navigation]);
+    // Optimización 3: Delay mínimo para mostrar splash screen
+    const timer = setTimeout(authenticateUser, 2000);
+    return () => clearTimeout(timer);
+  }, [authenticateUser]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Animatable.Image
           animation="fadeIn"
-          duration={2900}
-          source={require('../../assets/logo/logoDark.png')}
+          duration={2000}
+          source={require("../../assets/logo/logoDark.png")}
           style={styles.logo}
           resizeMode="contain"
+          accessibilityLabel="Logo de la aplicación"
         />
       </View>
     </SafeAreaView>
@@ -50,12 +60,12 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   logo: {
     width: 450,

@@ -33,10 +33,6 @@ export const login = async (email: string, password: string): Promise<LoginRespo
         // Store user data in Zustand
         useUserStore.getState().setUser(user);
 
-        // Store user and token in AsyncStorage
-        // await AsyncStorage.setItem('accessToken', session?.access_token || '');
-        // await AsyncStorage.setItem('user', JSON.stringify(user));
-
         return {
             success: true,
             user,

@@ -1,21 +1,24 @@
-import { View, StyleSheet, Text } from 'react-native';
-import FiltersComponents from '../components/Filters/FiltersComponents';
-import NewActionComponent from '../components/NewAction/NewActionComponent';
+import type React from "react"
+import { memo } from "react"
+import { View, StyleSheet } from "react-native"
+import FiltersComponents from "../components/Filters/FiltersComponents"
+import NewActionComponent from "../components/NewAction/NewActionComponent"
 
-const HighlightsScreen = () => {
+// Optimización 1: Componente memoizado para evitar re-renders innecesarios
+const HighlightsScreen: React.FC = memo(() => {
   return (
     <View style={styles.container}>
       <FiltersComponents filterType="favorites" />
       <NewActionComponent />
     </View>
-  );
-};
+  )
+})
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
   },
-});
+})
 
-export default HighlightsScreen;
+export default HighlightsScreen

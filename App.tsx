@@ -6,11 +6,11 @@ import toastConfig from "./src/components/Template/toastConfig";
 import Loader from "./src/components/Template/Loader";
 import { useGlobalStore } from "./src/store/globalStore";
 import * as Font from "expo-font";
-import useNetInfo from "./src/hook/useNetInfo";
+import useNetInfo from "./src/hooks/useNetInfo";
 import { useUserStore } from "./src/store/userStore";
 import { MainNavigator } from "./src/navigation/BottomTap";
 import { SafeAreaView } from "react-native-safe-area-context";
-import useDocumentsSync from "./src/hook/useDocumentsSync";
+import useDocumentsSync from "./src/hooks/useDocumentsSync";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext";
 
