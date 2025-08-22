@@ -1,71 +1,68 @@
-"use client"
-
-import React from "react"
-import { memo, useRef, useState, useCallback } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { CameraView } from "expo-camera"
-import * as ImageManipulator from "expo-image-manipulator"
+// CameraModal.tsx
+import React from "react";
+import { memo, useRef, useState, useCallback } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { CameraView } from "expo-camera";
+import * as ImageManipulator from "expo-image-manipulator";
+import BaseModal from "../common/BaseModal";
 
 interface CameraModalProps {
-  visible: boolean
-  onClose: () => void
-  onCapture: (photoUri: string) => void
+  visible: boolean;
+  onClose: () => void;
+  onCapture: (photoUri: string) => void;
 }
 
 const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture }) => {
-  const cameraRef = useRef<CameraView>(null)
-  const [capturing, setCapturing] = useState(false)
+  const cameraRef = useRef<CameraView>(null);
+  const [capturing, setCapturing] = useState(false);
 
   const takePicture = useCallback(async () => {
-    if (!cameraRef.current || capturing) return
+    if (!cameraRef.current || capturing) return;
 
     try {
-      setCapturing(true)
+      console.log("Taking picture");
+      setCapturing(true);
 
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.5, // Reducimos la calidad para menor carga
         base64: false,
-      })
+      });
 
       if (!photo) {
-        Alert.alert("Error", "No se pudo tomar la foto")
-        return
+        console.error("No photo captured");
+        Alert.alert("Error", "No se pudo tomar la foto");
+        return;
       }
 
-      const processedImage = await ImageManipulator.manipulateAsync(photo.uri, [{ resize: { width: 1200 } }], {
-        compress: 0.8,
+      console.log("Processing captured photo:", photo.uri);
+      const processedImage = await ImageManipulator.manipulateAsync(photo.uri, [{ resize: { width: 800 } }], {
+        // Reducimos el ancho para menor carga
+        compress: 0.7, // Reducimos la compresión
         format: ImageManipulator.SaveFormat.JPEG,
-      })
+      });
 
-      onCapture(processedImage.uri)
+      console.log("Photo processed successfully:", processedImage.uri);
+      onCapture(processedImage.uri);
     } catch (error) {
-      console.error("Error taking picture:", error)
-      Alert.alert("Error", "No se pudo tomar la foto")
+      console.error("Error taking picture:", error);
+      Alert.alert("Error", "No se pudo tomar la foto");
     } finally {
-      setCapturing(false)
+      setCapturing(false);
     }
-  }, [capturing, onCapture])
+  }, [capturing, onCapture]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-      presentationStyle="fullScreen"
-      statusBarTranslucent
-    >
+    <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen={true}>
       <View style={styles.container}>
         <CameraView style={styles.camera} ref={cameraRef} facing="back" />
 
-        {/* Header con botón de cerrar */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Cerrar cámara">
             <Ionicons name="close" size={30} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Controles de cámara */}
         <View style={styles.controls}>
           <TouchableOpacity
             style={[styles.captureButton, capturing && styles.capturingButton]}
@@ -77,14 +74,13 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
           </TouchableOpacity>
         </View>
 
-        {/* Feedback de captura */}
         {capturing && <Text style={styles.capturingText}>Procesando imagen...</Text>}
       </View>
-    </Modal>
-  )
-})
+    </BaseModal>
+  );
+});
 
-CameraModal.displayName = "CameraModal"
+CameraModal.displayName = "CameraModal";
 
 const styles = StyleSheet.create({
   container: {
@@ -145,6 +141,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     zIndex: 1,
   },
-})
+});
 
-export default CameraModal
+export default CameraModal;

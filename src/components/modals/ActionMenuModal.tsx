@@ -1,62 +1,50 @@
-"use client"
-
+// ActionMenuModal.tsx
 import React from "react"
 import { memo, useCallback, useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import BaseModal from "../common/BaseModal"
 import LoadingButton from "../common/LoadingButton"
-import ColorPicker from "../common/ColorPicker"
 import ActionMoveModal from "./ActionMoveModal"
-import CreateFolderModal from "./CreateFolderModal"
 import { useDocumentActions } from "../../hooks/useDocumentActions"
-import { useFolderManager } from "../../hooks/useFolderManager"
 import { useFileOperations } from "../../hooks/useFileOperations"
-import type { Document, ModalProps } from "../types"
-// Agregar el import del nuevo hook:
 import { useImageViewer } from "../../hooks/useImageViewer"
+import type { Document, ModalProps } from "../types"
 
 interface ActionMenuModalProps extends ModalProps {
   document: Document | null
   onActionComplete: () => void
   folder?: Document
+  onActionSelect: (action: "edit" | "color", document: Document) => void
 }
 
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
-  ({ visible, onClose, document, onActionComplete, folder }) => {
-    const { toggleFavorite, deleteDocumentWithConfirmation, updateDocumentColor, moveDocuments } = useDocumentActions()
-
-    const { editItem, processing } = useFolderManager()
+  ({ visible, onClose, document, onActionComplete, folder, onActionSelect }) => {
+    const { toggleFavorite, deleteDocumentWithConfirmation } = useDocumentActions()
     const { viewFile, shareFile, downloadFile } = useFileOperations()
-    // Dentro del componente, agregar el hook:
     const { viewImage } = useImageViewer()
 
-    const [showColorPicker, setShowColorPicker] = useState(false)
-    const [showEditModal, setShowEditModal] = useState(false)
     const [showMoveModal, setShowMoveModal] = useState(false)
 
-    // Handlers optimizados
     const handleToggleFavorite = useCallback(async () => {
       if (!document) return
+      console.log("Toggling favorite for document:", document.id)
       const success = await toggleFavorite(document.id, document.is_favorite)
       if (success) {
         onActionComplete()
       }
     }, [document, toggleFavorite, onActionComplete])
 
-    // Función auxiliar para detectar si es imagen:
     const isImageFile = useCallback((ext?: string) => {
       if (!ext) return false
       const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"]
       return imageExtensions.includes(ext.toLowerCase().replace(".", ""))
     }, [])
 
-    // Reemplazar handleViewFile:
     const handleViewFile = useCallback(async () => {
       if (!document) return
-      onClose() // Cerrar modal antes de la operación
-
-      // Si es imagen, usar el visor específico
+      console.log("Viewing file:", document.id)
+      onClose()
       if (isImageFile(document.ext)) {
         await viewImage(document.path, document.name)
       } else {
@@ -66,18 +54,21 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleShareFile = useCallback(async () => {
       if (!document) return
-      onClose() // Cerrar modal antes de la operación
+      console.log("Sharing file:", document.id)
+      onClose()
       await shareFile(document.path, document.name)
     }, [document, shareFile, onClose])
 
     const handleDownloadFile = useCallback(async () => {
       if (!document) return
-      onClose() // Cerrar modal antes de la operación
+      console.log("Downloading file:", document.id)
+      onClose()
       await downloadFile(document.path, document.name, document.ext)
     }, [document, downloadFile, onClose])
 
     const handleDelete = useCallback(async () => {
       if (!document) return
+      console.log("Deleting document:", document.id)
       const success = await deleteDocumentWithConfirmation(document.id, document.name)
       if (success) {
         onActionComplete()
@@ -85,42 +76,26 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
     }, [document, deleteDocumentWithConfirmation, onActionComplete])
 
     const handleEdit = useCallback(() => {
-      setShowEditModal(true)
-    }, [])
-
-    const handleEditSubmit = useCallback(
-      async (newName: string) => {
-        if (!document) return false
-        const success = await editItem(document.id, newName)
-        if (success) {
-          onActionComplete()
-        }
-        return success
-      },
-      [document, editItem, onActionComplete],
-    )
+      if (!document) return
+      console.log("Triggering edit for document:", document.id)
+      onClose()
+      onActionSelect("edit", document)
+    }, [document, onClose, onActionSelect])
 
     const handleChangeColor = useCallback(() => {
-      setShowColorPicker(true)
-    }, [])
-
-    const handleColorSelect = useCallback(
-      async (color: string) => {
-        if (!document) return false
-        const success = await updateDocumentColor(document.id, color)
-        if (success) {
-          onActionComplete()
-        }
-        return success
-      },
-      [document, updateDocumentColor, onActionComplete],
-    )
+      if (!document) return
+      console.log("Triggering color change for document:", document.id)
+      onClose()
+      onActionSelect("color", document)
+    }, [document, onClose, onActionSelect])
 
     const handleMove = useCallback(() => {
+      console.log("Opening ActionMoveModal")
       setShowMoveModal(true)
     }, [])
 
     const handleMoveComplete = useCallback(() => {
+      console.log("Move completed, closing ActionMoveModal")
       setShowMoveModal(false)
       onActionComplete()
     }, [onActionComplete])
@@ -129,7 +104,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
       return null
     }
 
-    // Configuración de opciones del menú
     const menuOptions = [
       {
         key: "favorite",
@@ -179,14 +153,14 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
         onPress: handleChangeColor,
         show: true,
       },
-      {
-        key: "move",
-        icon: "folder-open-outline",
-        iconColor: "#666",
-        text: "Mover",
-        onPress: handleMove,
-        show: !document.is_folder,
-      },
+      // {
+      //   key: "move",
+      //   icon: "folder-open-outline",
+      //   iconColor: "#666",
+      //   text: "Mover",
+      //   onPress: handleMove,
+      //   show: !document.is_folder,
+      // },
       {
         key: "delete",
         icon: "trash-outline",
@@ -205,7 +179,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
             <Text style={styles.title} numberOfLines={2}>
               {document.name}
             </Text>
-
             {menuOptions
               .filter((option) => option.show)
               .map((option) => (
@@ -219,30 +192,15 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
                   <Text style={[styles.optionText, option.isDestructive && styles.deleteText]}>{option.text}</Text>
                 </TouchableOpacity>
               ))}
-
             <LoadingButton title="Cerrar" onPress={onClose} variant="ghost" style={styles.closeButton} />
           </View>
         </BaseModal>
-
-        {/* Modales anidados */}
-        <ColorPicker
-          visible={showColorPicker}
-          onClose={() => setShowColorPicker(false)}
-          onColorSelect={handleColorSelect}
-          selectedColor={document.color || undefined}
-        />
-
-        <CreateFolderModal
-          visible={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSubmit={handleEditSubmit}
-          editItem={document}
-          loading={processing}
-        />
-
         <ActionMoveModal
           visible={showMoveModal}
-          onClose={() => setShowMoveModal(false)}
+          onClose={() => {
+            console.log("Closing ActionMoveModal")
+            setShowMoveModal(false)
+          }}
           selectedItems={document ? [document.id] : []}
           onMoveComplete={handleMoveComplete}
           folder={folder}

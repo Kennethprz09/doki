@@ -1,5 +1,4 @@
-"use client"
-
+// FiltersScreen.tsx
 import React from "react"
 import { memo, useState, useCallback } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native"
@@ -10,37 +9,37 @@ import FilterControls from "../components/common/FilterControls"
 import DocumentList from "../components/common/DocumentList"
 import ProfileModal from "../components/modals/ProfileModal"
 import ActionMenuModal from "../components/modals/ActionMenuModal"
+import ColorPicker from "../components/common/ColorPicker"
+import CreateFolderModal from "../components/modals/CreateFolderModal"
 import type { Document } from "../components/types"
 import useDocumentsSync from "../hooks/useDocumentsSync"
+import { useFolderManager } from "../hooks/useFolderManager"
+import { useDocumentActions } from "../hooks/useDocumentActions"
 
 interface FiltersScreenProps {
   filterType: "all" | "favorites"
 }
 
-// Optimización 1: Screen optimizado para filtros principales
 const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   const user = useUserStore((state) => state.user)
-  const documents = useDocumentsStore((state) => state.documents) // Obtener documentos raíz
-  const documentsFavorite = useDocumentsStore((state) => state.documentsFavorite) // Obtener documentos favoritos
+  const documents = useDocumentsStore((state) => state.documents)
+  const documentsFavorite = useDocumentsStore((state) => state.documentsFavorite)
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false)
-
-  // Estado para el modal de acciones
   const [isActionMenuVisible, setIsActionMenuVisible] = useState(false)
   const [selectedDocumentForActions, setSelectedDocumentForActions] = useState<Document | null>(null)
+  const [isColorPickerVisible, setIsColorPickerVisible] = useState(false)
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false)
 
-  // Hook para sincronización de documentos
   const { syncDocuments } = useDocumentsSync()
-
-  // Optimización 2: Seleccionar documentos según el tipo de filtro
   const sourceDocuments = filterType === "all" ? documents : documentsFavorite
-
-  // Optimización 3: Usar hook de filtros
   const { search, setSearch, sortOrder, toggleSortOrder, filteredDocuments } = useDocumentFilters({
-    documents: sourceDocuments, // Pasar los documentos ya filtrados por tipo
+    documents: sourceDocuments,
   })
 
-  // Optimización 4: Funciones de UI
+  const { editItem, processing } = useFolderManager()
+  const { updateDocumentColor } = useDocumentActions()
+
   const handleToggleView = useCallback(() => {
     setViewMode((prev) => (prev === "list" ? "grid" : "list"))
   }, [])
@@ -49,28 +48,74 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
     setIsProfileModalVisible(!isProfileModalVisible)
   }, [isProfileModalVisible])
 
-  // Optimización 5: Manejar la acción de un item (abrir modal de acciones)
   const handleItemActionPress = useCallback((document: Document) => {
+    console.log("Opening ActionMenuModal for document:", document.id)
     setSelectedDocumentForActions(document)
     setIsActionMenuVisible(true)
   }, [])
 
   const handleActionMenuClose = useCallback(() => {
+    console.log("Closing ActionMenuModal")
     setIsActionMenuVisible(false)
     setSelectedDocumentForActions(null)
   }, [])
 
-  // Optimización 6: Generar iniciales del usuario
+  const handleActionSelect = useCallback((action: "edit" | "color", document: Document) => {
+    console.log(`Action selected: ${action} for document: ${document.id}`)
+    setSelectedDocumentForActions(document)
+    setTimeout(() => {
+      if (action === "edit") {
+        console.log("Opening CreateFolderModal")
+        setIsEditModalVisible(true)
+      } else if (action === "color") {
+        console.log("Opening ColorPicker")
+        setIsColorPickerVisible(true)
+      }
+    }, 500) // Aumentamos el retraso a 500ms
+  }, [])
+
   const userInitials = user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
 
-  // Función de recarga para DocumentList
   const handleRefresh = useCallback(async () => {
-    await syncDocuments() // Llama a la función de sincronización global
+    await syncDocuments()
   }, [syncDocuments])
+
+  const handleEditSubmit = useCallback(
+    async (newName: string) => {
+      if (!selectedDocumentForActions) return false
+      console.log("Submitting edit for document:", selectedDocumentForActions.id, "newName:", newName)
+      const success = await editItem(selectedDocumentForActions.id, newName)
+      if (success) {
+        console.log("Edit successful, closing CreateFolderModal")
+        setIsEditModalVisible(false)
+        handleActionMenuClose()
+      } else {
+        console.log("Edit failed")
+      }
+      return success
+    },
+    [selectedDocumentForActions, editItem, handleActionMenuClose],
+  )
+
+  const handleColorSelect = useCallback(
+    async (color: string) => {
+      if (!selectedDocumentForActions) return false
+      console.log("Submitting color change for document:", selectedDocumentForActions.id, "color:", color)
+      const success = await updateDocumentColor(selectedDocumentForActions.id, color)
+      if (success) {
+        console.log("Color change successful, closing ColorPicker")
+        setIsColorPickerVisible(false)
+        handleActionMenuClose()
+      } else {
+        console.log("Color change failed")
+      }
+      return success
+    },
+    [selectedDocumentForActions, updateDocumentColor, handleActionMenuClose],
+  )
 
   return (
     <View style={styles.container}>
-      {/* Header con búsqueda y avatar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -79,7 +124,6 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
           onChangeText={setSearch}
           placeholderTextColor="#a3a3a3"
         />
-
         <TouchableOpacity style={styles.avatarContainer} onPress={handleToggleProfile}>
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>{userInitials}</Text>
@@ -87,7 +131,6 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Controles de filtro */}
       <FilterControls
         sortDirection={sortOrder.direction}
         onToggleSort={toggleSortOrder}
@@ -95,26 +138,45 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
         onToggleView={handleToggleView}
       />
 
-      {/* Lista de documentos */}
       <DocumentList
         documents={filteredDocuments}
-        onRefresh={handleRefresh} // Siempre pasar la función de recarga
+        onRefresh={handleRefresh}
         renderMode={viewMode}
         emptyMessage={
           filterType === "all" ? "No hay documentos disponibles." : "No tienes documentos marcados como favoritos."
         }
-        onItemActionPress={handleItemActionPress} // Pasar la función para abrir el modal de acciones
+        onItemActionPress={handleItemActionPress}
       />
 
-      {/* Modal de perfil */}
       <ProfileModal visible={isProfileModalVisible} onClose={handleToggleProfile} />
 
-      {/* Modal de acciones del documento */}
       <ActionMenuModal
         visible={isActionMenuVisible}
         onClose={handleActionMenuClose}
         document={selectedDocumentForActions}
-        onActionComplete={handleActionMenuClose} // Cerrar el modal después de cualquier acción
+        onActionComplete={handleActionMenuClose}
+        onActionSelect={handleActionSelect}
+      />
+
+      <CreateFolderModal
+        visible={isEditModalVisible}
+        onClose={() => {
+          console.log("Closing CreateFolderModal")
+          setIsEditModalVisible(false)
+        }}
+        onSubmit={handleEditSubmit}
+        editItem={selectedDocumentForActions}
+        loading={processing}
+      />
+
+      <ColorPicker
+        visible={isColorPickerVisible}
+        onClose={() => {
+          console.log("Closing ColorPicker")
+          setIsColorPickerVisible(false)
+        }}
+        onColorSelect={handleColorSelect}
+        selectedColor={selectedDocumentForActions?.color || undefined}
       />
     </View>
   )

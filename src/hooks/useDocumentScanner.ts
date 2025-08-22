@@ -1,137 +1,174 @@
-"use client"
-
-import { useCallback, useState } from "react"
-import { Alert } from "react-native"
-import Toast from "react-native-toast-message"
-import * as FileSystem from "expo-file-system"
-import * as Print from "expo-print"
-import { Buffer } from "buffer"
-import { Camera } from "expo-camera"
-import { useUserStore } from "../store/userStore"
-import { useDocumentsStore } from "../store/documentsStore"
-import { useGlobalStore } from "../store/globalStore"
-import { checkInternetConnection } from "../utils/actions"
-import { supabase } from "../supabase/supabaseClient"
-import type { Document } from "../components/types"
+// useDocumentScanner.ts
+import { useCallback, useState } from "react";
+import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
+import * as FileSystem from "expo-file-system";
+import * as Print from "expo-print";
+import { Buffer } from "buffer";
+import { Camera } from "expo-camera";
+import { useUserStore } from "../store/userStore";
+import { useDocumentsStore } from "../store/documentsStore";
+import { useGlobalStore } from "../store/globalStore";
+import { checkInternetConnection } from "../utils/actions";
+import { supabase } from "../supabase/supabaseClient";
+import type { Document } from "../components/types";
 
 interface UseDocumentScannerProps {
-  folderId?: string | null
-  onSuccess?: (document: Document) => void
-  onError?: (error: string) => void
+  folderId?: string | null;
+  onSuccess?: (document: Document) => void;
+  onError?: (error: string) => void;
 }
 
 interface ScanState {
-  frontPhoto: string | null
-  backPhoto: string | null
-  isCapturingBack: boolean
+  frontPhoto: string | null;
+  backPhoto: string | null;
+  isCapturingBack: boolean;
 }
 
-// Optimización 1: Hook para escaneo de documentos
 export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocumentScannerProps = {}) => {
-  const user = useUserStore((state) => state.user)
-  const { addDocument } = useDocumentsStore()
-  const { setLoading } = useGlobalStore()
-  const [scanning, setScanning] = useState(false)
+  const user = useUserStore((state) => state.user);
+  const { addDocument } = useDocumentsStore();
+  const { setLoading } = useGlobalStore();
+  const [scanning, setScanning] = useState(false);
   const [scanState, setScanState] = useState<ScanState>({
     frontPhoto: null,
     backPhoto: null,
     isCapturingBack: false,
-  })
+  });
 
-  // Optimización 2: Solicitar permisos de cámara
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB por imagen
+
   const requestCameraPermission = useCallback(async () => {
     try {
-      const { status } = await Camera.requestCameraPermissionsAsync()
+      console.log("Requesting camera permission");
+      const { status } = await Camera.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permiso denegado", "Se necesita acceso a la cámara para escanear documentos.")
-        return false
+        console.error("Camera permission denied");
+        Alert.alert("Permiso denegado", "Se necesita acceso a la cámara para escanear documentos.");
+        return false;
       }
-      return true
+      console.log("Camera permission granted");
+      return true;
     } catch (error) {
-      console.error("Error requesting camera permission:", error)
-      return false
+      console.error("Error requesting camera permission:", error);
+      return false;
     }
-  }, [])
+  }, []);
 
-  // Optimización 3: Actualizar foto frontal
   const setFrontPhoto = useCallback((uri: string) => {
-    setScanState((prev) => ({ ...prev, frontPhoto: uri }))
-  }, [])
+    console.log("Setting front photo:", uri);
+    setScanState((prev) => ({ ...prev, frontPhoto: uri }));
+  }, []);
 
-  // Optimización 4: Actualizar foto trasera
   const setBackPhoto = useCallback((uri: string) => {
-    setScanState((prev) => ({ ...prev, backPhoto: uri }))
-  }, [])
+    console.log("Setting back photo:", uri);
+    setScanState((prev) => ({ ...prev, backPhoto: uri }));
+  }, []);
 
-  // Optimización 5: Alternar modo de captura
   const setIsCapturingBack = useCallback((capturing: boolean) => {
-    setScanState((prev) => ({ ...prev, isCapturingBack: capturing }))
-  }, [])
+    console.log("Setting isCapturingBack:", capturing);
+    setScanState((prev) => ({ ...prev, isCapturingBack: capturing }));
+  }, []);
 
-  // Optimización 6: Reiniciar estado de escaneo
   const resetScanState = useCallback(() => {
+    console.log("Resetting scan state");
     setScanState({
       frontPhoto: null,
       backPhoto: null,
       isCapturingBack: false,
-    })
-  }, [])
+    });
+  }, []);
 
-  // Optimización 7: Generar PDF desde fotos
   const generatePDF = useCallback(async () => {
     if (!scanState.frontPhoto) {
-      const errorMsg = "La foto frontal es obligatoria"
-      onError?.(errorMsg)
-      Alert.alert("Error", errorMsg)
-      return false
+      const errorMsg = "La foto frontal es obligatoria";
+      console.error(errorMsg);
+      onError?.(errorMsg);
+      Alert.alert("Error", errorMsg);
+      return false;
     }
 
     try {
-      // Verificar conectividad
-      const isOffline = await checkInternetConnection()
+      console.log("Starting PDF generation process");
+      console.log("Checking internet connection");
+      const isOffline = await checkInternetConnection();
       if (isOffline) {
-        const errorMsg = "No hay conexión a internet"
-        onError?.(errorMsg)
+        const errorMsg = "No hay conexión a internet";
+        console.error(errorMsg);
+        onError?.(errorMsg);
         Toast.show({
           type: "error",
           text1: "Sin conexión",
           text2: "Por favor, verifica tu conexión a internet.",
-        })
-        return false
+        });
+        return false;
       }
 
+      console.log("Checking user authentication");
       if (!user?.id) {
-        const errorMsg = "Usuario no autenticado"
-        onError?.(errorMsg)
-        Alert.alert("Error", errorMsg)
-        return false
+        const errorMsg = "Usuario no autenticado";
+        console.error(errorMsg);
+        onError?.(errorMsg);
+        Alert.alert("Error", errorMsg);
+        return false;
       }
 
-      setScanning(true)
-      setLoading(true)
+      setScanning(true);
+      setLoading(true);
 
-      // Leer imágenes como Base64
-      const frontPhotoBase64 = await FileSystem.readAsStringAsync(scanState.frontPhoto, {
-        encoding: FileSystem.EncodingType.Base64,
-      })
+      // Validar tamaño de las imágenes
+      console.log("Validating front photo size:", scanState.frontPhoto);
+      const frontInfo = await FileSystem.getInfoAsync(scanState.frontPhoto);
+      if (!frontInfo.exists || frontInfo.size > MAX_IMAGE_SIZE) {
+        const errorMsg = "La foto frontal es inválida o excede el límite de 5MB";
+        console.error(errorMsg);
+        onError?.(errorMsg);
+        Alert.alert("Error", errorMsg);
+        return false;
+      }
 
-      const backPhotoBase64 = scanState.backPhoto
-        ? await FileSystem.readAsStringAsync(scanState.backPhoto, {
-            encoding: FileSystem.EncodingType.Base64,
-          })
-        : null
+      let backPhotoBase64 = null;
+      if (scanState.backPhoto) {
+        console.log("Validating back photo size:", scanState.backPhoto);
+        const backInfo = await FileSystem.getInfoAsync(scanState.backPhoto);
+        if (!backInfo.exists || backInfo.size > MAX_IMAGE_SIZE) {
+          Regul
+          const errorMsg = "La foto trasera es inválida o excede el límite de 5MB";
+          console.error(errorMsg);
+          onError?.(errorMsg);
+          Alert.alert("Error", errorMsg);
+          return false;
+        }
+        console.log("Reading back photo as Base64");
+        backPhotoBase64 = await FileSystem.readAsStringAsync(scanState.backPhoto, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      }
+
+      // Usar fetch para obtener Blob en lugar de Base64
+      console.log("Converting front photo to Blob");
+      const frontResponse = await fetch(scanState.frontPhoto);
+      const frontBlob = await frontResponse.blob();
+
+      let backBlob = null;
+      if (scanState.backPhoto) {
+        console.log("Converting back photo to Blob");
+        const backResponse = await fetch(scanState.backPhoto);
+        backBlob = await backResponse.blob();
+      }
 
       // Crear HTML con imágenes incrustadas
+      console.log("Creating HTML content for PDF");
       const htmlContent = `
         <html>
           <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif;">
             <h1 style="text-align: center; color: #333;">Documento Escaneado</h1>
             <div style="text-align: center; margin: 20px 0;">
-              <img src="data:image/jpeg;base64,${frontPhotoBase64}" 
+              <img src="${scanState.frontPhoto}" 
                    style="width: 100%; max-width: 500px; margin-bottom: 20px; border: 1px solid #ddd;" />
               ${
-                backPhotoBase64
-                  ? `<img src="data:image/jpeg;base64,${backPhotoBase64}" 
+                scanState.backPhoto
+                  ? `<img src="${scanState.backPhoto}" 
                          style="width: 100%; max-width: 500px; border: 1px solid #ddd;" />`
                   : ""
               }
@@ -141,30 +178,36 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
             </p>
           </body>
         </html>
-      `
+      `;
 
-      // Generar PDF
-      const { uri } = await Print.printToFileAsync({
+      console.log("Generating PDF");
+      const { uri, base64 } = await Print.printToFileAsync({
         html: htmlContent,
         base64: true,
-      })
+      });
 
-      const fileContent = await FileSystem.readAsStringAsync(uri, {
+      console.log("PDF generated:", uri);
+      const fileContent = base64 || (await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
-      })
+      }));
 
-      // Subir PDF
-      const fileName = `scanned_${Date.now()}.pdf`
-      const filePath = `${user.id}/${fileName}`
-      const fileData = Buffer.from(fileContent, "base64")
+      console.log("Uploading PDF to Supabase storage");
+      const fileName = `scanned_${Date.now()}.pdf`;
+      const filePath = `${user.id}/${fileName}`;
+      const fileData = Buffer.from(fileContent, "base64");
 
       const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, fileData, {
         contentType: "application/pdf",
-      })
+      });
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
 
-      // Guardar en base de datos
+      console.log("PDF uploaded successfully to:", filePath);
+
+      console.log("Inserting document metadata into Supabase database");
       const { data, error: insertError } = await supabase
         .from("documents")
         .insert([
@@ -179,11 +222,15 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
           },
         ])
         .select()
-        .single()
+        .single();
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
 
-      // Crear documento para el store
+      console.log("Document inserted into database:", data);
+
       const newDocument: Document = {
         id: data.id,
         name: data.name,
@@ -196,44 +243,41 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         user_id: data.user_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
-      }
+      };
 
-      addDocument(newDocument)
-      onSuccess?.(newDocument)
+      console.log("Adding document to store:", newDocument);
+      addDocument(newDocument);
+      onSuccess?.(newDocument);
 
       Toast.show({
         type: "success",
         text1: "Documento escaneado",
         text2: "El documento se ha guardado como PDF",
-      })
+      });
 
-      resetScanState()
-      return true
+      resetScanState();
+      return true;
     } catch (error: any) {
-      const errorMsg = error.message || "No se pudo generar el PDF"
-      console.error("Error generating PDF:", error)
-      onError?.(errorMsg)
-      Alert.alert("Error", errorMsg)
-      return false
+      const errorMsg = error.message || "No se pudo generar el PDF";
+      console.error("Error generating PDF:", error);
+      onError?.(errorMsg);
+      Alert.alert("Error", errorMsg);
+      return false;
     } finally {
-      setScanning(false)
-      setLoading(false)
+      console.log("PDF generation process completed");
+      setScanning(false);
+      setLoading(false);
     }
-  }, [scanState, user?.id, folderId, addDocument, setLoading, onSuccess, onError, resetScanState])
+  }, [scanState, user?.id, folderId, addDocument, setLoading, onSuccess, onError, resetScanState]);
 
   return {
-    // Estado
     scanState,
     scanning,
-
-    // Funciones de estado
     setFrontPhoto,
     setBackPhoto,
     setIsCapturingBack,
     resetScanState,
-
-    // Funciones principales
     requestCameraPermission,
     generatePDF,
-  }
-}
+  };
+};

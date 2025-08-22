@@ -1,4 +1,4 @@
-"use client"
+// BaseModal.tsx
 import React from "react"
 import { useCallback, useEffect, useState } from "react"
 import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler, Dimensions } from "react-native"
@@ -17,7 +17,7 @@ interface BaseModalProps extends ModalProps {
   backdropOpacity?: number
   children: React.ReactNode
   position?: "center" | "bottom"
-  fullScreen?: boolean // ⭐ Nueva prop
+  fullScreen?: boolean
 }
 
 const BaseModal: React.FC<BaseModalProps> = ({
@@ -29,11 +29,10 @@ const BaseModal: React.FC<BaseModalProps> = ({
   backdropOpacity = 0.5,
   children,
   position = "center",
-  fullScreen = false, // ⭐ Valor por defecto
+  fullScreen = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(visible)
-  const fadeAnim = useState(new Animated.Value(0))[0]
-  const slideAnim = useState(new Animated.Value(position === "bottom" ? 300 : 0))[0]
+  const fadeAnim = useState(new Animated.Value(visible ? 1 : 0))[0] // Iniciar con valor correcto
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -49,35 +48,21 @@ const BaseModal: React.FC<BaseModalProps> = ({
   useEffect(() => {
     if (visible) {
       setModalVisible(true)
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start()
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start()
     } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: position === "bottom" ? 300 : 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
         setModalVisible(false)
       })
     }
-  }, [visible, fadeAnim, slideAnim, position])
+  }, [visible, fadeAnim])
 
   const handleBackdropPress = useCallback(() => {
     if (onBackdropPress) {
@@ -102,23 +87,20 @@ const BaseModal: React.FC<BaseModalProps> = ({
       opacity: fadeAnim,
       transform: [
         {
-          scale: fadeAnim.interpolate({
+          translateY: position === "bottom" ? fadeAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [0.9, 1],
-          }),
-        },
-        {
-          translateY: slideAnim,
+            outputRange: [300, 0], // Simple slide para posición bottom
+          }) : 0,
         },
       ],
     },
-    fullScreen && styles.fullScreenContainer, // ⭐ Aplicar estilo fullScreen
+    fullScreen && styles.fullScreenContainer,
   ]
 
   return (
     <Modal
       transparent={transparent}
-      animationType={animationType}
+      animationType="none" // Desactivamos animationType nativo para usar solo Animated
       visible={modalVisible}
       onRequestClose={onClose}
       statusBarTranslucent
@@ -144,11 +126,11 @@ const styles = StyleSheet.create({
     maxHeight: "80%",
   },
   fullScreenContainer: {
-    width: screenWidth, // ⭐ Ocupar todo el ancho
-    height: screenHeight, // ⭐ Ocupar toda la altura
-    maxWidth: screenWidth, // ⭐ Anular maxWidth
-    maxHeight: screenHeight, // ⭐ Anular maxHeight
-    borderRadius: 0, // ⭐ Quitar borderRadius si lo tiene
+    width: screenWidth,
+    height: screenHeight,
+    maxWidth: screenWidth,
+    maxHeight: screenHeight,
+    borderRadius: 0,
   },
 })
 

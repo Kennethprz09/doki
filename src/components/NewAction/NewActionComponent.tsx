@@ -1,32 +1,28 @@
-"use client";
-
-import React from "react";
-import { memo, useState, useCallback } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { useFileUpload } from "../../hooks/useFileUpload";
-import { useDocumentScanner } from "../../hooks/useDocumentScanner";
-import { useFolderManager } from "../../hooks/useFolderManager";
-import NewActionButton from "./NewActionButton";
-import type { Document } from "../types";
-import ActionOptionsModal from "../modals/ActionOptionsModal";
-import CameraModal from "../modals/CameraModal";
-import PhotoPreviewModal from "../modals/PhotoPreviewModal";
-import CreateFolderModal from "../modals/CreateFolderModal";
+// NewActionComponent.tsx
+import React from 'react';
+import { memo, useState, useCallback } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
+import { useFileUpload } from '../../hooks/useFileUpload';
+import { useDocumentScanner } from '../../hooks/useDocumentScanner';
+import { useFolderManager } from '../../hooks/useFolderManager';
+import NewActionButton from './NewActionButton';
+import type { Document } from '../types';
+import ActionOptionsModal from '../modals/ActionOptionsModal';
+import CameraModal from '../modals/CameraModal';
+import PhotoPreviewModal from '../modals/PhotoPreviewModal';
+import CreateFolderModal from '../modals/CreateFolderModal';
 
 interface NewActionComponentProps {
   folder?: { folder?: Partial<Document> };
 }
 
-// Optimización 1: Componente principal optimizado
 const NewActionComponent: React.FC<NewActionComponentProps> = memo(
   ({ folder }) => {
-    // Estados de modales
     const [showOptions, setShowOptions] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showCreateFolder, setShowCreateFolder] = useState(false);
 
-    // Hooks personalizados
     const { uploadFile, uploading } = useFileUpload({
       folderId: folder?.folder?.id,
     });
@@ -46,30 +42,39 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
 
     const { createFolder, processing } = useFolderManager();
 
-    // Optimización 2: Función para manejar captura de foto
     const handlePhotoCapture = useCallback(
       (photoUri: string) => {
+        console.log('Photo captured:', photoUri);
         if (scanState.isCapturingBack) {
+          console.log('Setting back photo and opening PhotoPreviewModal');
           setBackPhoto(photoUri);
           setShowCamera(false);
-          setShowPreview(true);
+          setTimeout(() => {
+            console.log('Opening PhotoPreviewModal');
+            setShowPreview(true);
+          }, 500); // Retraso para cerrar CameraModal
         } else {
+          console.log('Setting front photo');
           setFrontPhoto(photoUri);
-          // Preguntar si quiere tomar foto trasera
           Alert.alert(
-            "¿Tomar foto trasera?",
-            "¿Deseas tomar una foto de la parte trasera del documento?",
+            '¿Tomar foto trasera?',
+            '¿Deseas tomar una foto de la parte trasera del documento?',
             [
               {
-                text: "No",
+                text: 'No',
                 onPress: () => {
+                  console.log('No back photo, opening PhotoPreviewModal');
                   setShowCamera(false);
-                  setShowPreview(true);
+                  setTimeout(() => {
+                    console.log('Opening PhotoPreviewModal');
+                    setShowPreview(true);
+                  }, 500); // Retraso para cerrar CameraModal
                 },
               },
               {
-                text: "Sí",
+                text: 'Sí',
                 onPress: () => {
+                  console.log('Capturing back photo');
                   setIsCapturingBack(true);
                 },
               },
@@ -85,72 +90,112 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
       ]
     );
 
-    // Optimización 3: Función para reiniciar escaneo
     const handleRetakeFront = useCallback(() => {
-      setFrontPhoto("");
+      console.log('Retaking front photo');
+      setFrontPhoto('');
       setIsCapturingBack(false);
       setShowPreview(false);
-      setShowCamera(true);
+      setTimeout(() => {
+        console.log('Opening CameraModal for front photo');
+        setShowCamera(true);
+      }, 500); // Retraso para cerrar PhotoPreviewModal
     }, [setFrontPhoto, setIsCapturingBack]);
 
     const handleRetakeBack = useCallback(() => {
-      setBackPhoto("");
+      console.log('Retaking back photo');
+      setBackPhoto('');
       setIsCapturingBack(true);
       setShowPreview(false);
-      setShowCamera(true);
+      setTimeout(() => {
+        console.log('Opening CameraModal for back photo');
+        setShowCamera(true);
+      }, 500); // Retraso para cerrar PhotoPreviewModal
     }, [setBackPhoto, setIsCapturingBack]);
 
-    // Optimización 4: Función para iniciar escaneo
     const handleStartScan = useCallback(async () => {
+      console.log('Starting scan process');
       const hasPermission = await requestCameraPermission();
-      if (!hasPermission) return;
+      if (!hasPermission) {
+        console.log('Camera permission denied');
+        return;
+      }
 
+      console.log('Resetting scan state and opening CameraModal');
       resetScanState();
       setShowCamera(true);
     }, [requestCameraPermission, resetScanState]);
 
-    // Optimización 5: Función para guardar PDF
     const handleSavePDF = useCallback(async () => {
+      console.log('Starting PDF save');
       const success = await generatePDF();
       if (success) {
+        console.log('PDF saved successfully, closing PhotoPreviewModal');
         setShowPreview(false);
         resetScanState();
+      } else {
+        console.log('PDF save failed');
       }
+      console.log('PDF save process completed');
       return success;
     }, [generatePDF, resetScanState]);
 
-    // Optimización 6: Función para crear carpeta
     const handleCreateFolder = useCallback(
       async (name: string) => {
+        console.log('Submitting folder creation with name:', name);
         const success = await createFolder(name);
+        if (success) {
+          console.log('Folder creation successful, closing CreateFolderModal');
+          setShowCreateFolder(false);
+        } else {
+          console.log('Folder creation failed');
+        }
         return success;
       },
       [createFolder]
     );
 
-    // Optimización 7: Opciones del modal
+    const handleOptionSelect = useCallback(
+      (optionId: string) => {
+        console.log('Selected option:', optionId);
+        setShowOptions(false);
+        setTimeout(() => {
+          if (optionId === 'folder') {
+            console.log('Opening CreateFolderModal');
+            setShowCreateFolder(true);
+          } else if (optionId === 'file') {
+            console.log('Starting file upload');
+            uploadFile();
+          } else if (optionId === 'scan') {
+            console.log('Starting scan');
+            handleStartScan();
+          }
+        }, 500); // Retraso de 500ms para todas las opciones
+      },
+      [uploadFile, handleStartScan]
+    );
+
     const actionOptions = [
       ...(folder?.folder?.id
         ? []
         : [
             {
-              id: "folder",
-              label: "Carpeta",
-              icon: "folder-outline" as const,
-              onPress: () => setShowCreateFolder(true),
+              id: 'folder',
+              label: 'Carpeta',
+              icon: 'folder-outline' as const,
+              onPress: () => handleOptionSelect('folder'),
             },
           ]),
       {
-        id: "file",
-        label: "Archivo",
-        icon: "cloud-upload-outline" as const,
-        onPress: uploadFile,
+        id: 'file',
+        label: 'Archivo',
+        icon: 'cloud-upload-outline' as const,
+        onPress: () => handleOptionSelect('file'),
       },
       {
-        id: "scan",
-        label: "Escanear",
-        icon: "scan-outline" as const,
-        onPress: handleStartScan,
+        id: 'scan',
+        label: 'Escanear',
+        icon: 'scan-outline' as const,
+        onPress: () => handleOptionSelect('scan'),
       },
     ];
 
@@ -158,33 +203,37 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
 
     return (
       <View style={styles.container}>
-        {/* Botón principal */}
         <NewActionButton
-          onPress={() => setShowOptions(true)}
+          onPress={() => {
+            console.log('Opening ActionOptionsModal');
+            setShowOptions(true);
+          }}
           disabled={isDisabled}
         />
 
-        {/* Modal de opciones */}
         <ActionOptionsModal
           visible={showOptions}
-          onClose={() => setShowOptions(false)}
+          onClose={() => {
+            console.log('Closing ActionOptionsModal');
+            setShowOptions(false);
+          }}
           options={actionOptions}
         />
 
-        {/* Modal de cámara */}
         <CameraModal
           visible={showCamera}
           onClose={() => {
+            console.log('Closing CameraModal');
             setShowCamera(false);
             resetScanState();
           }}
           onCapture={handlePhotoCapture}
         />
 
-        {/* Modal de previsualización */}
         <PhotoPreviewModal
           visible={showPreview}
           onClose={() => {
+            console.log('Closing PhotoPreviewModal');
             setShowPreview(false);
             resetScanState();
           }}
@@ -197,10 +246,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           onUpdateBackPhoto={setBackPhoto}
         />
 
-        {/* Modal de crear carpeta */}
         <CreateFolderModal
           visible={showCreateFolder}
-          onClose={() => setShowCreateFolder(false)}
+          onClose={() => {
+            console.log('Closing CreateFolderModal');
+            setShowCreateFolder(false);
+          }}
           onSubmit={handleCreateFolder}
           loading={processing}
         />
@@ -209,12 +260,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
   }
 );
 
-NewActionComponent.displayName = "NewActionComponent";
+NewActionComponent.displayName = 'NewActionComponent';
 
 const styles = StyleSheet.create({
   container: {
     flex: 0.17,
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
 });
 

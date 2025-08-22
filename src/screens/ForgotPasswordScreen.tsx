@@ -1,83 +1,86 @@
-"use client"
-
-import React from "react"
-import { useState, useCallback } from "react"
-import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
-import Toast from "react-native-toast-message"
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
-import type { RootStackParamList } from "../components/types"
-import { resetPassword } from "../supabase/auth"
-import { useFormValidation, commonValidationRules } from "../hooks/useFormValidation"
-import FormInput from "../components/common/FormInput"
-import LoadingButton from "../components/common/LoadingButton"
+import React from "react";
+import { useState, useCallback } from "react";
+import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import Toast from "react-native-toast-message";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../components/types";
+import { resetPassword } from "../supabase/auth";
+import { useFormValidation, commonValidationRules } from "../hooks/useFormValidation";
+import FormInput from "../components/common/FormInput";
+import LoadingButton from "../components/common/LoadingButton";
 
 interface ForgotPasswordScreenProps {
-  navigation: NativeStackNavigationProp<RootStackParamList>
+  navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
-// Optimización 1: Componente optimizado con hooks reutilizables
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Optimización 2: Usar hook de validación reutilizable
   const { errors, validateForm, clearError } = useFormValidation({
     email: commonValidationRules.email,
-  })
+  });
 
-  // Optimización 3: Función de actualización de email optimizada
   const updateEmail = useCallback(
     (value: string) => {
-      setEmail(value)
-      clearError("email")
-      setSuccessMessage("") // Limpiar mensaje de éxito al cambiar email
+      console.log("Updating email:", value);
+      setEmail(value);
+      clearError("email");
+      setSuccessMessage("");
     },
     [clearError],
-  )
+  );
 
-  // Optimización 4: Función de reset mejorada con mejor UX
   const handleResetPassword = useCallback(async () => {
     try {
+      console.log("Initiating password reset for email:", email);
       if (!validateForm({ email })) {
-        return
+        console.log("Form validation failed");
+        return;
       }
 
-      setLoading(true)
-      setSuccessMessage("")
+      setLoading(true);
+      setSuccessMessage("");
 
-      const { success, message, errorMessage } = await resetPassword(email)
+      const { success, message, errorMessage } = await resetPassword(email);
 
       if (!success) {
+        console.error("Password reset failed:", errorMessage);
         Toast.show({
           type: "error",
           text1: "Error",
           text2: errorMessage || "Error al procesar la solicitud",
-        })
-        return
+        });
+        return;
       }
 
-      const successMsg = message || "Se ha enviado una nueva contraseña a tu correo."
-      setSuccessMessage(successMsg)
+      const successMsg = message || "Se ha enviado una nueva contraseña a tu correo.";
+      console.log("Password reset successful:", successMsg);
+      setSuccessMessage(successMsg);
 
       Toast.show({
         type: "success",
         text1: "Éxito",
         text2: successMsg,
-      })
+      });
 
-      // Navegar después de un delay para que el usuario vea el mensaje
-      setTimeout(() => navigation.navigate("Login"), 2000)
+      setTimeout(() => {
+        console.log("Navigating to Login screen");
+        navigation.navigate("Login");
+      }, 2000);
     } catch (error: any) {
+      console.error("Unexpected error in handleResetPassword:", error);
       Toast.show({
         type: "error",
         text1: "Error",
         text2: error.message || "Error al enviar la nueva contraseña.",
-      })
+      });
     } finally {
-      setLoading(false)
+      console.log("Password reset process completed");
+      setLoading(false);
     }
-  }, [email, validateForm, navigation])
+  }, [email, validateForm, navigation]);
 
   return (
     <KeyboardAvoidingView
@@ -115,7 +118,10 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
 
             <TouchableOpacity
               style={styles.linkButton}
-              onPress={() => navigation.navigate("Login")}
+              onPress={() => {
+                console.log("Navigating back to Login screen");
+                navigation.navigate("Login");
+              }}
               accessibilityLabel="Volver al inicio de sesión"
             >
               <Text style={styles.linkText}>Volver al inicio de sesión</Text>
@@ -124,8 +130,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   keyboardView: {
@@ -187,6 +193,6 @@ const styles = StyleSheet.create({
     fontFamily: "Karla-SemiBold",
     color: "#ffffff",
   },
-})
+});
 
-export default ForgotPasswordScreen
+export default ForgotPasswordScreen;

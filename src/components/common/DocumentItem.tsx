@@ -94,7 +94,7 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
     documentColor =
       document.color && typeof document.color === "string"
         ? document.color
-        : "#ff8c00";
+        : "#a1a1a1ff";
     documentIcon =
       document.icon && typeof document.icon === "string"
         ? document.icon
@@ -105,7 +105,7 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
       isSelected && styles.selectedItem,
     ];
     const iconName = isSelected ? "checkmark-circle-outline" : documentIcon;
-    const iconColor = isSelected ? "#ff8c00" : documentColor;
+    const iconColor = isSelected ? "#a1a1a1ff" : documentColor;
 
     const accessibilityLabel = `${
       document.is_folder ? "Carpeta" : "Documento"

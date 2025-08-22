@@ -1,24 +1,23 @@
-"use client"
-
-import React from "react"
-import { memo, useState, useCallback } from "react"
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import * as ImageManipulator from "expo-image-manipulator"
-import BaseModal from "../common/BaseModal"
-import LoadingButton from "../common/LoadingButton"
-import SimpleCropper from "./SimpleCropper"
+// PhotoPreviewModal.tsx
+import React from "react";
+import { memo, useState, useCallback } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImageManipulator from "expo-image-manipulator";
+import BaseModal from "../common/BaseModal";
+import LoadingButton from "../common/LoadingButton";
+import SimpleCropper from "./SimpleCropper";
 
 interface PhotoPreviewModalProps {
-  visible: boolean
-  onClose: () => void
-  frontPhoto: string | null
-  backPhoto: string | null
-  onRetakeFront: () => void
-  onRetakeBack: () => void
-  onSave: () => Promise<boolean>
-  onUpdateFrontPhoto: (uri: string) => void
-  onUpdateBackPhoto: (uri: string) => void
+  visible: boolean;
+  onClose: () => void;
+  frontPhoto: string | null;
+  backPhoto: string | null;
+  onRetakeFront: () => void;
+  onRetakeBack: () => void;
+  onSave: () => Promise<boolean>;
+  onUpdateFrontPhoto: (uri: string) => void;
+  onUpdateBackPhoto: (uri: string) => void;
 }
 
 const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
@@ -33,80 +32,86 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     onUpdateFrontPhoto,
     onUpdateBackPhoto,
   }) => {
-    const [saving, setSaving] = useState(false)
-    const [showCropper, setShowCropper] = useState(false)
-    const [cropTarget, setCropTarget] = useState<"front" | "back" | null>(null)
+    const [saving, setSaving] = useState(false);
+    const [showCropper, setShowCropper] = useState(false);
+    const [cropTarget, setCropTarget] = useState<"front" | "back" | null>(null);
 
-    // Función para rotar imagen
     const rotateImage = useCallback(
       async (target: "front" | "back", angle: number) => {
-        const uri = target === "front" ? frontPhoto : backPhoto
-        if (!uri) return
+        const uri = target === "front" ? frontPhoto : backPhoto;
+        if (!uri) return;
 
         try {
+          console.log(`Rotating ${target} image by ${angle} degrees`);
           const result = await ImageManipulator.manipulateAsync(uri, [{ rotate: angle }], {
-            compress: 0.8,
+            compress: 0.7, // Reducimos compresión
             format: ImageManipulator.SaveFormat.JPEG,
-          })
+          });
 
+          console.log(`Rotation successful for ${target} image:`, result.uri);
           if (target === "front") {
-            onUpdateFrontPhoto(result.uri)
+            onUpdateFrontPhoto(result.uri);
           } else {
-            onUpdateBackPhoto(result.uri)
+            onUpdateBackPhoto(result.uri);
           }
         } catch (error) {
-          console.error("Error rotating image:", error)
-          Alert.alert("Error", "No se pudo rotar la imagen")
+          console.error(`Error rotating ${target} image:`, error);
+          Alert.alert("Error", "No se pudo rotar la imagen");
         }
       },
       [frontPhoto, backPhoto, onUpdateFrontPhoto, onUpdateBackPhoto],
-    )
+    );
 
-    // Función para iniciar recorte
     const startCrop = useCallback((target: "front" | "back") => {
-      setCropTarget(target)
-      setShowCropper(true)
-    }, [])
+      console.log(`Starting crop for ${target} photo`);
+      setCropTarget(target);
+      setTimeout(() => {
+        console.log("Opening SimpleCropper");
+        setShowCropper(true);
+      }, 500); // Retraso para transición
+    }, []);
 
-    // Función para completar recorte
     const handleCropComplete = useCallback(
       (croppedUri: string) => {
-        if (!cropTarget) return
+        if (!cropTarget) return;
 
+        console.log(`Crop completed for ${cropTarget} photo:`, croppedUri);
         if (cropTarget === "front") {
-          onUpdateFrontPhoto(croppedUri)
+          onUpdateFrontPhoto(croppedUri);
         } else {
-          onUpdateBackPhoto(croppedUri)
+          onUpdateBackPhoto(croppedUri);
         }
 
-        setShowCropper(false)
-        setCropTarget(null)
+        setShowCropper(false);
+        setCropTarget(null);
       },
       [cropTarget, onUpdateFrontPhoto, onUpdateBackPhoto],
-    )
+    );
 
-    // Función para cancelar recorte
     const handleCropCancel = useCallback(() => {
-      setShowCropper(false)
-      setCropTarget(null)
-    }, [])
+      console.log("Crop canceled");
+      setShowCropper(false);
+      setCropTarget(null);
+    }, []);
 
-    // Función para guardar
     const handleSave = useCallback(async () => {
-      setSaving(true)
-      const success = await onSave()
-      setSaving(false)
+      console.log("Initiating PDF save");
+      setSaving(true);
+      const success = await onSave();
+      setSaving(false);
 
       if (success) {
-        onClose()
+        console.log("PDF saved successfully, closing PhotoPreviewModal");
+        onClose();
+      } else {
+        console.log("PDF save failed");
       }
-      return success
-    }, [onSave, onClose])
+      return success;
+    }, [onSave, onClose]);
 
-    // Render de sección de foto mejorada
     const renderPhotoSection = useCallback(
       (label: string, uri: string | null, onRetake: () => void, target: "front" | "back") => {
-        if (!uri) return null
+        if (!uri) return null;
 
         return (
           <View style={styles.photoSection}>
@@ -144,26 +149,24 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
               </View>
             </View>
           </View>
-        )
+        );
       },
       [rotateImage, startCrop],
-    )
+    );
 
-    // Si está mostrando el cropper, renderizar solo eso
     if (showCropper && cropTarget) {
-      const imageUri = cropTarget === "front" ? frontPhoto : backPhoto
-      if (!imageUri) return null
+      const imageUri = cropTarget === "front" ? frontPhoto : backPhoto;
+      if (!imageUri) return null;
 
       return (
         <SimpleCropper imageUri={imageUri} onCrop={handleCropComplete} onCancel={handleCropCancel} />
-      )
+      );
     }
 
     return (
-      <BaseModal visible={visible} onClose={onClose} animationType="slide" fullScreen={true}>
+      <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen={true}>
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Header mejorado */}
             <View style={styles.header}>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <Ionicons name="close" size={24} color="#666" />
@@ -172,11 +175,9 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
               <View style={styles.placeholder} />
             </View>
 
-            {/* Secciones de fotos */}
             {renderPhotoSection("Foto Frontal", frontPhoto, onRetakeFront, "front")}
             {renderPhotoSection("Foto Trasera", backPhoto, onRetakeBack, "back")}
 
-            {/* Footer mejorado */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                 <Text style={styles.cancelText}>Cancelar</Text>
@@ -193,11 +194,11 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
           </ScrollView>
         </View>
       </BaseModal>
-    )
+    );
   },
-)
+);
 
-PhotoPreviewModal.displayName = "PhotoPreviewModal"
+PhotoPreviewModal.displayName = "PhotoPreviewModal";
 
 const styles = StyleSheet.create({
   container: {
@@ -325,6 +326,6 @@ const styles = StyleSheet.create({
     flex: 2,
     borderRadius: 12,
   },
-})
+});
 
-export default PhotoPreviewModal
+export default PhotoPreviewModal;
