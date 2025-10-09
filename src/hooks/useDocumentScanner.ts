@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from "expo-print";
 import { Buffer } from "buffer";
 import { Camera } from "expo-camera";

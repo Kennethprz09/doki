@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import { Alert, Platform, Linking } from "react-native"
-import * as FileSystem from "expo-file-system"
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from "expo-sharing"
 import * as IntentLauncher from "expo-intent-launcher"
 import AsyncStorage from "@react-native-async-storage/async-storage"

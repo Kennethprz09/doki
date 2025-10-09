@@ -4,7 +4,7 @@ import React from "react";
 import { useEffect, useCallback } from "react";
 import { View, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../components/types";
 import { useUserStore } from "../store/userStore";
