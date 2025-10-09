@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useEffect, useCallback } from "react";
-import { View, StyleSheet, SafeAreaView, Image } from "react-native";
-// import * as Animatable from "react-native-animatable";
+import { View, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../components/types";
 import { useUserStore } from "../store/userStore";
@@ -50,15 +50,6 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
           resizeMode="contain"
           accessibilityLabel="Logo de la aplicación"
         />
-
-        {/* <Animatable.Image
-          animation="fadeIn"
-          duration={2000}
-          source={require("../../assets/logo/logoDark.png")}
-          style={styles.logo}
-          resizeMode="contain"
-          accessibilityLabel="Logo de la aplicación"
-        /> */}
       </View>
     </SafeAreaView>
   );
