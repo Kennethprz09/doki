@@ -60,7 +60,6 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
   try {
     // Validar el correo electrónico
     if (!email) {
-      console.log("Email validation failed: Email is required");
       return {
         success: false,
         errorMessage: 'El correo electrónico es obligatorio',
@@ -68,7 +67,6 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log("Email validation failed: Invalid email format");
       return {
         success: false,
         errorMessage: 'Por favor, ingresa un correo electrónico válido',
@@ -76,7 +74,6 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
     }
 
     // Verificar si el correo existe
-    console.log("Invoking check-email-exists for email:", email);
     const { data: checkData, error: checkError } = await supabase.functions.invoke('check-email-exists', {
       body: { email },
     });
@@ -89,7 +86,6 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
       };
     }
 
-    console.log("Email exists, invoking reset-password function");
     // Llamar a la función de borde para restablecer la contraseña
     const { data, error } = await supabase.functions.invoke('reset-password', {
       body: { email },
@@ -103,7 +99,6 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
       };
     }
 
-    console.log("Reset password successful:", data.message);
     return {
       success: true,
       message: data.message || 'Se ha enviado una nueva contraseña a tu correo',

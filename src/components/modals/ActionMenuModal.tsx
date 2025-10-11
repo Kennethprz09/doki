@@ -28,7 +28,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleToggleFavorite = useCallback(async () => {
       if (!document) return
-      console.log("Toggling favorite for document:", document.id)
       const success = await toggleFavorite(document.id, document.is_favorite)
       if (success) {
         onActionComplete()
@@ -43,7 +42,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleViewFile = useCallback(async () => {
       if (!document) return
-      console.log("Viewing file:", document.id)
       onClose()
       if (isImageFile(document.ext)) {
         await viewImage(document.path, document.name)
@@ -54,21 +52,18 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleShareFile = useCallback(async () => {
       if (!document) return
-      console.log("Sharing file:", document.id)
       onClose()
       await shareFile(document.path, document.name)
     }, [document, shareFile, onClose])
 
     const handleDownloadFile = useCallback(async () => {
       if (!document) return
-      console.log("Downloading file:", document.id)
       onClose()
       await downloadFile(document.path, document.name, document.ext)
     }, [document, downloadFile, onClose])
 
     const handleDelete = useCallback(async () => {
       if (!document) return
-      console.log("Deleting document:", document.id)
       const success = await deleteDocumentWithConfirmation(document.id, document.name)
       if (success) {
         onActionComplete()
@@ -77,25 +72,21 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleEdit = useCallback(() => {
       if (!document) return
-      console.log("Triggering edit for document:", document.id)
       onClose()
       onActionSelect("edit", document)
     }, [document, onClose, onActionSelect])
 
     const handleChangeColor = useCallback(() => {
       if (!document) return
-      console.log("Triggering color change for document:", document.id)
       onClose()
       onActionSelect("color", document)
     }, [document, onClose, onActionSelect])
 
     const handleMove = useCallback(() => {
-      console.log("Opening ActionMoveModal")
       setShowMoveModal(true)
     }, [])
 
     const handleMoveComplete = useCallback(() => {
-      console.log("Move completed, closing ActionMoveModal")
       setShowMoveModal(false)
       onActionComplete()
     }, [onActionComplete])
@@ -198,7 +189,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
         <ActionMoveModal
           visible={showMoveModal}
           onClose={() => {
-            console.log("Closing ActionMoveModal")
             setShowMoveModal(false)
           }}
           selectedItems={document ? [document.id] : []}

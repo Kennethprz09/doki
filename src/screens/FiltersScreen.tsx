@@ -49,26 +49,21 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   }, [isProfileModalVisible])
 
   const handleItemActionPress = useCallback((document: Document) => {
-    console.log("Opening ActionMenuModal for document:", document.id)
     setSelectedDocumentForActions(document)
     setIsActionMenuVisible(true)
   }, [])
 
   const handleActionMenuClose = useCallback(() => {
-    console.log("Closing ActionMenuModal")
     setIsActionMenuVisible(false)
     setSelectedDocumentForActions(null)
   }, [])
 
   const handleActionSelect = useCallback((action: "edit" | "color", document: Document) => {
-    console.log(`Action selected: ${action} for document: ${document.id}`)
     setSelectedDocumentForActions(document)
     setTimeout(() => {
       if (action === "edit") {
-        console.log("Opening CreateFolderModal")
         setIsEditModalVisible(true)
       } else if (action === "color") {
-        console.log("Opening ColorPicker")
         setIsColorPickerVisible(true)
       }
     }, 500) // Aumentamos el retraso a 500ms
@@ -83,14 +78,10 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   const handleEditSubmit = useCallback(
     async (newName: string) => {
       if (!selectedDocumentForActions) return false
-      console.log("Submitting edit for document:", selectedDocumentForActions.id, "newName:", newName)
       const success = await editItem(selectedDocumentForActions.id, newName)
       if (success) {
-        console.log("Edit successful, closing CreateFolderModal")
         setIsEditModalVisible(false)
         handleActionMenuClose()
-      } else {
-        console.log("Edit failed")
       }
       return success
     },
@@ -100,14 +91,10 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   const handleColorSelect = useCallback(
     async (color: string) => {
       if (!selectedDocumentForActions) return false
-      console.log("Submitting color change for document:", selectedDocumentForActions.id, "color:", color)
       const success = await updateDocumentColor(selectedDocumentForActions.id, color)
       if (success) {
-        console.log("Color change successful, closing ColorPicker")
         setIsColorPickerVisible(false)
         handleActionMenuClose()
-      } else {
-        console.log("Color change failed")
       }
       return success
     },
@@ -161,7 +148,6 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
       <CreateFolderModal
         visible={isEditModalVisible}
         onClose={() => {
-          console.log("Closing CreateFolderModal")
           setIsEditModalVisible(false)
         }}
         onSubmit={handleEditSubmit}
@@ -172,7 +158,6 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
       <ColorPicker
         visible={isColorPickerVisible}
         onClose={() => {
-          console.log("Closing ColorPicker")
           setIsColorPickerVisible(false)
         }}
         onColorSelect={handleColorSelect}

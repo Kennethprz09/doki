@@ -21,7 +21,6 @@ export const useFileOperations = () => {
   const extractFileExtension = useCallback((fileUrl: string, providedExt?: string): string => {
     // Si providedExt parece ser un MIME type, ignorarlo
     if (providedExt && providedExt.includes("/")) {
-      console.log("Detected MIME type instead of extension:", providedExt)
       providedExt = undefined
     }
 
@@ -78,31 +77,18 @@ export const useFileOperations = () => {
         const finalFileName = fileName || fileUrl.split("/").pop() || `tempfile.${realExtension}`
         const mimeType = getMimeType(realExtension)
 
-        console.log("ViewFile Debug (Fixed):", {
-          fileUrl,
-          providedExt: fileExt,
-          extractedExt: realExtension,
-          finalFileName,
-          mimeType,
-          platform: Platform.OS,
-        })
-
         const downloadResult = await downloadFileToCache(fileUrl, finalFileName)
         if (!downloadResult) {
           throw new Error("No se pudo descargar el archivo.")
         }
 
-        console.log("Download result:", downloadResult.uri)
 
         if (Platform.OS === "android") {
           try {
             const contentUri = await FileSystem.getContentUriAsync(downloadResult.uri)
-            console.log("Content URI:", contentUri)
 
             // Para imágenes, usar intent específico
             if (mimeType.startsWith("image/")) {
-              console.log("Opening as image with MIME:", mimeType)
-
               // Intentar con la galería primero
               try {
                 await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
@@ -112,7 +98,6 @@ export const useFileOperations = () => {
                   category: "android.intent.category.DEFAULT",
                 })
               } catch (galleryError) {
-                console.log("Gallery intent failed, trying generic image intent:", galleryError)
                 // Fallback: intent genérico para imágenes
                 await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
                   data: contentUri,
@@ -360,7 +345,6 @@ export const useFileOperations = () => {
     const cleanExt = extension.toLowerCase().replace(".", "")
     const mimeType = mimeTypes[cleanExt] || "application/octet-stream"
 
-    console.log(`getMimeType: ${cleanExt} -> ${mimeType}`)
     return mimeType
   }
 

@@ -40,14 +40,12 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
 
   const requestCameraPermission = useCallback(async () => {
     try {
-      console.log("Requesting camera permission");
       const { status } = await Camera.requestCameraPermissionsAsync();
       if (status !== "granted") {
         console.error("Camera permission denied");
         Alert.alert("Permiso denegado", "Se necesita acceso a la cámara para escanear documentos.");
         return false;
       }
-      console.log("Camera permission granted");
       return true;
     } catch (error) {
       console.error("Error requesting camera permission:", error);
@@ -56,22 +54,18 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
   }, []);
 
   const setFrontPhoto = useCallback((uri: string) => {
-    console.log("Setting front photo:", uri);
     setScanState((prev) => ({ ...prev, frontPhoto: uri }));
   }, []);
 
   const setBackPhoto = useCallback((uri: string) => {
-    console.log("Setting back photo:", uri);
     setScanState((prev) => ({ ...prev, backPhoto: uri }));
   }, []);
 
   const setIsCapturingBack = useCallback((capturing: boolean) => {
-    console.log("Setting isCapturingBack:", capturing);
     setScanState((prev) => ({ ...prev, isCapturingBack: capturing }));
   }, []);
 
   const resetScanState = useCallback(() => {
-    console.log("Resetting scan state");
     setScanState({
       frontPhoto: null,
       backPhoto: null,
@@ -89,8 +83,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
     }
 
     try {
-      console.log("Starting PDF generation process");
-      console.log("Checking internet connection");
       const isOffline = await checkInternetConnection();
       if (isOffline) {
         const errorMsg = "No hay conexión a internet";
@@ -104,7 +96,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         return false;
       }
 
-      console.log("Checking user authentication");
       if (!user?.id) {
         const errorMsg = "Usuario no autenticado";
         console.error(errorMsg);
@@ -117,7 +108,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
       setLoading(true);
 
       // Validar tamaño de las imágenes
-      console.log("Validating front photo size:", scanState.frontPhoto);
       const frontInfo = await FileSystem.getInfoAsync(scanState.frontPhoto);
       if (!frontInfo.exists || frontInfo.size > MAX_IMAGE_SIZE) {
         const errorMsg = "La foto frontal es inválida o excede el límite de 5MB";
@@ -129,7 +119,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
 
       let backPhotoBase64 = null;
       if (scanState.backPhoto) {
-        console.log("Validating back photo size:", scanState.backPhoto);
         const backInfo = await FileSystem.getInfoAsync(scanState.backPhoto);
         if (!backInfo.exists || backInfo.size > MAX_IMAGE_SIZE) {
           Regul
@@ -139,26 +128,22 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
           Alert.alert("Error", errorMsg);
           return false;
         }
-        console.log("Reading back photo as Base64");
         backPhotoBase64 = await FileSystem.readAsStringAsync(scanState.backPhoto, {
           encoding: FileSystem.EncodingType.Base64,
         });
       }
 
       // Usar fetch para obtener Blob en lugar de Base64
-      console.log("Converting front photo to Blob");
       const frontResponse = await fetch(scanState.frontPhoto);
       const frontBlob = await frontResponse.blob();
 
       let backBlob = null;
       if (scanState.backPhoto) {
-        console.log("Converting back photo to Blob");
         const backResponse = await fetch(scanState.backPhoto);
         backBlob = await backResponse.blob();
       }
 
       // Crear HTML con imágenes incrustadas
-      console.log("Creating HTML content for PDF");
       const htmlContent = `
         <html>
           <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif;">
@@ -180,18 +165,15 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         </html>
       `;
 
-      console.log("Generating PDF");
       const { uri, base64 } = await Print.printToFileAsync({
         html: htmlContent,
         base64: true,
       });
 
-      console.log("PDF generated:", uri);
       const fileContent = base64 || (await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       }));
 
-      console.log("Uploading PDF to Supabase storage");
       const fileName = `scanned_${Date.now()}.pdf`;
       const filePath = `${user.id}/${fileName}`;
       const fileData = Buffer.from(fileContent, "base64");
@@ -205,9 +187,7 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         throw uploadError;
       }
 
-      console.log("PDF uploaded successfully to:", filePath);
 
-      console.log("Inserting document metadata into Supabase database");
       const { data, error: insertError } = await supabase
         .from("documents")
         .insert([
@@ -229,7 +209,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         throw insertError;
       }
 
-      console.log("Document inserted into database:", data);
 
       const newDocument: Document = {
         id: data.id,
@@ -245,7 +224,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         updated_at: data.updated_at,
       };
 
-      console.log("Adding document to store:", newDocument);
       addDocument(newDocument);
       onSuccess?.(newDocument);
 
@@ -264,7 +242,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
       Alert.alert("Error", errorMsg);
       return false;
     } finally {
-      console.log("PDF generation process completed");
       setScanning(false);
       setLoading(false);
     }

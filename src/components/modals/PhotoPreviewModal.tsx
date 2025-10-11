@@ -42,13 +42,11 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
         if (!uri) return;
 
         try {
-          console.log(`Rotating ${target} image by ${angle} degrees`);
           const result = await ImageManipulator.manipulateAsync(uri, [{ rotate: angle }], {
             compress: 0.7, // Reducimos compresión
             format: ImageManipulator.SaveFormat.JPEG,
           });
 
-          console.log(`Rotation successful for ${target} image:`, result.uri);
           if (target === "front") {
             onUpdateFrontPhoto(result.uri);
           } else {
@@ -63,10 +61,8 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     );
 
     const startCrop = useCallback((target: "front" | "back") => {
-      console.log(`Starting crop for ${target} photo`);
       setCropTarget(target);
       setTimeout(() => {
-        console.log("Opening SimpleCropper");
         setShowCropper(true);
       }, 500); // Retraso para transición
     }, []);
@@ -75,7 +71,6 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
       (croppedUri: string) => {
         if (!cropTarget) return;
 
-        console.log(`Crop completed for ${cropTarget} photo:`, croppedUri);
         if (cropTarget === "front") {
           onUpdateFrontPhoto(croppedUri);
         } else {
@@ -89,22 +84,17 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     );
 
     const handleCropCancel = useCallback(() => {
-      console.log("Crop canceled");
       setShowCropper(false);
       setCropTarget(null);
     }, []);
 
     const handleSave = useCallback(async () => {
-      console.log("Initiating PDF save");
       setSaving(true);
       const success = await onSave();
       setSaving(false);
 
       if (success) {
-        console.log("PDF saved successfully, closing PhotoPreviewModal");
         onClose();
-      } else {
-        console.log("PDF save failed");
       }
       return success;
     }, [onSave, onClose]);

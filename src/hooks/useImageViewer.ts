@@ -36,7 +36,6 @@ export const useImageViewer = () => {
         setLoading(true)
 
         const realExtension = extractFileExtension(fileUrl, fileExt)
-        console.log("Image viewer - extracted extension:", realExtension)
 
         // Obtener URL firmada
         const { data, error } = await supabase.storage.from("documents").createSignedUrl(fileUrl, 60)
@@ -63,7 +62,6 @@ export const useImageViewer = () => {
               category: "android.intent.category.DEFAULT",
             })
           } catch (galleryError) {
-            console.log("Gallery intent failed:", galleryError)
             // Fallback: intent genérico para imágenes
             await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
               data: contentUri,

@@ -41,10 +41,7 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
 
   const uploadFile = useCallback(async () => {
     try {
-      console.log("Starting file upload process");
-
       // Verificar conectividad
-      console.log("Checking internet connection");
       const isOffline = await checkInternetConnection();
       if (isOffline) {
         const errorMsg = "No hay conexión a internet";
@@ -58,7 +55,6 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
       }
 
       // Verificar usuario
-      console.log("Checking user authentication");
       if (!user?.id) {
         const errorMsg = "Usuario no autenticado";
         onError?.(errorMsg);
@@ -70,23 +66,18 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
       setLoading(true);
 
       // Seleccionar archivo
-      console.log("Opening DocumentPicker");
       const pickedFile = await DocumentPicker.getDocumentAsync({
         type: ALLOWED_TYPES,
         copyToCacheDirectory: true,
       });
 
-      console.log("DocumentPicker result:", pickedFile);
-
       if (pickedFile.canceled) {
-        console.log("File selection canceled");
         return false;
       }
 
       const file = pickedFile.assets[0];
 
       // Validar tamaño
-      console.log("Validating file size:", file.size);
       if (file.size && file.size > MAX_FILE_SIZE) {
         const errorMsg = "El archivo excede el límite de 10MB";
         onError?.(errorMsg);
@@ -95,15 +86,11 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
       }
 
       // Leer archivo
-      console.log("Reading file:", file.uri);
       const fileContent = await FileSystem.readAsStringAsync(file.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      console.log("File read successfully, size:", fileContent.length);
-
       // Subir a storage
-      console.log("Uploading file to Supabase storage");
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
       const fileData = Buffer.from(fileContent, "base64");
 
@@ -116,10 +103,7 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
         throw uploadError;
       }
 
-      console.log("File uploaded successfully to:", filePath);
-
       // Guardar en base de datos
-      console.log("Inserting document metadata into Supabase database");
       const { data, error: insertError } = await supabase
         .from("documents")
         .insert([
@@ -141,8 +125,6 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
         throw insertError;
       }
 
-      console.log("Document inserted into database:", data);
-
       // Crear documento para el store
       const newDocument: Document = {
         id: data.id,
@@ -158,7 +140,6 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
         updated_at: data.updated_at,
       };
 
-      console.log("Adding document to store:", newDocument);
       addDocument(newDocument);
       onSuccess?.(newDocument);
 
@@ -176,7 +157,6 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
       Alert.alert("Error", errorMsg);
       return false;
     } finally {
-      console.log("Upload process completed, resetting states");
       setUploading(false);
       setLoading(false);
     }

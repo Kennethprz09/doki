@@ -21,7 +21,6 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
     if (!cameraRef.current || capturing) return;
 
     try {
-      console.log("Taking picture");
       setCapturing(true);
 
       const photo = await cameraRef.current.takePictureAsync({
@@ -35,14 +34,12 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
         return;
       }
 
-      console.log("Processing captured photo:", photo.uri);
       const processedImage = await ImageManipulator.manipulateAsync(photo.uri, [{ resize: { width: 800 } }], {
         // Reducimos el ancho para menor carga
         compress: 0.7, // Reducimos la compresión
         format: ImageManipulator.SaveFormat.JPEG,
       });
 
-      console.log("Photo processed successfully:", processedImage.uri);
       onCapture(processedImage.uri);
     } catch (error) {
       console.error("Error taking picture:", error);

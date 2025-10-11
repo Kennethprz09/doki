@@ -38,12 +38,10 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   const { updateDocumentColor } = useDocumentActions();
 
   const handleBack = useCallback(() => {
-    console.log("Navigating back");
     navigation.goBack();
   }, [navigation]);
 
   const handleToggleSearch = useCallback(() => {
-    console.log("Toggling search, current state:", isSearching);
     setIsSearching(!isSearching);
     if (isSearching) {
       setSearch("");
@@ -51,36 +49,29 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   }, [isSearching, setSearch]);
 
   const handleToggleView = useCallback(() => {
-    console.log("Toggling view mode to:", viewMode === "list" ? "grid" : "list");
     setViewMode((prev) => (prev === "list" ? "grid" : "list"));
   }, [viewMode]);
 
   const handleToggleProfile = useCallback(() => {
-    console.log("Toggling ProfileModal, current state:", isProfileModalVisible);
     setIsProfileModalVisible(!isProfileModalVisible);
   }, [isProfileModalVisible]);
 
   const handleItemActionPress = useCallback((document: Document) => {
-    console.log("Opening ActionMenuModal for document:", document.id);
     setSelectedDocumentForActions(document);
     setIsActionMenuVisible(true);
   }, []);
 
   const handleActionMenuClose = useCallback(() => {
-    console.log("Closing ActionMenuModal");
     setIsActionMenuVisible(false);
     setSelectedDocumentForActions(null);
   }, []);
 
   const handleActionSelect = useCallback((action: "edit" | "color", document: Document) => {
-    console.log(`Action selected: ${action} for document: ${document.id}`);
     setSelectedDocumentForActions(document);
     setTimeout(() => {
       if (action === "edit") {
-        console.log("Opening CreateFolderModal");
         setIsEditModalVisible(true);
       } else if (action === "color") {
-        console.log("Opening ColorPicker");
         setIsColorPickerVisible(true);
       }
     }, 500);
@@ -89,14 +80,10 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   const handleEditSubmit = useCallback(
     async (newName: string) => {
       if (!selectedDocumentForActions) return false;
-      console.log("Submitting edit for document:", selectedDocumentForActions.id, "newName:", newName);
       const success = await editItem(selectedDocumentForActions.id, newName);
       if (success) {
-        console.log("Edit successful, closing CreateFolderModal");
         setIsEditModalVisible(false);
         handleActionMenuClose();
-      } else {
-        console.log("Edit failed");
       }
       return success;
     },
@@ -106,14 +93,10 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   const handleColorSelect = useCallback(
     async (color: string) => {
       if (!selectedDocumentForActions) return false;
-      console.log("Submitting color change for document:", selectedDocumentForActions.id, "color:", color);
       const success = await updateDocumentColor(selectedDocumentForActions.id, color);
       if (success) {
-        console.log("Color change successful, closing ColorPicker");
         setIsColorPickerVisible(false);
         handleActionMenuClose();
-      } else {
-        console.log("Color change failed");
       }
       return success;
     },
@@ -170,7 +153,6 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
       <CreateFolderModal
         visible={isEditModalVisible}
         onClose={() => {
-          console.log("Closing CreateFolderModal");
           setIsEditModalVisible(false);
         }}
         onSubmit={handleEditSubmit}
@@ -181,7 +163,6 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
       <ColorPicker
         visible={isColorPickerVisible}
         onClose={() => {
-          console.log("Closing ColorPicker");
           setIsColorPickerVisible(false);
         }}
         onColorSelect={handleColorSelect}

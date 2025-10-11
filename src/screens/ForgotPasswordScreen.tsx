@@ -24,7 +24,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
 
   const updateEmail = useCallback(
     (value: string) => {
-      console.log("Updating email:", value);
       setEmail(value);
       clearError("email");
       setSuccessMessage("");
@@ -34,9 +33,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
 
   const handleResetPassword = useCallback(async () => {
     try {
-      console.log("Initiating password reset for email:", email);
       if (!validateForm({ email })) {
-        console.log("Form validation failed");
         return;
       }
 
@@ -56,7 +53,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
       }
 
       const successMsg = message || "Se ha enviado una nueva contraseña a tu correo.";
-      console.log("Password reset successful:", successMsg);
       setSuccessMessage(successMsg);
 
       Toast.show({
@@ -66,7 +62,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
       });
 
       setTimeout(() => {
-        console.log("Navigating to Login screen");
         navigation.navigate("Login");
       }, 2000);
     } catch (error: any) {
@@ -77,7 +72,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         text2: error.message || "Error al enviar la nueva contraseña.",
       });
     } finally {
-      console.log("Password reset process completed");
       setLoading(false);
     }
   }, [email, validateForm, navigation]);
@@ -119,7 +113,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <TouchableOpacity
               style={styles.linkButton}
               onPress={() => {
-                console.log("Navigating back to Login screen");
                 navigation.navigate("Login");
               }}
               accessibilityLabel="Volver al inicio de sesión"

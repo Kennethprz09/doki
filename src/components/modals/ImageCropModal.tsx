@@ -210,10 +210,6 @@ const ImageCropModal: React.FC<ImageCropModalProps> = memo(({ visible, onClose, 
         height: Math.min(imageLayout.imageHeight, Math.round(relativeHeight * imageLayout.imageHeight)),
       }
 
-      console.log("Crop config:", cropConfig)
-      console.log("Image layout:", imageLayout)
-      console.log("Crop area:", cropArea)
-
       const croppedImage = await ImageManipulator.manipulateAsync(imageUri, [{ crop: cropConfig }], {
         compress: 0.8,
         format: ImageManipulator.SaveFormat.JPEG,

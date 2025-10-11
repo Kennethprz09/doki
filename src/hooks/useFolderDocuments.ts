@@ -10,15 +10,12 @@ export const useFolderDocuments = (folder: Document | null) => {
   const [loading, setLoading] = useState(false);
 
   const fetchFolderDocuments = useCallback(async () => {
-    console.log("Starting fetchFolderDocuments for folder:", folder?.id || "root");
     if (!folder?.id) {
-      console.log("No folder ID, setting empty documents");
       setDocumentsFolder([]);
       return;
     }
 
     try {
-      console.log("Checking internet connection");
       const isOffline = await checkInternetConnection();
       if (isOffline) {
         console.error("Offline, cannot fetch documents");
@@ -31,7 +28,6 @@ export const useFolderDocuments = (folder: Document | null) => {
       }
 
       setLoading(true);
-      console.log("Fetching documents from Supabase");
       const { data, error } = await supabase
         .from("documents")
         .select("*")
@@ -44,7 +40,6 @@ export const useFolderDocuments = (folder: Document | null) => {
         throw error;
       }
 
-      console.log("Documents fetched successfully:", data);
       setDocumentsFolder(data || []);
     } catch (error) {
       console.error("Error fetching folder documents:", error);
@@ -55,17 +50,14 @@ export const useFolderDocuments = (folder: Document | null) => {
       });
       setDocumentsFolder([]);
     } finally {
-      console.log("Fetch completed, loading:", false);
       setLoading(false);
     }
   }, [folder?.id, setDocumentsFolder]);
 
   useEffect(() => {
-    console.log("useEffect triggered for folder ID:", folder?.id);
     if (folder?.id) {
       fetchFolderDocuments();
     } else {
-      console.log("No folder ID, clearing documents");
       setDocumentsFolder([]);
     }
   }, [folder?.id, fetchFolderDocuments, setDocumentsFolder]);
