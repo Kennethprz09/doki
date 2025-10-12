@@ -26,6 +26,7 @@
       ]
     },
     "ios": {
+      "icon": "./assets/icon.png",
       "usesIcloudStorage": true,
       "bundleIdentifier": "com.app.doki",
       "infoPlist": {
