@@ -1,4 +1,5 @@
 - Logo android y ios.
+- Verificar que cuando se elimine un archivo tambien se elimine del bucker de supabase.
 
 
 
