@@ -3,8 +3,7 @@ import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from 'expo-file-system/legacy';
-import { Buffer } from "buffer";
+import { File } from "expo-file-system";
 import { useUserStore } from "../store/userStore";
 import { useDocumentsStore } from "../store/documentsStore";
 import { useGlobalStore } from "../store/globalStore";
@@ -18,7 +17,11 @@ interface UseFileUploadProps {
   onError?: (error: string) => void;
 }
 
-export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadProps = {}) => {
+export const useFileUpload = ({
+  folderId,
+  onSuccess,
+  onError,
+}: UseFileUploadProps = {}) => {
   const user = useUserStore((state) => state.user);
   const { addDocument } = useDocumentsStore();
   const { setLoading } = useGlobalStore();
@@ -85,18 +88,16 @@ export const useFileUpload = ({ folderId, onSuccess, onError }: UseFileUploadPro
         return false;
       }
 
-      // Leer archivo
-      const fileContent = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      // Subir a storage
+      // Leer archivo y Subir a storage
+      const fileInstance = new File(file.uri);
+      const fileData = await fileInstance.bytes();
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      const fileData = Buffer.from(fileContent, "base64");
 
-      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, fileData, {
-        contentType: file.mimeType || "application/octet-stream",
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, fileData, {
+          contentType: file.mimeType || "application/octet-stream",
+        });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);

@@ -2,9 +2,8 @@
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
-import * as FileSystem from 'expo-file-system/legacy';
+import { File } from "expo-file-system";
 import * as Print from "expo-print";
-import { Buffer } from "buffer";
 import { Camera } from "expo-camera";
 import { useUserStore } from "../store/userStore";
 import { useDocumentsStore } from "../store/documentsStore";
@@ -25,7 +24,11 @@ interface ScanState {
   isCapturingBack: boolean;
 }
 
-export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocumentScannerProps = {}) => {
+export const useDocumentScanner = ({
+  folderId,
+  onSuccess,
+  onError,
+}: UseDocumentScannerProps = {}) => {
   const user = useUserStore((state) => state.user);
   const { addDocument } = useDocumentsStore();
   const { setLoading } = useGlobalStore();
@@ -43,7 +46,10 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
       const { status } = await Camera.requestCameraPermissionsAsync();
       if (status !== "granted") {
         console.error("Camera permission denied");
-        Alert.alert("Permiso denegado", "Se necesita acceso a la cámara para escanear documentos.");
+        Alert.alert(
+          "Permiso denegado",
+          "Se necesita acceso a la cámara para escanear documentos."
+        );
         return false;
       }
       return true;
@@ -107,93 +113,167 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
       setScanning(true);
       setLoading(true);
 
-      // Validar tamaño de las imágenes
-      const frontInfo = await FileSystem.getInfoAsync(scanState.frontPhoto);
-      if (!frontInfo.exists || frontInfo.size > MAX_IMAGE_SIZE) {
-        const errorMsg = "La foto frontal es inválida o excede el límite de 5MB";
+      // Validar tamaño de las imágen frontPhoto
+      const frontFile = new File(scanState.frontPhoto);
+      const frontInfo = await frontFile.info();
+      const frontPhotoBase64 = await frontFile.base64();
+      if (!frontInfo.exists || frontFile.size > MAX_IMAGE_SIZE) {
+        const errorMsg =
+          "La foto frontal es inválida o excede el límite de 5MB";
         console.error(errorMsg);
         onError?.(errorMsg);
         Alert.alert("Error", errorMsg);
         return false;
       }
 
-      let backPhotoBase64 = null;
+      var backPhotoBase64 = "";
       if (scanState.backPhoto) {
-        const backInfo = await FileSystem.getInfoAsync(scanState.backPhoto);
-        if (!backInfo.exists || backInfo.size > MAX_IMAGE_SIZE) {
-          Regul
-          const errorMsg = "La foto trasera es inválida o excede el límite de 5MB";
+        const backFile = new File(scanState.backPhoto);
+        const backInfo = await backFile.info();
+        backPhotoBase64 = await backFile.base64();
+
+        if (!backInfo.exists || backFile.size > MAX_IMAGE_SIZE) {
+          const errorMsg =
+            "La foto trasera es inválida o excede el límite de 5MB";
           console.error(errorMsg);
           onError?.(errorMsg);
           Alert.alert("Error", errorMsg);
           return false;
         }
-        backPhotoBase64 = await FileSystem.readAsStringAsync(scanState.backPhoto, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-      }
-
-      // Usar fetch para obtener Blob en lugar de Base64
-      const frontResponse = await fetch(scanState.frontPhoto);
-      const frontBlob = await frontResponse.blob();
-
-      let backBlob = null;
-      if (scanState.backPhoto) {
-        const backResponse = await fetch(scanState.backPhoto);
-        backBlob = await backResponse.blob();
       }
 
       // Crear HTML con imágenes incrustadas
       const htmlContent = `
         <html>
-          <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif;">
-            <h1 style="text-align: center; color: #333;">Documento Escaneado</h1>
-            <div style="text-align: center; margin: 20px 0;">
-              <img src="${scanState.frontPhoto}" 
-                   style="width: 100%; max-width: 500px; margin-bottom: 20px; border: 1px solid #ddd;" />
-              ${
-                scanState.backPhoto
-                  ? `<img src="${scanState.backPhoto}" 
-                         style="width: 100%; max-width: 500px; border: 1px solid #ddd;" />`
-                  : ""
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
               }
+              
+              body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                line-height: 1.4;
+                color: #333;
+              }
+
+              .page-container {
+                max-width: 210mm; /* Ancho A4 */
+                margin: 0 auto;
+                padding: 15mm;
+              }
+
+              .header {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #eee;
+              }
+
+              .image-container {
+                text-align: center;
+                margin: 25px 0;
+              }
+
+              .document-image {
+                max-width: 100%;
+                height: auto;
+                max-height: 250mm; /* Altura máxima A4 */
+                display: block;
+                margin: 0 auto 20px auto;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+              }
+
+              .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 15px;
+                border-top: 1px solid #eee;
+                color: #666;
+                font-size: 12px;
+              }
+
+              @media print {
+                .page-break {
+                  page-break-before: always;
+                }
+                
+                body {
+                  padding: 0;
+                }
+                
+                .document-image {
+                  max-height: 270mm; /* Mayor tolerancia para impresión */
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="page-container">
+              <header class="header">
+                <h1>Documento Escaneado</h1>
+              </header>
+
+              <div class="image-container">
+                <img 
+                  src="data:image/jpeg;base64,${frontPhotoBase64}" 
+                  class="document-image"
+                  alt="Frente del documento"
+                />
+                
+                ${
+                  scanState.backPhoto
+                    ? `
+                      <img 
+                        src="data:image/jpeg;base64,${backPhotoBase64}" 
+                        class="document-image"
+                        alt="Dorso del documento"
+                      />
+                      `
+                    : ""
+                }
+              </div>
+
+              <footer class="footer">
+                <p>Generado por Doki el ${new Date().toLocaleDateString()}</p>
+              </footer>
             </div>
-            <p style="text-align: center; color: #666; font-size: 12px;">
-              Generado el ${new Date().toLocaleDateString()}
-            </p>
           </body>
         </html>
       `;
 
-      const { uri, base64 } = await Print.printToFileAsync({
+      const { uri } = await Print.printToFileAsync({
         html: htmlContent,
         base64: true,
       });
 
-      const fileContent = base64 || (await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      }));
-
       const fileName = `scanned_${Date.now()}.pdf`;
       const filePath = `${user.id}/${fileName}`;
-      const fileData = Buffer.from(fileContent, "base64");
+      const fileInstance = new File(uri ?? "");
+      const fileData = await fileInstance.bytes();
 
-      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, fileData, {
-        contentType: "application/pdf",
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, fileData, {
+          contentType: "application/pdf",
+        });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
         throw uploadError;
       }
 
-
       const { data, error: insertError } = await supabase
         .from("documents")
         .insert([
           {
             name: fileName,
-            size: fileContent.length,
+            size: fileInstance.size,
             ext: "application/pdf",
             user_id: user.id,
             folder_id: folderId || null,
@@ -208,7 +288,6 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
         console.error("Insert error:", insertError);
         throw insertError;
       }
-
 
       const newDocument: Document = {
         id: data.id,
@@ -245,7 +324,16 @@ export const useDocumentScanner = ({ folderId, onSuccess, onError }: UseDocument
       setScanning(false);
       setLoading(false);
     }
-  }, [scanState, user?.id, folderId, addDocument, setLoading, onSuccess, onError, resetScanState]);
+  }, [
+    scanState,
+    user?.id,
+    folderId,
+    addDocument,
+    setLoading,
+    onSuccess,
+    onError,
+    resetScanState,
+  ]);
 
   return {
     scanState,

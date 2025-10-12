@@ -9,35 +9,45 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../components/types";
 import { useUserStore } from "../store/userStore";
 import { useGlobalStore } from "../store/globalStore";
+import { useCameraPermissions } from 'expo-camera';
 
 interface SplashScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
-// Optimización 1: Componente más robusto con mejor manejo de autenticación
 const SplashScreen: React.FC<SplashScreenProps> = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useUserStore();
   const { setLoading } = useGlobalStore();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
-  // Optimización 2: Función de autenticación mejorada
+  // Función de autenticación que primero solicita permisos esenciales
   const authenticateUser = useCallback(async () => {
     try {
+
+      // Paso 1: Solicitar permisos de cámara si no están concedidos
+      if (!cameraPermission?.granted) {
+        console.log('Solicitando permiso de cámara...');
+        await requestCameraPermission();
+      } else {
+        console.log('Permiso de cámara ya concedido');
+      }
+
       setLoading(true);
 
+      // Paso 2: Continuar con la lógica de autenticación normal
       navigation.replace("Login");
+      
     } catch (error) {
-      console.error("Error during authentication:", error);
+      console.error("Error durante la autenticación:", error);
       navigation.replace("Login");
     } finally {
       setLoading(false);
     }
-  }, [navigation, user, setLoading]);
+  }, [navigation, user, setLoading, cameraPermission, requestCameraPermission]);
 
   useEffect(() => {
-    // Optimización 3: Delay mínimo para mostrar splash screen
-    const timer = setTimeout(authenticateUser, 2000);
+    const timer = setTimeout(authenticateUser, 1500);
     return () => clearTimeout(timer);
   }, [authenticateUser]);
 

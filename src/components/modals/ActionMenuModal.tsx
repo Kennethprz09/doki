@@ -1,98 +1,111 @@
 // ActionMenuModal.tsx
-import React from "react"
-import { memo, useCallback, useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import BaseModal from "../common/BaseModal"
-import LoadingButton from "../common/LoadingButton"
-import ActionMoveModal from "./ActionMoveModal"
-import { useDocumentActions } from "../../hooks/useDocumentActions"
-import { useFileOperations } from "../../hooks/useFileOperations"
-import { useImageViewer } from "../../hooks/useImageViewer"
-import type { Document, ModalProps } from "../types"
+import React from "react";
+import { memo, useCallback, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import BaseModal from "../common/BaseModal";
+import LoadingButton from "../common/LoadingButton";
+import ActionMoveModal from "./ActionMoveModal";
+import { useDocumentActions } from "../../hooks/useDocumentActions";
+import { useFileOperations } from "../../hooks/useFileOperations";
+import type { Document, ModalProps } from "../types";
 
 interface ActionMenuModalProps extends ModalProps {
-  document: Document | null
-  onActionComplete: () => void
-  folder?: Document
-  onActionSelect: (action: "edit" | "color", document: Document) => void
+  document: Document | null;
+  onActionComplete: () => void;
+  folder?: Document;
+  onActionSelect: (action: "edit" | "color", document: Document) => void;
 }
 
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
-  ({ visible, onClose, document, onActionComplete, folder, onActionSelect }) => {
-    const { toggleFavorite, deleteDocumentWithConfirmation } = useDocumentActions()
-    const { viewFile, shareFile, downloadFile } = useFileOperations()
-    const { viewImage } = useImageViewer()
+  ({
+    visible,
+    onClose,
+    document,
+    onActionComplete,
+    folder,
+    onActionSelect,
+  }) => {
+    const { toggleFavorite, deleteDocumentWithConfirmation } =
+      useDocumentActions();
+    const { viewFile, shareFile, downloadFile } = useFileOperations();
 
-    const [showMoveModal, setShowMoveModal] = useState(false)
+    const [showMoveModal, setShowMoveModal] = useState(false);
 
     const handleToggleFavorite = useCallback(async () => {
-      if (!document) return
-      const success = await toggleFavorite(document.id, document.is_favorite)
+      if (!document) return;
+      const success = await toggleFavorite(document.id, document.is_favorite);
       if (success) {
-        onActionComplete()
+        onActionComplete();
       }
-    }, [document, toggleFavorite, onActionComplete])
+    }, [document, toggleFavorite, onActionComplete]);
 
     const isImageFile = useCallback((ext?: string) => {
-      if (!ext) return false
-      const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"]
-      return imageExtensions.includes(ext.toLowerCase().replace(".", ""))
-    }, [])
+      if (!ext) return false;
+      const imageExtensions = [
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "bmp",
+        "webp",
+        "svg",
+      ];
+      return imageExtensions.includes(ext.toLowerCase().replace(".", ""));
+    }, []);
 
     const handleViewFile = useCallback(async () => {
-      if (!document) return
-      onClose()
-      if (isImageFile(document.ext)) {
-        await viewImage(document.path, document.name)
-      } else {
-        await viewFile(document.path, document.ext, document.name)
-      }
-    }, [document, viewFile, viewImage, isImageFile, onClose])
+      if (!document) return;
+      onClose();
+      await viewFile(document.path, document.ext, document.name);
+    }, [document, viewFile, isImageFile, onClose]);
 
     const handleShareFile = useCallback(async () => {
-      if (!document) return
-      onClose()
-      await shareFile(document.path, document.name)
-    }, [document, shareFile, onClose])
+      if (!document) return;
+      onClose();
+      await shareFile(document.path, document.name);
+    }, [document, shareFile, onClose]);
 
     const handleDownloadFile = useCallback(async () => {
-      if (!document) return
-      onClose()
-      await downloadFile(document.path, document.name, document.ext)
-    }, [document, downloadFile, onClose])
+      if (!document) return;
+      onClose();
+      await downloadFile(document.path, document.name, document.ext);
+    }, [document, downloadFile, onClose]);
 
     const handleDelete = useCallback(async () => {
-      if (!document) return
-      const success = await deleteDocumentWithConfirmation(document.id, document.name)
+      if (!document) return;
+      const success = await deleteDocumentWithConfirmation(
+        document.id,
+        document.name
+      );
       if (success) {
-        onActionComplete()
+        onActionComplete();
       }
-    }, [document, deleteDocumentWithConfirmation, onActionComplete])
+    }, [document, deleteDocumentWithConfirmation, onActionComplete]);
 
     const handleEdit = useCallback(() => {
-      if (!document) return
-      onClose()
-      onActionSelect("edit", document)
-    }, [document, onClose, onActionSelect])
+      if (!document) return;
+      onClose();
+      onActionSelect("edit", document);
+    }, [document, onClose, onActionSelect]);
 
     const handleChangeColor = useCallback(() => {
-      if (!document) return
-      onClose()
-      onActionSelect("color", document)
-    }, [document, onClose, onActionSelect])
+      if (!document) return;
+      onClose();
+      onActionSelect("color", document);
+    }, [document, onClose, onActionSelect]);
 
     const handleMove = useCallback(() => {
-      setShowMoveModal(true)
-    }, [])
+      setShowMoveModal(true);
+    }, []);
 
     const handleMoveComplete = useCallback(() => {
-      setShowMoveModal(false)
-      onActionComplete()
-    }, [onActionComplete])
+      setShowMoveModal(false);
+      onActionComplete();
+    }, [onActionComplete]);
 
     if (!document) {
-      return null
+      return null;
     }
 
     const menuOptions = [
@@ -100,7 +113,9 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
         key: "favorite",
         icon: document.is_favorite ? "star" : "star-outline",
         iconColor: document.is_favorite ? "#ff8c00" : "#666",
-        text: document.is_favorite ? "Remover de favoritos" : "Marcar como favorito",
+        text: document.is_favorite
+          ? "Remover de favoritos"
+          : "Marcar como favorito",
         onPress: handleToggleFavorite,
         show: true,
       },
@@ -161,11 +176,16 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
         show: true,
         isDestructive: true,
       },
-    ]
+    ];
 
     return (
       <>
-        <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.6} position="bottom">
+        <BaseModal
+          visible={visible}
+          onClose={onClose}
+          backdropOpacity={0.6}
+          position="bottom"
+        >
           <View style={styles.modalContent}>
             <Text style={styles.title} numberOfLines={2}>
               {document.name}
@@ -175,32 +195,52 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
               .map((option) => (
                 <TouchableOpacity
                   key={option.key}
-                  style={[styles.option, option.isDestructive && styles.deleteOption]}
+                  style={[
+                    styles.option,
+                    option.isDestructive && styles.deleteOption,
+                  ]}
                   onPress={option.onPress}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={option.icon as any} size={24} color={option.iconColor} style={styles.optionIcon} />
-                  <Text style={[styles.optionText, option.isDestructive && styles.deleteText]}>{option.text}</Text>
+                  <Ionicons
+                    name={option.icon as any}
+                    size={24}
+                    color={option.iconColor}
+                    style={styles.optionIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.optionText,
+                      option.isDestructive && styles.deleteText,
+                    ]}
+                  >
+                    {option.text}
+                  </Text>
                 </TouchableOpacity>
               ))}
-            <LoadingButton title="Cerrar" onPress={onClose} variant="ghost" style={styles.closeButton} />
+            <LoadingButton
+              title="Cerrar"
+              onPress={onClose}
+              variant="ghost"
+              style={styles.closeButton}
+            />
           </View>
         </BaseModal>
         <ActionMoveModal
           visible={showMoveModal}
           onClose={() => {
-            setShowMoveModal(false)
+            setShowMoveModal(false);
           }}
           selectedItems={document ? [document.id] : []}
           onMoveComplete={handleMoveComplete}
           folder={folder}
         />
       </>
-    )
-  },
-)
+    );
+  }
+);
 
-ActionMenuModal.displayName = "ActionMenuModal"
+ActionMenuModal.displayName = "ActionMenuModal";
 
 const styles = StyleSheet.create({
   modalContent: {
@@ -252,6 +292,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 10,
   },
-})
+});
 
-export default ActionMenuModal
+export default ActionMenuModal;
