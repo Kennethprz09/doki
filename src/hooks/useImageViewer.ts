@@ -1,96 +1,134 @@
-"use client"
+"use client";
 
-import { useCallback } from "react"
-import { Alert, Platform } from "react-native"
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from "expo-sharing"
-import * as IntentLauncher from "expo-intent-launcher"
-import { supabase } from "../supabase/supabaseClient"
-import { useGlobalStore } from "../store/globalStore"
+import { useCallback } from "react";
+import { Alert, Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import * as IntentLauncher from "expo-intent-launcher";
+import { supabase } from "../supabase/supabaseClient";
+import { useGlobalStore } from "../store/globalStore";
+import * as WebBrowser from 'expo-web-browser';
 
 export const useImageViewer = () => {
-  const { setLoading } = useGlobalStore()
+  const { setLoading } = useGlobalStore();
+
+  const ALLOWED_TYPES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+  ];
 
   // Función para extraer extensión real
-  const extractFileExtension = useCallback((fileUrl: string, providedExt?: string): string => {
-    if (providedExt && providedExt.includes("/")) {
-      providedExt = undefined
-    }
+  const extractFileExtension = useCallback(
+    (fileUrl: string, providedExt?: string): string => {
+      if (providedExt && providedExt.includes("/")) {
+        providedExt = undefined;
+      }
 
-    if (providedExt && !providedExt.includes("/")) {
-      return providedExt.toLowerCase().replace(".", "")
-    }
+      if (providedExt && !providedExt.includes("/")) {
+        return providedExt.toLowerCase().replace(".", "");
+      }
 
-    const urlParts = fileUrl.split(".")
-    if (urlParts.length > 1) {
-      const ext = urlParts[urlParts.length - 1].split("?")[0]
-      return ext.toLowerCase()
-    }
+      const urlParts = fileUrl.split(".");
+      if (urlParts.length > 1) {
+        const ext = urlParts[urlParts.length - 1].split("?")[0];
+        return ext.toLowerCase();
+      }
 
-    return ""
-  }, [])
+      return "";
+    },
+    []
+  );
 
   const viewImage = useCallback(
     async (fileUrl: string, fileName?: string, fileExt?: string) => {
       try {
-        setLoading(true)
+        setLoading(true);
 
-        const realExtension = extractFileExtension(fileUrl, fileExt)
+        const realExtension = extractFileExtension(fileUrl, fileExt);
+        const mimeType = getMimeType(realExtension); // Función que debes definir
 
-        // Obtener URL firmada
-        const { data, error } = await supabase.storage.from("documents").createSignedUrl(fileUrl, 60)
+        if (!ALLOWED_TYPES.includes(mimeType)) {
+          throw new Error("Tipo de archivo no permitido.");
+        }
+
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(fileUrl, 60);
 
         if (error || !data?.signedUrl) {
-          throw new Error("No se pudo obtener la URL firmada.")
+          throw new Error("No se pudo obtener la URL firmada.");
         }
 
-        const finalFileName = fileName || fileUrl.split("/").pop() || `image.${realExtension}`
-        const localFile = `${FileSystem.cacheDirectory}${finalFileName}`
+        const finalFileName =
+          fileName || fileUrl.split("/").pop() || `file.${realExtension}`;
+        const localFile = `${FileSystem.cacheDirectory}${finalFileName}`;
 
-        // Descargar imagen
-        const { uri } = await FileSystem.downloadAsync(data.signedUrl, localFile)
+        const { uri } = await FileSystem.downloadAsync(
+          data.signedUrl,
+          localFile
+        );
 
         if (Platform.OS === "android") {
-          const contentUri = await FileSystem.getContentUriAsync(uri)
+          const contentUri = await FileSystem.getContentUriAsync(uri);
 
-          // Intent específico para galería de imágenes
-          try {
-            await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+          await IntentLauncher.startActivityAsync(
+            "android.intent.action.VIEW",
+            {
               data: contentUri,
-              type: "image/*",
+              type: mimeType,
               flags: 1,
-              category: "android.intent.category.DEFAULT",
-            })
-          } catch (galleryError) {
-            // Fallback: intent genérico para imágenes
-            await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
-              data: contentUri,
-              type: "image/*",
-              flags: 1,
-            })
-          }
+            }
+          );
         } else {
-          // iOS: usar Quick Look
           if (await Sharing.isAvailableAsync()) {
             await Sharing.shareAsync(uri, {
-              dialogTitle: "Ver imagen",
-            })
+              dialogTitle: "Ver archivo",
+              mimeType,
+            });
           } else {
-            throw new Error("No se puede ver la imagen en este dispositivo.")
+            // Fallback: abrir en navegador si es compatible
+            await WebBrowser.openBrowserAsync(uri);
           }
         }
 
-        return { success: true }
+        return { success: true };
       } catch (error) {
-        console.error("Error viewing image:", error)
-        Alert.alert("Error", "No se pudo abrir la imagen. Asegúrate de tener una aplicación de galería instalada.")
-        return { success: false }
+        console.error("Error viewing file:", error);
+        Alert.alert(
+          "Error",
+          "No se pudo abrir el archivo. Verifica que tengas una app compatible instalada."
+        );
+        return { success: false };
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     },
-    [setLoading, extractFileExtension],
-  )
+    [setLoading, extractFileExtension]
+  );
 
-  return { viewImage }
-}
+  const getMimeType = (ext: string): string => {
+    const map: Record<string, string> = {
+      pdf: "application/pdf",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xls: "application/vnd.ms-excel",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+    };
+    return map[ext.toLowerCase()] || "application/octet-stream";
+  };
+
+  return { viewImage };
+};
