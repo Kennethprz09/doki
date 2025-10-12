@@ -23,6 +23,7 @@
     "expo-blur": "^15.0.7",
     "expo-camera": "^17.0.8",
     "expo-crop-image": "^0.2.1",
+    "expo-dev-client": "~6.0.15",
     "expo-document-picker": "^14.0.7",
     "expo-dynamic-image-crop": "^1.4.44",
     "expo-file-system": "~19.0.17",

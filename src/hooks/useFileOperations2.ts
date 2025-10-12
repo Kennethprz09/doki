@@ -1,14 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Alert, Platform } from "react-native";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
 import * as IntentLauncher from "expo-intent-launcher";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import { File, Directory, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { supabase } from "../supabase/supabaseClient";
 import { useGlobalStore } from "../store/globalStore";
-import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 
 interface FileOperationResult {
@@ -19,7 +18,95 @@ interface FileOperationResult {
 export const useFileOperations = () => {
   const { setLoading } = useGlobalStore();
 
-  // Función para extraer la extensión real del archivo
+  useEffect(() => {
+    console.log("useEffect en useFileOperations ejecutado");
+
+    const initDownloadsDir = async () => {
+      const downloadsDir = new Directory(Paths.cache, "downloaded_files");
+      if (!downloadsDir.exists) {
+        await downloadsDir.create();
+      }
+    };
+    initDownloadsDir();
+  }, []);
+
+  // Función común para obtener URL firmada y descargar archivo
+  const downloadFileToCache = useCallback(
+    async (
+      fileUrl: string
+    ): Promise<{ uri: string; signedUrl: string } | null> => {
+      try {
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(fileUrl, 60);
+
+        if (error || !data?.signedUrl) {
+          throw new Error("No se pudo obtener la URL firmada.");
+        }
+
+        // Generar nombre único con timestamp y ID aleatorio
+        const timestamp = Date.now();
+        const randomId = Math.floor(Math.random() * 10000);
+        const fileName = `${timestamp}_${randomId}_${fileUrl.split("/").pop()}`;
+
+        const downloadsDir = new Directory(Paths.cache, "downloaded_files");
+        const outputFile = new File(downloadsDir, fileName);
+
+        const downloadedFile = await File.downloadFileAsync(
+          data.signedUrl,
+          outputFile
+        );
+
+        return {
+          uri: downloadedFile.uri,
+          signedUrl: data.signedUrl,
+        };
+      } catch (error) {
+        console.error("Error downloading file to cache:", error);
+        return null;
+      }
+    },
+    []
+  );
+
+  // Función auxiliar para determinar MIME types
+  const getMimeType = (filename: string): string => {
+    const extension = filename.split(".").pop()?.toLowerCase();
+    const mimeTypes: { [key: string]: string } = {
+      pdf: "application/pdf",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xls: "application/vnd.ms-excel",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      txt: "text/plain",
+    };
+    return mimeTypes[extension || ""] || "application/octet-stream";
+  };
+
+  // Función auxiliar para Uniform Type Identifiers (iOS)
+  const getUniformTypeIdentifier = (filename: string): string => {
+    const extension = filename.split(".").pop()?.toLowerCase();
+    const utis: { [key: string]: string } = {
+      pdf: "com.adobe.pdf",
+      doc: "com.microsoft.word.doc",
+      docx: "org.openxmlformats.wordprocessingml.document",
+      xls: "com.microsoft.excel.xls",
+      xlsx: "org.openxmlformats.spreadsheetml.sheet",
+      ppt: "com.microsoft.powerpoint.ppt",
+      pptx: "org.openxmlformats.presentationml.presentation",
+      jpg: "public.jpeg",
+      jpeg: "public.jpeg",
+      png: "public.png",
+      txt: "text/plain",
+    };
+    return utis[extension || ""] || "public.data";
+  };
+
   const extractFileExtension = useCallback(
     (fileUrl: string, providedExt?: string): string => {
       // Si providedExt parece ser un MIME type, ignorarlo
@@ -44,164 +131,6 @@ export const useFileOperations = () => {
     []
   );
 
-  // Función común para obtener URL firmada y descargar archivo
-  const downloadFileToCache = useCallback(
-    async (
-      fileUrl: string,
-      fileName: string
-    ): Promise<{ uri: string; signedUrl: string } | null> => {
-      try {
-        const { data, error } = await supabase.storage
-          .from("documents")
-          .createSignedUrl(fileUrl, 60);
-
-        if (error || !data?.signedUrl) {
-          throw new Error("No se pudo obtener la URL firmada.");
-        }
-
-        const localFile = `${FileSystem.cacheDirectory}${fileName}`;
-        const { uri } = await FileSystem.downloadAsync(
-          data.signedUrl,
-          localFile
-        );
-
-        return { uri, signedUrl: data.signedUrl };
-      } catch (error) {
-        console.error("Error downloading file to cache:", error);
-        return null;
-      }
-    },
-    []
-  );
-
-  // Manejo específico para Android
-  const handleAndroidDownload = async (
-    tempUri: string,
-    fileName: string,
-    fileExt: string
-  ): Promise<FileOperationResult> => {
-    try {
-      let dirUri = await AsyncStorage.getItem("downloadDirUri");
-
-      if (!dirUri) {
-        const permissions =
-          await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        if (!permissions.granted) {
-          Alert.alert(
-            "Permisos denegados",
-            "Se requieren permisos para guardar archivos en Descargas."
-          );
-          return { success: false, error: "Permissions denied" };
-        }
-        dirUri = permissions.directoryUri;
-        await AsyncStorage.setItem("downloadDirUri", dirUri);
-      }
-
-      const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-        dirUri,
-        fileName,
-        getMimeType(fileExt)
-      );
-
-      const fileBase64 = await FileSystem.readAsStringAsync(tempUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      await FileSystem.StorageAccessFramework.writeAsStringAsync(
-        fileUri,
-        fileBase64,
-        {
-          encoding: FileSystem.EncodingType.Base64,
-        }
-      );
-
-      Alert.alert(
-        "Descarga completada",
-        `Archivo guardado en: Descargas/${fileName}`
-      );
-
-      return { success: true };
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // Manejo específico para iOS
-  const handleIOSDownload = async (
-    tempUri: string,
-    fileName: string
-  ): Promise<FileOperationResult> => {
-    try {
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(tempUri, {
-          dialogTitle: "Guardar archivo en Descargas",
-        });
-        Alert.alert(
-          "Descarga completada",
-          "Por favor, guarda el archivo en la carpeta Descargas desde el diálogo."
-        );
-        return { success: true };
-      } else {
-        throw new Error("No se puede guardar el archivo en este dispositivo.");
-      }
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // Función getMimeType mejorada
-  const getMimeType = (extension: string): string => {
-    const mimeTypes: Record<string, string> = {
-      // Imágenes
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      png: "image/png",
-      gif: "image/gif",
-      bmp: "image/bmp",
-      webp: "image/webp",
-      svg: "image/svg+xml",
-      ico: "image/x-icon",
-      tiff: "image/tiff",
-      tif: "image/tiff",
-
-      // Documentos
-      pdf: "application/pdf",
-      doc: "application/msword",
-      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      xls: "application/vnd.ms-excel",
-      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ppt: "application/vnd.ms-powerpoint",
-      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-
-      // Texto
-      txt: "text/plain",
-      rtf: "application/rtf",
-      csv: "text/csv",
-
-      // Audio
-      mp3: "audio/mpeg",
-      wav: "audio/wav",
-      m4a: "audio/mp4",
-      aac: "audio/aac",
-
-      // Video
-      mp4: "video/mp4",
-      avi: "video/x-msvideo",
-      mov: "video/quicktime",
-      wmv: "video/x-ms-wmv",
-
-      // Archivos comprimidos
-      zip: "application/zip",
-      rar: "application/x-rar-compressed",
-      "7z": "application/x-7z-compressed",
-    };
-
-    const cleanExt = extension.toLowerCase().replace(".", "");
-    const mimeType = mimeTypes[cleanExt] || "application/octet-stream";
-
-    return mimeType;
-  };
-
   // Función viewFile corregida
   const viewFile = useCallback(
     async (
@@ -223,15 +152,10 @@ export const useFileOperations = () => {
           fileName || fileUrl.split("/").pop() || `tempfile.${realExtension}`;
         const mimeType = getMimeType(realExtension);
 
-        const downloadResult = await downloadFileToCache(
-          fileUrl,
-          finalFileName
-        );
+        const downloadResult = await downloadFileToCache(fileUrl);
         if (!downloadResult) {
           throw new Error("No se pudo descargar el archivo.");
         }
-
-        console.log(downloadResult.signedUrl);
 
         if (Platform.OS === "android") {
           try {
@@ -290,13 +214,20 @@ export const useFileOperations = () => {
           }
         } else {
           // iOS
-          const canOpen = await Linking.canOpenURL(downloadResult.signedUrl);
+          const canOpen = await Linking.canOpenURL(downloadResult.uri);
           if (canOpen) {
-            await Linking.openURL(downloadResult.signedUrl);
+            await Linking.openURL(downloadResult.uri);
           } else {
-            throw new Error(
-              "No se puede abrir el archivo en este dispositivo."
-            );
+            // Fallback para iOS
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(downloadResult.uri, {
+                dialogTitle: `Abrir ${finalFileName}`,
+              });
+            } else {
+              throw new Error(
+                "No se puede abrir el archivo en este dispositivo."
+              );
+            }
           }
         }
 
@@ -328,10 +259,7 @@ export const useFileOperations = () => {
 
   // Función optimizada para compartir archivos
   const shareFile = useCallback(
-    async (
-      fileUrl?: string,
-      fileName?: string
-    ): Promise<FileOperationResult> => {
+    async (fileUrl?: string): Promise<FileOperationResult> => {
       if (!fileUrl) {
         Alert.alert("Error", "No se proporcionó una URL válida.");
         return { success: false, error: "No file URL provided" };
@@ -340,13 +268,7 @@ export const useFileOperations = () => {
       try {
         setLoading(true);
 
-        const finalFileName =
-          fileName || fileUrl.split("/").pop() || "tempfile";
-
-        const downloadResult = await downloadFileToCache(
-          fileUrl,
-          finalFileName
-        );
+        const downloadResult = await downloadFileToCache(fileUrl);
         if (!downloadResult) {
           throw new Error("No se pudo descargar el archivo.");
         }
@@ -373,36 +295,93 @@ export const useFileOperations = () => {
     [downloadFileToCache, setLoading]
   );
 
-  // Función optimizada para descargar archivos
+  // Function optimizada para descargar archivos
   const downloadFile = useCallback(
     async (
-      fileUrl?: string,
-      fileName?: string,
-      fileExt?: string
+      fileUrl: string,
+      originalFileName: string
     ): Promise<FileOperationResult> => {
-      if (!fileUrl || !fileName) {
-        Alert.alert("Error", "Falta la URL o el nombre del archivo.");
+      if (!fileUrl) {
+        Alert.alert("Error", "No se proporcionó una URL válida.");
         return { success: false, error: "Missing required parameters" };
       }
 
       try {
         setLoading(true);
 
-        const realExtension = extractFileExtension(fileUrl, fileExt);
+        // 1. Obtener la URL firmada de Supabase
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(fileUrl, 60);
 
-        const downloadResult = await downloadFileToCache(fileUrl, fileName);
-        if (!downloadResult) {
-          throw new Error("No se pudo descargar el archivo.");
+        if (error || !data?.signedUrl) {
+          throw new Error("No se pudo obtener la URL firmada.");
         }
 
+        // 2. Descargar el archivo a la caché de la app primero
+        const downloadResult = await downloadFileToCache(fileUrl);
+        if (!downloadResult) {
+          throw new Error("No se pudo descargar el archivo a la caché.");
+        }
+
+        // 3. Plataforma: Android - Usar Storage Access Framework
         if (Platform.OS === "android") {
-          return await handleAndroidDownload(
+          const permissions =
+            await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+          if (!permissions.granted) {
+            await Sharing.shareAsync(downloadResult.uri, {
+              dialogTitle: "Compartir archivo",
+            });
+            return { success: true };
+          }
+
+          // Obtener información del archivo descargado
+          const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
+          if (!fileInfo.exists || fileInfo.size === 0) {
+            throw new Error("El archivo descargado está vacío o no existe.");
+          }
+
+          // Leer el contenido del archivo descargado
+          const fileContent = await FileSystem.readAsStringAsync(
             downloadResult.uri,
-            fileName,
-            realExtension
+            {
+              encoding: FileSystem.EncodingType.Base64,
+            }
           );
-        } else {
-          return await handleIOSDownload(downloadResult.uri, fileName);
+
+          // Crear el archivo en el directorio seleccionado con el contenido
+          const newFileUri =
+            await FileSystem.StorageAccessFramework.createFileAsync(
+              permissions.directoryUri,
+              originalFileName,
+              getMimeType(originalFileName) // Función auxiliar para determinar MIME type
+            );
+
+          // Escribir el contenido en el nuevo archivo
+          await FileSystem.StorageAccessFramework.writeAsStringAsync(
+            newFileUri,
+            fileContent,
+            { encoding: FileSystem.EncodingType.Base64 }
+          );
+
+          Alert.alert("Éxito", "Archivo descargado correctamente.");
+          return { success: true };
+        }
+        // 4. Plataforma: iOS - Usar expo-sharing para abrir el panel de compartir/guardar
+        else {
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(downloadResult.uri, {
+              dialogTitle: "Guardar archivo",
+              mimeType: getMimeType(originalFileName), // MIME type específico
+              UTI: getUniformTypeIdentifier(originalFileName), // UTI específico para iOS
+            });
+            return { success: true };
+          } else {
+            throw new Error(
+              "Compartir no está disponible en este dispositivo."
+            );
+          }
         }
       } catch (error) {
         const errorMessage =
@@ -414,7 +393,7 @@ export const useFileOperations = () => {
         setLoading(false);
       }
     },
-    [downloadFileToCache, setLoading, extractFileExtension]
+    [downloadFileToCache, setLoading]
   );
 
   return {
