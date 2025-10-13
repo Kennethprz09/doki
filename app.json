@@ -12,10 +12,6 @@
     },
     "android": {
       "icon": "./assets/icon_android.png",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icon_android.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "com.app.doki",
       "permissions": [
         "android.permission.CAMERA",
