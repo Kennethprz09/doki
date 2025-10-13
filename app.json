@@ -11,7 +11,7 @@
       }
     },
     "android": {
-      "icon": "./assets/icon.png",
+      "icon": "./assets/icon_android.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,7 +26,7 @@
       ]
     },
     "ios": {
-      "icon": "./assets/icon.png",
+      "icon": "./assets/icon_ios.png",
       "usesIcloudStorage": true,
       "bundleIdentifier": "com.app.doki",
       "infoPlist": {
