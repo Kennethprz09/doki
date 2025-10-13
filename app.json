@@ -13,7 +13,7 @@
     "android": {
       "icon": "./assets/icon_android.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon_android.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.app.doki",
