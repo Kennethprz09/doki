@@ -9,7 +9,7 @@ import * as Font from "expo-font";
 import useNetInfo from "./src/hooks/useNetInfo";
 import { useUserStore } from "./src/store/userStore";
 import { MainNavigator } from "./src/navigation/BottomTap";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import useDocumentsSync from "./src/hooks/useDocumentsSync";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext";
@@ -29,7 +29,7 @@ const AppContent = () => {
   return (
     <>
       {isLoading && <Loader />}
-      <NavigationContainer >
+      <NavigationContainer>
         <MainNavigator />
         <Toast config={toastConfig} />
       </NavigationContainer>
@@ -57,18 +57,23 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
-      <StatusBar
-        translucent={false}
-        backgroundColor={"#ffffff"}
-        barStyle={"dark-content"}
-      />
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SupabaseSubscriptionProvider>
-          <AppContent />
-        </SupabaseSubscriptionProvider>
-      </GestureHandlerRootView>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "black" }}
+        edges={["top", "bottom"]}
+      >
+        <StatusBar
+          translucent={false}
+          backgroundColor={"#ffffff"}
+          barStyle={"dark-content"}
+        />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SupabaseSubscriptionProvider>
+            <AppContent />
+          </SupabaseSubscriptionProvider>
+        </GestureHandlerRootView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
