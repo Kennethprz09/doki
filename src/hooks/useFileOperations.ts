@@ -231,73 +231,11 @@ export const useFileOperations = () => {
           throw new Error("No se pudo descargar el archivo.");
         }
 
-        console.log(downloadResult.signedUrl);
-
-        if (Platform.OS === "android") {
-          try {
-            const contentUri = await FileSystem.getContentUriAsync(
-              downloadResult.uri
-            );
-
-            // Para imágenes, usar intent específico
-            if (mimeType.startsWith("image/")) {
-              // Intentar con la galería primero
-              try {
-                await IntentLauncher.startActivityAsync(
-                  "android.intent.action.VIEW",
-                  {
-                    data: contentUri,
-                    type: mimeType,
-                    flags: 1,
-                    category: "android.intent.category.DEFAULT",
-                  }
-                );
-              } catch (galleryError) {
-                // Fallback: intent genérico para imágenes
-                await IntentLauncher.startActivityAsync(
-                  "android.intent.action.VIEW",
-                  {
-                    data: contentUri,
-                    type: "image/*",
-                    flags: 1,
-                  }
-                );
-              }
-            } else {
-              // Para otros archivos
-              await IntentLauncher.startActivityAsync(
-                "android.intent.action.VIEW",
-                {
-                  data: contentUri,
-                  type: mimeType,
-                  flags: 1,
-                }
-              );
-            }
-          } catch (intentError) {
-            console.error("Intent error:", intentError);
-            // Fallback: usar sharing
-            if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(downloadResult.uri, {
-                dialogTitle: `Abrir ${finalFileName}`,
-                mimeType: mimeType,
-              });
-            } else {
-              throw new Error(
-                "No se encontró una aplicación para abrir este tipo de archivo."
-              );
-            }
-          }
+        const canOpen = await Linking.canOpenURL(downloadResult.signedUrl);
+        if (canOpen) {
+          await Linking.openURL(downloadResult.signedUrl);
         } else {
-          // iOS
-          const canOpen = await Linking.canOpenURL(downloadResult.signedUrl);
-          if (canOpen) {
-            await Linking.openURL(downloadResult.signedUrl);
-          } else {
-            throw new Error(
-              "No se puede abrir el archivo en este dispositivo."
-            );
-          }
+          throw new Error("No se puede abrir el archivo en este dispositivo.");
         }
 
         return { success: true };

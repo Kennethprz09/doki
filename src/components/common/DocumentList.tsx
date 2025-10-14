@@ -1,24 +1,32 @@
-"use client"
+"use client";
 
-import React from "react"
-import { memo, useCallback, useState } from "react"
-import { FlatList, RefreshControl, StyleSheet, Text, View, Dimensions } from "react-native"
-import type { Document } from "../types"
-import DocumentItem from "./DocumentItem"
-import SelectionBar from "./SelectionBar"
+import React from "react";
+import { memo, useCallback, useState } from "react";
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+} from "react-native";
+import type { Document } from "../types";
+import DocumentItem from "./DocumentItem";
+import SelectionBar from "./SelectionBar";
+import { useFileOperations } from "../../hooks/useFileOperations";
 
-const { height } = Dimensions.get("window")
+const { height } = Dimensions.get("window");
 
 interface DocumentListProps {
-  documents: Document[]
-  onRefresh?: () => Promise<void>
-  onDocumentPress?: (document: Document) => void
-  onDocumentLongPress?: (document: Document) => void
-  onSelectionChange?: (selectedIds: string[]) => void
-  renderMode?: "list" | "grid"
-  folder?: Document
-  emptyMessage?: string
-  onItemActionPress?: (document: Document) => void // Nueva prop para el menú de acciones
+  documents: Document[];
+  onRefresh?: () => Promise<void>;
+  onDocumentPress?: (document: Document) => void;
+  onDocumentLongPress?: (document: Document) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
+  renderMode?: "list" | "grid";
+  folder?: Document;
+  emptyMessage?: string;
+  onItemActionPress?: (document: Document) => void; // Nueva prop para el menú de acciones
 }
 
 // Optimización 1: Lista de documentos reutilizable y optimizada
@@ -34,59 +42,67 @@ const DocumentList: React.FC<DocumentListProps> = memo(
     emptyMessage = "No hay documentos disponibles.",
     onItemActionPress, // Recibir la nueva prop
   }) => {
-    const [selectedItems, setSelectedItems] = useState<string[]>([])
-    const [refreshing, setRefreshing] = useState(false)
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const { viewFile } = useFileOperations();
 
     // Optimización 2: Función para manejar selección
     const handleItemPress = useCallback(
-      (document: Document) => {
+      async (document: Document) => {
         if (selectedItems.length > 0) {
           // Modo selección: alternar selección
           const newSelection = selectedItems.includes(document.id)
             ? selectedItems.filter((id) => id !== document.id)
-            : [...selectedItems, document.id]
+            : [...selectedItems, document.id];
 
-          setSelectedItems(newSelection)
-          onSelectionChange?.(newSelection)
+          setSelectedItems(newSelection);
+          onSelectionChange?.(newSelection);
         } else {
+          console.log(document, "que eres");
           // Modo normal: ejecutar acción
-          onDocumentPress?.(document)
+          // onDocumentPress?.(document)
+
+          if (document.is_folder == false) {
+            await viewFile(document.path, document.ext, document.name);
+          }
         }
       },
-      [selectedItems, onDocumentPress, onSelectionChange],
-    )
+      [selectedItems, onDocumentPress, onSelectionChange]
+    );
 
     // Optimización 3: Función para manejar long press
     const handleItemLongPress = useCallback(
       (document: Document) => {
         if (!document.is_folder) {
-          const newSelection = selectedItems.includes(document.id) ? selectedItems : [...selectedItems, document.id]
+          const newSelection = selectedItems.includes(document.id)
+            ? selectedItems
+            : [...selectedItems, document.id];
 
-          setSelectedItems(newSelection)
-          onSelectionChange?.(newSelection)
-          onDocumentLongPress?.(document)
+          setSelectedItems(newSelection);
+          onSelectionChange?.(newSelection);
+          onDocumentLongPress?.(document);
         }
       },
-      [selectedItems, onDocumentLongPress, onSelectionChange],
-    )
+      [selectedItems, onDocumentLongPress, onSelectionChange]
+    );
 
     // Optimización 4: Función para limpiar selección
     const handleClearSelection = useCallback(() => {
-      setSelectedItems([])
-      onSelectionChange?.([])
-    }, [onSelectionChange])
+      setSelectedItems([]);
+      onSelectionChange?.([]);
+    }, [onSelectionChange]);
 
     // Optimización 5: Función de refresh optimizada
     const handleRefresh = useCallback(async () => {
-      if (!onRefresh) return
+      if (!onRefresh) return;
 
-      setRefreshing(true)
+      setRefreshing(true);
       try {
-        await onRefresh()
+        await onRefresh();
       } finally {
-        setRefreshing(false)
+        setRefreshing(false);
       }
-    }, [onRefresh])
+    }, [onRefresh]);
 
     // Optimización 6: Render item optimizado
     const renderItem = useCallback(
@@ -101,11 +117,20 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           onActionPress={onItemActionPress} // Pasar la prop onItemActionPress
         />
       ),
-      [handleItemPress, handleItemLongPress, selectedItems, renderMode, onItemActionPress],
-    )
+      [
+        handleItemPress,
+        handleItemLongPress,
+        selectedItems,
+        renderMode,
+        onItemActionPress,
+      ]
+    );
 
     // Optimización 7: Key extractor optimizado
-    const keyExtractor = useCallback((item: Document, index: number) => item.id || index.toString(), [])
+    const keyExtractor = useCallback(
+      (item: Document, index: number) => item.id || index.toString(),
+      []
+    );
 
     // Optimización 8: Empty component optimizado
     const EmptyComponent = useCallback(
@@ -114,8 +139,8 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           <Text style={styles.emptyText}>{emptyMessage}</Text>
         </View>
       ),
-      [emptyMessage],
-    )
+      [emptyMessage]
+    );
 
     return (
       <View style={styles.container}>
@@ -133,10 +158,19 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           data={documents}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
-          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} /> : undefined}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
+            ) : undefined
+          }
           numColumns={renderMode === "grid" ? 2 : 1}
           key={renderMode} // Force re-render when mode changes
-          columnWrapperStyle={renderMode === "grid" ? styles.gridRow : undefined}
+          columnWrapperStyle={
+            renderMode === "grid" ? styles.gridRow : undefined
+          }
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={EmptyComponent}
           initialNumToRender={10}
@@ -155,11 +189,11 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           }
         />
       </View>
-    )
-  },
-)
+    );
+  }
+);
 
-DocumentList.displayName = "DocumentList"
+DocumentList.displayName = "DocumentList";
 
 const styles = StyleSheet.create({
   container: {
@@ -185,6 +219,6 @@ const styles = StyleSheet.create({
     fontFamily: "Karla-Regular",
     color: "#888",
   },
-})
+});
 
-export default DocumentList
+export default DocumentList;
