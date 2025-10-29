@@ -1,6 +1,6 @@
 // useFileUpload.ts
 import { useCallback, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, DeviceEventEmitter } from "react-native";
 import Toast from "react-native-toast-message";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
@@ -25,6 +25,7 @@ export const useFileUpload = ({
   const user = useUserStore((state) => state.user);
   const { addDocument } = useDocumentsStore();
   const { setLoading } = useGlobalStore();
+  
   const [uploading, setUploading] = useState(false);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -154,6 +155,8 @@ export const useFileUpload = ({
 
       if (!data.folder_id) {
         addDocument(newDocument);
+      } else {
+        DeviceEventEmitter.emit("document:uploaded", { document: newDocument });
       }
 
       onSuccess?.(newDocument);

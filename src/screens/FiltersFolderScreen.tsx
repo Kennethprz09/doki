@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { memo, useState, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator, Text } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Text, DeviceEventEmitter } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp, Document } from "../components/types";
 import { useFolderDocuments } from "../hooks/useFolderDocuments";
@@ -102,6 +102,19 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
     },
     [selectedDocumentForActions, updateDocumentColor, handleActionMenuClose],
   );
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("document:uploaded", (payload: { document: Document }) => {
+      const uploaded = payload?.document;
+      if (!uploaded) return;
+      if (uploaded.folder_id === folder?.id) {
+        refetch();
+      }
+    });
+    return () => {
+      sub.remove();
+    };
+  }, [folder?.id, refetch]);
 
   return (
     <View style={styles.container}>
