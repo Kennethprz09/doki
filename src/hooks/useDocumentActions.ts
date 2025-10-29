@@ -7,10 +7,13 @@ import { useGlobalStore } from "../store/globalStore"
 import { useDocumentsStore } from "../store/documentsStore"
 import { checkInternetConnection } from "../utils/actions"
 import { supabase } from "../supabase/supabaseClient"
+import useDocumentsSync from "./useDocumentsSync"
 
 export const useDocumentActions = () => {
   const { setLoading } = useGlobalStore()
   const { updateDocument, deleteDocument } = useDocumentsStore()
+  const { syncDocuments } = useDocumentsSync()
+
 
   // Función auxiliar para obtener el usuario actual
   const getCurrentUser = useCallback(async () => {
@@ -56,6 +59,8 @@ export const useDocumentActions = () => {
 
         updateDocument({ id, changes: { is_favorite: !currentStatus } })
 
+        await syncDocuments()
+
         Toast.show({
           type: "success",
           text1: !currentStatus ? "Agregado a favoritos" : "Removido de favoritos",
@@ -74,7 +79,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
+    [setLoading, updateDocument, syncDocuments, checkConnectivity, getCurrentUser],
   )
 
   const deleteDocumentWithConfirmation = useCallback(
@@ -148,6 +153,7 @@ export const useDocumentActions = () => {
         if (error) throw error
 
         updateDocument({ id, changes: { color } })
+        await syncDocuments()
 
         Toast.show({
           type: "success",
@@ -167,7 +173,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
+    [setLoading, updateDocument, syncDocuments, checkConnectivity, getCurrentUser],
   )
 
   const moveDocuments = useCallback(

@@ -91,7 +91,19 @@ export const useFileUpload = ({
       // Leer archivo y Subir a storage
       const fileInstance = new File(file.uri);
       const fileData = await fileInstance.bytes();
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+
+      const sanitizeFileName = (name: string) => {
+        // Normaliza (separa caracteres compuestos) y elimina marcas diacríticas
+        const normalized =
+          name.normalize?.("NFKD")?.replace(/[\u0300-\u036f]/g, "") ?? name;
+        // Reemplaza espacios por guiones bajos y elimina caracteres no seguros
+        const replaced = normalized.replace(/\s+/g, "_");
+        const safe = replaced.replace(/[^a-zA-Z0-9._-]/g, "");
+        return safe || "file";
+      };
+
+      const safeFileName = sanitizeFileName(file.name);
+      const filePath = `${user.id}/${Date.now()}_${safeFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
@@ -100,7 +112,6 @@ export const useFileUpload = ({
         });
 
       if (uploadError) {
-        console.error("Upload error:", uploadError);
         throw uploadError;
       }
 
@@ -141,7 +152,10 @@ export const useFileUpload = ({
         updated_at: data.updated_at,
       };
 
-      addDocument(newDocument);
+      if (!data.folder_id) {
+        addDocument(newDocument);
+      }
+
       onSuccess?.(newDocument);
 
       Toast.show({
