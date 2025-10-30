@@ -10,6 +10,8 @@ export const useFolderDocuments = (folder: Document | null) => {
   const [loading, setLoading] = useState(false);
 
   const fetchFolderDocuments = useCallback(async () => {
+    console.log("se ejecuto fetchFolderDocuments");
+    
     if (!folder?.id) {
       setDocumentsFolder([]);
       return;

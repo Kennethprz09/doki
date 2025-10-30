@@ -10,6 +10,7 @@ import { useGlobalStore } from "../store/globalStore";
 import { checkInternetConnection } from "../utils/actions";
 import { supabase } from "../supabase/supabaseClient";
 import type { Document } from "../components/types";
+import useDocumentsSync from "./useDocumentsSync";
 
 interface UseFileUploadProps {
   folderId?: string | null;
@@ -25,6 +26,8 @@ export const useFileUpload = ({
   const user = useUserStore((state) => state.user);
   const { addDocument } = useDocumentsStore();
   const { setLoading } = useGlobalStore();
+  const { syncDocuments } = useDocumentsSync()
+
   
   const [uploading, setUploading] = useState(false);
 
@@ -154,11 +157,15 @@ export const useFileUpload = ({
       };
 
       if (!data.folder_id) {
+        console.log("desde raiz");
+        
         addDocument(newDocument);
       } else {
+        console.log("desde carpeta");
         DeviceEventEmitter.emit("document:uploaded", { document: newDocument });
       }
 
+      await syncDocuments();
       onSuccess?.(newDocument);
 
       Toast.show({
@@ -178,7 +185,7 @@ export const useFileUpload = ({
       setUploading(false);
       setLoading(false);
     }
-  }, [user?.id, folderId, addDocument, setLoading, onSuccess, onError]);
+  }, [user?.id, folderId, addDocument, syncDocuments, setLoading, onSuccess, onError]);
 
   return {
     uploadFile,
