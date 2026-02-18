@@ -1,72 +1,74 @@
-"use client"
+"use client";
 
-import React from "react"
-import { View, Text, StyleSheet, ScrollView } from "react-native"
-import LoadingButton from "../common/LoadingButton"
-import type { ModalProps } from "../types"
-import BaseModal from "../common/BaseModal"
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
+import LoadingButton from "../common/LoadingButton";
+import type { ModalProps } from "../types";
+import BaseModal from "../common/BaseModal";
 
 interface PrivacyPoliciesModalProps extends ModalProps {}
 
 // Optimización 1: Modal de políticas mejorado con mejor contenido y UX
-const PrivacyPoliciesModal: React.FC<PrivacyPoliciesModalProps> = ({ visible, onClose }) => {
+const PrivacyPoliciesModal: React.FC<PrivacyPoliciesModalProps> = ({
+  visible,
+  onClose,
+}) => {
   return (
     <BaseModal visible={visible} onClose={onClose}>
       <View style={styles.modalContainer}>
         <Text style={styles.modalTitle}>Políticas de Privacidad</Text>
 
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>1. Información que recopilamos</Text>
-            <Text style={styles.sectionContent}>
-              Recopilamos información personal como tu nombre, correo electrónico y los documentos que subes a nuestra
-              plataforma únicamente para proporcionar nuestros servicios.
+            <Text style={styles.sectionTitle}>
+              Última actualización: 10/02/2026
             </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>2. Uso de la información</Text>
             <Text style={styles.sectionContent}>
-              Utilizamos tu información para gestionar tu cuenta, procesar tus documentos y mejorar nuestros servicios.
-              No vendemos ni compartimos tu información personal con terceros.
+              ANDRES FELIPE SAAVEDRA TRUJILLO
             </Text>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Seguridad</Text>
+            <Text style={styles.sectionContent}>C.C.: 1130610004</Text>
+            <Text style={styles.sectionContent}>NIT: 1130610004 - 1</Text>
+
             <Text style={styles.sectionContent}>
-              Implementamos medidas de seguridad técnicas y organizativas para proteger tu información personal contra
-              acceso no autorizado, alteración o destrucción.
+              Matrícula Mercantil: 1196423-1 Domicilio: Cali, Valle del Cauca,
+              Colombia Correo de contacto: soporte@appdoki.com La presente
+              Política de Privacidad describe cómo recopilamos, usamos y
+              protegemos la información de los usuarios, en cumplimiento de la
+              Ley 1581 de 2012 y el Decreto 1377 de 2013.
             </Text>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4. Tus derechos</Text>
             <Text style={styles.sectionContent}>
-              Tienes derecho a acceder, rectificar o eliminar tu información personal. Puedes contactarnos en cualquier
-              momento para ejercer estos derechos.
+              Mas información aqui:
             </Text>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5. Contacto</Text>
-            <Text style={styles.sectionContent}>
-              Si tienes preguntas sobre estas políticas de privacidad, puedes contactarnos a través de nuestra
-              aplicación o sitio web.
+            <Text style={styles.sectionContentLink}>
+              <LoadingButton
+                title="Ver políticas completas"
+                onPress={() => Linking.openURL("https://appdoki.com/politicas-de-privacidad")}
+                style={styles.closeButton}
+              />
             </Text>
           </View>
         </ScrollView>
 
-        <LoadingButton title="Entendido" onPress={onClose} style={styles.closeButton} />
+        <LoadingButton
+          title="Entendido"
+          onPress={onClose}
+          style={styles.closeButton}
+        />
       </View>
     </BaseModal>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   modalContainer: {
     width: "90%",
-    maxHeight: "80%",
+    maxHeight: "100%",
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 24,
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   scrollContainer: {
-    maxHeight: 400,
+    maxHeight: 600,
     marginBottom: 20,
   },
   section: {
@@ -89,17 +91,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Karla-Bold",
     color: "#333",
-    marginBottom: 8,
   },
   sectionContent: {
     fontSize: 14,
     fontFamily: "Karla-Regular",
     color: "#666",
     lineHeight: 20,
+    marginBottom: 10,
   },
   closeButton: {
     marginTop: 10,
   },
-})
+  sectionContentLink: {
+    height: 45
+  },
+});
 
-export default PrivacyPoliciesModal
+export default PrivacyPoliciesModal;
