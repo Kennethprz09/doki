@@ -1,6 +1,3 @@
-- Reiniciar el recortador cada que se recorte o cuando le de a recortar al inicio.
-- Verificar que cuando se elimine un archivo tambien se elimine del bucker de supabase.
-
-
-
 token gmail: cltmnphkcstyvvle
+
+npx expo start -c
