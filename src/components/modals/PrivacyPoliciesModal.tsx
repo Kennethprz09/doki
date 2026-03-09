@@ -1,110 +1,211 @@
-"use client";
+"use client"
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
-import LoadingButton from "../common/LoadingButton";
-import type { ModalProps } from "../types";
-import BaseModal from "../common/BaseModal";
+import React, { useCallback, useEffect, useRef, useState } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Linking,
+  Dimensions,
+  Modal,
+  Animated,
+  BackHandler,
+  Platform,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { colors, fonts, radii, shadows, withAlpha } from "../../theme"
+import LoadingButton from "../common/LoadingButton"
 
-interface PrivacyPoliciesModalProps extends ModalProps {}
+// Diferencia entre pantalla física y ventana de la app = altura de la barra de navegación Android
+const WIN = Dimensions.get("window")
+const SCR = Dimensions.get("screen")
+const NAV_BAR_HEIGHT = Platform.OS === "android" ? Math.max(0, SCR.height - WIN.height) : 0
+const BOTTOM_FILL = Math.max(32, NAV_BAR_HEIGHT + 16)
 
-// Optimización 1: Modal de políticas mejorado con mejor contenido y UX
-const PrivacyPoliciesModal: React.FC<PrivacyPoliciesModalProps> = ({
-  visible,
-  onClose,
-}) => {
+interface PrivacyPoliciesModalProps {
+  visible: boolean
+  onClose: () => void
+}
+
+const PrivacyPoliciesModal: React.FC<PrivacyPoliciesModalProps> = ({ visible, onClose }) => {
+  const [modalVisible, setModalVisible] = useState(visible)
+  const fadeAnim = useRef(new Animated.Value(visible ? 1 : 0)).current
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true)
+      Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start()
+    } else {
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() =>
+        setModalVisible(false),
+      )
+    }
+  }, [visible, fadeAnim])
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (visible) { onClose(); return true }
+      return false
+    })
+    return () => sub.remove()
+  }, [visible, onClose])
+
+  const slideY = fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] })
+
+  const handleLink = useCallback(() => {
+    Linking.openURL("https://appdoki.com/politicas-de-privacidad")
+  }, [])
+
   return (
-    <BaseModal visible={visible} onClose={onClose}>
-      <View style={styles.modalContainer}>
-        <Text style={styles.modalTitle}>Políticas de Privacidad</Text>
+    <Modal
+      transparent
+      animationType="none"
+      visible={modalVisible}
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      {/* Backdrop */}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
+      </TouchableWithoutFeedback>
 
-        <ScrollView
-          style={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Última actualización: 10/02/2026
-            </Text>
-            <Text style={styles.sectionContent}>
-              ANDRES FELIPE SAAVEDRA TRUJILLO
-            </Text>
+      {/* Sheet */}
+      <Animated.View
+        style={[
+          styles.sheetWrapper,
+          { opacity: fadeAnim, transform: [{ translateY: slideY }] },
+        ]}
+        pointerEvents="box-none"
+      >
+        <TouchableWithoutFeedback>
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
 
-            <Text style={styles.sectionContent}>C.C.: 1130610004</Text>
-            <Text style={styles.sectionContent}>NIT: 1130610004 - 1</Text>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.headerIcon}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
+              </View>
+              <Text style={styles.title}>Políticas de Privacidad</Text>
+            </View>
 
-            <Text style={styles.sectionContent}>
-              Matrícula Mercantil: 1196423-1 Domicilio: Cali, Valle del Cauca,
-              Colombia Correo de contacto: soporte@appdoki.com La presente
-              Política de Privacidad describe cómo recopilamos, usamos y
-              protegemos la información de los usuarios, en cumplimiento de la
-              Ley 1581 de 2012 y el Decreto 1377 de 2013.
-            </Text>
+            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.date}>Última actualización: 10/02/2026</Text>
+              <Text style={styles.body}>
+                <Text style={styles.bold}>ANDRES FELIPE SAAVEDRA TRUJILLO{"\n"}</Text>
+                C.C.: 1130610004{"\n"}
+                NIT: 1130610004 - 1{"\n"}
+                Matrícula Mercantil: 1196423-1{"\n"}
+                Domicilio: Cali, Valle del Cauca, Colombia{"\n"}
+                Correo de contacto: soporte@appdoki.com
+              </Text>
+              <Text style={styles.body}>
+                La presente Política de Privacidad describe cómo recopilamos, usamos y protegemos
+                la información de los usuarios, en cumplimiento de la Ley 1581 de 2012 y el
+                Decreto 1377 de 2013.
+              </Text>
+            </ScrollView>
 
-            <Text style={styles.sectionContent}>
-              Mas información aqui:
-            </Text>
+            <TouchableOpacity style={styles.linkRow} onPress={handleLink}>
+              <Ionicons name="open-outline" size={16} color={colors.primary} />
+              <Text style={styles.linkText}>Ver políticas completas</Text>
+            </TouchableOpacity>
 
-            <Text style={styles.sectionContentLink}>
-              <LoadingButton
-                title="Ver políticas completas"
-                onPress={() => Linking.openURL("https://appdoki.com/politicas-de-privacidad")}
-                style={styles.closeButton}
-              />
-            </Text>
+            <LoadingButton title="Entendido" onPress={onClose} style={styles.btn} />
+
+            {/* Relleno que cubre la barra de navegación de Android */}
+            <View style={{ height: BOTTOM_FILL }} />
           </View>
-        </ScrollView>
-
-        <LoadingButton
-          title="Entendido"
-          onPress={onClose}
-          style={styles.closeButton}
-        />
-      </View>
-    </BaseModal>
-  );
-};
+        </TouchableWithoutFeedback>
+      </Animated.View>
+    </Modal>
+  )
+}
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    width: "90%",
-    maxHeight: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: "Karla-Bold",
-    color: "#333",
-    textAlign: "center",
+  sheetWrapper: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 12,
+    paddingHorizontal: 24,
+    maxHeight: SCR.height * 0.85,
+    ...shadows.lg,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.gray200,
+    alignSelf: "center",
     marginBottom: 20,
   },
-  scrollContainer: {
-    maxHeight: 600,
-    marginBottom: 20,
-  },
-  section: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: "Karla-Bold",
-    color: "#333",
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    backgroundColor: withAlpha(colors.primary, 12),
+    alignItems: "center",
+    justifyContent: "center",
   },
-  sectionContent: {
+  title: {
+    fontSize: 17,
+    fontFamily: fonts.bold,
+    color: colors.gray900,
+  },
+  scroll: {
+    maxHeight: 280,
+    marginBottom: 16,
+  },
+  date: {
+    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    color: colors.gray400,
+    marginBottom: 12,
+  },
+  body: {
     fontSize: 14,
-    fontFamily: "Karla-Regular",
-    color: "#666",
-    lineHeight: 20,
-    marginBottom: 10,
+    fontFamily: fonts.regular,
+    color: colors.gray600,
+    lineHeight: 22,
+    marginBottom: 12,
   },
-  closeButton: {
-    marginTop: 10,
+  bold: {
+    fontFamily: fonts.bold,
+    color: colors.gray800,
   },
-  sectionContentLink: {
-    height: 45
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    marginBottom: 8,
   },
-});
+  linkText: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.primary,
+  },
+  btn: { paddingVertical: 14 },
+})
 
-export default PrivacyPoliciesModal;
+export default PrivacyPoliciesModal

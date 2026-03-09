@@ -1,13 +1,14 @@
-"use client"
 import { View, Text, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { colors, fonts, radii, shadows } from "../../theme"
 import type { ToastProps } from "../types"
 
-// Optimización 1: Configuración de toast más completa y reutilizable
 const toastConfig = {
   success: ({ text1, text2 }: ToastProps) => (
     <View style={[styles.toastContainer, styles.successToast]}>
-      <Ionicons name="checkmark-circle" size={24} color="#fff" style={styles.icon} />
+      <View style={styles.iconWrap}>
+        <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+      </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{text1}</Text>
         {text2 && <Text style={styles.subtitle}>{text2}</Text>}
@@ -17,7 +18,9 @@ const toastConfig = {
 
   error: ({ text1, text2 }: ToastProps) => (
     <View style={[styles.toastContainer, styles.errorToast]}>
-      <Ionicons name="alert-circle" size={24} color="#fff" style={styles.icon} />
+      <View style={styles.iconWrap}>
+        <Ionicons name="alert-circle" size={22} color={colors.error} />
+      </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{text1}</Text>
         {text2 && <Text style={styles.subtitle}>{text2}</Text>}
@@ -27,7 +30,9 @@ const toastConfig = {
 
   info: ({ text1, text2 }: ToastProps) => (
     <View style={[styles.toastContainer, styles.infoToast]}>
-      <Ionicons name="information-circle" size={24} color="#fff" style={styles.icon} />
+      <View style={styles.iconWrap}>
+        <Ionicons name="information-circle" size={22} color="#3B82F6" />
+      </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{text1}</Text>
         {text2 && <Text style={styles.subtitle}>{text2}</Text>}
@@ -37,7 +42,9 @@ const toastConfig = {
 
   warning: ({ text1, text2 }: ToastProps) => (
     <View style={[styles.toastContainer, styles.warningToast]}>
-      <Ionicons name="warning" size={24} color="#fff" style={styles.icon} />
+      <View style={styles.iconWrap}>
+        <Ionicons name="warning" size={22} color="#F59E0B" />
+      </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{text1}</Text>
         {text2 && <Text style={styles.subtitle}>{text2}</Text>}
@@ -50,47 +57,31 @@ const styles = StyleSheet.create({
   toastContainer: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 60,
+    minHeight: 56,
     width: "90%",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: radii.xl,
     marginHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
+    backgroundColor: colors.surface,
+    ...shadows.md,
   },
-  successToast: {
-    backgroundColor: "#28a745",
-  },
-  errorToast: {
-    backgroundColor: "#dc3545",
-  },
-  infoToast: {
-    backgroundColor: "#17a2b8",
-  },
-  warningToast: {
-    backgroundColor: "#ffc107",
-  },
-  icon: {
-    marginRight: 12,
-  },
-  textContainer: {
-    flex: 1,
-  },
+  successToast: { borderLeftWidth: 4, borderLeftColor: colors.success },
+  errorToast: { borderLeftWidth: 4, borderLeftColor: colors.error },
+  infoToast: { borderLeftWidth: 4, borderLeftColor: "#3B82F6" },
+  warningToast: { borderLeftWidth: 4, borderLeftColor: "#F59E0B" },
+  iconWrap: { marginRight: 12 },
+  textContainer: { flex: 1 },
   title: {
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: "Karla-Bold",
-    marginBottom: 2,
+    color: colors.gray900,
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    marginBottom: 1,
   },
   subtitle: {
-    color: "#fff",
-    fontSize: 14,
-    fontFamily: "Karla-Regular",
-    opacity: 0.9,
+    color: colors.gray500,
+    fontSize: 13,
+    fontFamily: fonts.regular,
   },
 })
 

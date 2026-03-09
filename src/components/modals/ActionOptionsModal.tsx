@@ -1,94 +1,120 @@
-"use client"
+"use client";
 
-import React from "react"
-import { memo, useCallback } from "react"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import BaseModal from "../common/BaseModal"
+import React from "react";
+import { memo, useCallback } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import BaseModal from "../common/BaseModal";
+import { colors, fonts, spacing, radii, withAlpha } from "../../theme";
 
 interface ActionOption {
-  id: string
-  label: string
-  icon: keyof typeof Ionicons.glyphMap
-  onPress: () => void
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
 }
 
 interface ActionOptionsModalProps {
-  visible: boolean
-  onClose: () => void
-  options: ActionOption[]
+  visible: boolean;
+  onClose: () => void;
+  options: ActionOption[];
 }
 
-// Optimización 1: Modal de opciones reutilizable
+const ICON_COLORS: Record<string, string> = {
+  folder: "#FF9800",
+  file: "#2196F3",
+  scan: "#10B981",
+};
+
 const ActionOptionsModal: React.FC<ActionOptionsModalProps> = memo(({ visible, onClose, options }) => {
-  // Optimización 2: Render de opción individual
   const renderOption = useCallback(
-    (option: ActionOption) => (
-      <TouchableOpacity
-        key={option.id}
-        style={styles.option}
-        onPress={() => {
-          option.onPress()
-          onClose()
-        }}
-        accessibilityLabel={option.label}
-      >
-        <View style={styles.iconContainer}>
-          <Ionicons name={option.icon} size={30} color="#666" />
-        </View>
-        <Text style={styles.optionText}>{option.label}</Text>
-      </TouchableOpacity>
-    ),
-    [onClose],
-  )
+    (option: ActionOption) => {
+      const accent = ICON_COLORS[option.id] || colors.primary;
+      return (
+        <TouchableOpacity
+          key={option.id}
+          style={styles.option}
+          onPress={() => {
+            option.onPress();
+            onClose();
+          }}
+          accessibilityLabel={option.label}
+          activeOpacity={0.75}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: withAlpha(accent, 14) }]}>
+            <Ionicons name={option.icon} size={28} color={accent} />
+          </View>
+          <Text style={styles.optionText}>{option.label}</Text>
+        </TouchableOpacity>
+      );
+    },
+    [onClose]
+  );
 
   return (
     <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.5} position="bottom">
-      <View style={styles.container}>
-        <View style={styles.optionsContainer}>{options.map(renderOption)}</View>
+      <View style={styles.sheet}>
+        <View style={styles.handle} />
+        <Text style={styles.title}>¿Qué quieres agregar?</Text>
+        <View style={styles.optionsRow}>{options.map(renderOption)}</View>
+        <View style={styles.bottomSpacer} />
       </View>
     </BaseModal>
-  )
-})
+  );
+});
 
-ActionOptionsModal.displayName = "ActionOptionsModal"
+ActionOptionsModal.displayName = "ActionOptionsModal";
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%", // Asegurar que el contenedor interno también ocupe el 100%
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingVertical: 20,
-  },
-  optionsContainer: {
+  sheet: {
     width: "100%",
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    paddingTop: spacing.sm,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.gray200,
+    borderRadius: radii.full,
+    alignSelf: "center",
+    marginBottom: spacing.base,
+  },
+  title: {
+    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    color: colors.gray500,
+    textAlign: "center",
+    marginBottom: spacing.lg,
+  },
+  optionsRow: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   option: {
     alignItems: "center",
     flex: 1,
-    paddingVertical: 10,
+    gap: 10,
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#f8f9fa",
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    width: 68,
+    height: 68,
+    borderRadius: radii.lg,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
   },
   optionText: {
-    fontSize: 14,
-    fontFamily: "Karla-SemiBold",
-    color: "#333",
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.gray700,
     textAlign: "center",
   },
-})
+  bottomSpacer: {
+    height: spacing.xl,
+  },
+});
 
-export default ActionOptionsModal
+export default ActionOptionsModal;

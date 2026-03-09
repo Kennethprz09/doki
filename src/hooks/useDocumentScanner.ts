@@ -1,6 +1,5 @@
 // useDocumentScanner.ts
 import { useCallback, useState } from "react";
-import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 import { File } from "expo-file-system";
 import * as Print from "expo-print";
@@ -45,10 +44,7 @@ export const useDocumentScanner = ({
     try {
       const { status } = await Camera.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permiso denegado",
-          "Se necesita acceso a la cámara para escanear documentos."
-        );
+        Toast.show({ type: "error", text1: "Permiso denegado", text2: "Se necesita acceso a la cámara para escanear documentos." });
         return false;
       }
       return true;
@@ -81,7 +77,7 @@ export const useDocumentScanner = ({
     if (!scanState.frontPhoto) {
       const errorMsg = "La foto frontal es obligatoria";
       onError?.(errorMsg);
-      Alert.alert("Error", errorMsg);
+      Toast.show({ type: "error", text1: "Error", text2: errorMsg });
       return false;
     }
 
@@ -101,7 +97,7 @@ export const useDocumentScanner = ({
       if (!user?.id) {
         const errorMsg = "Usuario no autenticado";
         onError?.(errorMsg);
-        Alert.alert("Error", errorMsg);
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg });
         return false;
       }
 
@@ -114,7 +110,7 @@ export const useDocumentScanner = ({
       if (!frontInfo.exists || frontFile.size > MAX_IMAGE_SIZE) {
         const errorMsg = "La foto frontal es inválida o excede el límite de 5MB";
         onError?.(errorMsg);
-        Alert.alert("Error", errorMsg);
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg });
         return false;
       }
       const frontPhotoBase64 = await frontFile.base64();
@@ -126,7 +122,7 @@ export const useDocumentScanner = ({
         if (!backInfo.exists || backFile.size > MAX_IMAGE_SIZE) {
           const errorMsg = "La foto trasera es inválida o excede el límite de 5MB";
           onError?.(errorMsg);
-          Alert.alert("Error", errorMsg);
+          Toast.show({ type: "error", text1: "Error", text2: errorMsg });
           return false;
         }
         backPhotoBase64 = await backFile.base64();
@@ -305,7 +301,7 @@ export const useDocumentScanner = ({
     } catch (error: any) {
       const errorMsg = error.message || "No se pudo generar el PDF";
       onError?.(errorMsg);
-      Alert.alert("Error", errorMsg);
+      Toast.show({ type: "error", text1: "Error", text2: errorMsg });
       return false;
     } finally {
       setScanning(false);

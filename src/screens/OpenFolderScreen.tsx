@@ -4,7 +4,7 @@ import React from "react"
 import { memo } from "react"
 import { View, StyleSheet, Text } from "react-native"
 import { type RouteProp, useRoute } from "@react-navigation/native"
-import FiltersFolderComponents from "../components/Filters/FiltersFolderComponents"
+import FiltersFolderScreen from "./FiltersFolderScreen"
 import NewActionComponent from "../components/NewAction/NewActionComponent"
 import type { RootStackParamList } from "../components/types"
 
@@ -28,7 +28,7 @@ const OpenFolderScreen: React.FC = memo(() => {
 
   return (
     <View style={styles.container}>
-      <FiltersFolderComponents folder={folder} />
+      <FiltersFolderScreen folder={folder} />
       <NewActionComponent folder={{ folder }} />
     </View>
   )
@@ -39,7 +39,7 @@ OpenFolderScreen.displayName = "OpenFolderScreen"
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#F4F5F7",
   },
   errorContainer: {
     flex: 1,
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#ff4d4d",
+    color: "#EF4444",
     fontFamily: "Karla-Regular",
     textAlign: "center",
   },

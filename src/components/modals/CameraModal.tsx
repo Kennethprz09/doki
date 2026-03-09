@@ -1,143 +1,150 @@
-// CameraModal.tsx
-import React from "react";
-import { memo, useRef, useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { CameraView } from "expo-camera";
-import * as ImageManipulator from "expo-image-manipulator";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import BaseModal from "../common/BaseModal";
+import React from "react"
+import { memo, useRef, useState, useCallback } from "react"
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { CameraView } from "expo-camera"
+import * as ImageManipulator from "expo-image-manipulator"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import Toast from "react-native-toast-message"
+import { colors, fonts, radii, withAlpha } from "../../theme"
+import BaseModal from "../common/BaseModal"
 
 interface CameraModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onCapture: (photoUri: string) => void;
+  visible: boolean
+  onClose: () => void
+  onCapture: (photoUri: string) => void
 }
 
 const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture }) => {
-  const cameraRef = useRef<CameraView>(null);
-  const [capturing, setCapturing] = useState(false);
-  const insets = useSafeAreaInsets();
+  const cameraRef = useRef<CameraView>(null)
+  const [capturing, setCapturing] = useState(false)
+  const insets = useSafeAreaInsets()
 
   const takePicture = useCallback(async () => {
-    if (!cameraRef.current || capturing) return;
+    if (!cameraRef.current || capturing) return
 
     try {
-      setCapturing(true);
-
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.5, // Reducimos la calidad para menor carga
-        base64: false,
-      });
+      setCapturing(true)
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.5, base64: false })
 
       if (!photo) {
-        console.error("No photo captured");
-        Alert.alert("Error", "No se pudo tomar la foto");
-        return;
+        Toast.show({ type: "error", text1: "Error", text2: "No se pudo tomar la foto" })
+        return
       }
 
-      const processedImage = await ImageManipulator.manipulateAsync(photo.uri, [{ resize: { width: 800 } }], {
-        // Reducimos el ancho para menor carga
-        compress: 0.7, // Reducimos la compresión
-        format: ImageManipulator.SaveFormat.JPEG,
-      });
+      const processed = await ImageManipulator.manipulateAsync(
+        photo.uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+      )
 
-      onCapture(processedImage.uri);
-    } catch (error) {
-      console.error("Error taking picture:", error);
-      Alert.alert("Error", "No se pudo tomar la foto");
+      onCapture(processed.uri)
+    } catch {
+      Toast.show({ type: "error", text1: "Error", text2: "No se pudo tomar la foto" })
     } finally {
-      setCapturing(false);
+      setCapturing(false)
     }
-  }, [capturing, onCapture]);
+  }, [capturing, onCapture])
 
   return (
-    <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen={true}>
+    <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen>
       <View style={styles.container}>
         <CameraView style={styles.camera} ref={cameraRef} facing="back" />
 
-        <View style={[styles.header, { top: insets.top + 10 }]}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Cerrar cámara">
-            <Ionicons name="close" size={30} color="#FFF" />
+        {/* Top controls */}
+        <View style={[styles.topBar, { top: insets.top + 10 }]}>
+          <TouchableOpacity style={styles.iconBtn} onPress={onClose} accessibilityLabel="Cerrar cámara">
+            <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.controls, { bottom: Math.max(insets.bottom, 20) + 30 }]}>
+        {/* Bottom controls */}
+        <View style={[styles.bottomBar, { bottom: Math.max(insets.bottom, 20) + 24 }]}>
           <TouchableOpacity
-            style={[styles.captureButton, capturing && styles.capturingButton]}
+            style={[styles.captureBtn, capturing && styles.capturingBtn]}
             onPress={takePicture}
             disabled={capturing}
             accessibilityLabel="Tomar foto"
           >
-            <Ionicons name="camera" size={40} color="#FFF" />
+            <View style={styles.captureInner} />
           </TouchableOpacity>
         </View>
 
-        {capturing && <Text style={styles.capturingText}>Procesando imagen...</Text>}
+        {capturing && (
+          <View style={styles.processingBadge}>
+            <Text style={styles.processingText}>Procesando...</Text>
+          </View>
+        )}
       </View>
     </BaseModal>
-  );
-});
+  )
+})
 
-CameraModal.displayName = "CameraModal";
+CameraModal.displayName = "CameraModal"
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000",
   },
-  camera: {
-    flex: 1,
-  },
-  header: {
+  camera: { flex: 1 },
+  topBar: {
     position: "absolute",
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "flex-start",
     paddingHorizontal: 20,
     zIndex: 1,
   },
-  closeButton: {
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: 25,
-    padding: 10,
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  controls: {
+  bottomBar: {
     position: "absolute",
     left: 0,
     right: 0,
-    flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
   },
-  captureButton: {
-    backgroundColor: "#ff8c00",
-    borderRadius: 40,
-    padding: 20,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+  captureBtn: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    borderColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
-  capturingButton: {
-    backgroundColor: "#cccccc",
+  captureInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.primary,
   },
-  capturingText: {
+  capturingBtn: {
+    opacity: 0.5,
+  },
+  processingBadge: {
     position: "absolute",
-    bottom: 150,
+    bottom: 160,
     alignSelf: "center",
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: "Karla-SemiBold",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
-    zIndex: 1,
+    borderRadius: radii.full,
+    zIndex: 2,
   },
-});
+  processingText: {
+    color: colors.white,
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+  },
+})
 
-export default CameraModal;
+export default CameraModal

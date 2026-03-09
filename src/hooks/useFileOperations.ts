@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
+import Toast from "react-native-toast-message";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as IntentLauncher from "expo-intent-launcher";
@@ -91,10 +92,7 @@ export const useFileOperations = () => {
         const permissions =
           await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
         if (!permissions.granted) {
-          Alert.alert(
-            "Permisos denegados",
-            "Se requieren permisos para guardar archivos en Descargas."
-          );
+          Toast.show({ type: "error", text1: "Permisos denegados", text2: "Se requieren permisos para guardar archivos en Descargas." });
           return { success: false, error: "Permissions denied" };
         }
         dirUri = permissions.directoryUri;
@@ -119,10 +117,7 @@ export const useFileOperations = () => {
         }
       );
 
-      Alert.alert(
-        "Descarga completada",
-        `Archivo guardado en: Descargas/${fileName}`
-      );
+      Toast.show({ type: "success", text1: "Descarga completada", text2: `Archivo guardado en: Descargas/${fileName}` });
 
       return { success: true };
     } catch (error) {
@@ -140,10 +135,7 @@ export const useFileOperations = () => {
         await Sharing.shareAsync(tempUri, {
           dialogTitle: "Guardar archivo en Descargas",
         });
-        Alert.alert(
-          "Descarga completada",
-          "Por favor, guarda el archivo en la carpeta Descargas desde el diálogo."
-        );
+        Toast.show({ type: "success", text1: "Descarga completada", text2: "Por favor, guarda el archivo en la carpeta Descargas desde el diálogo." });
         return { success: true };
       } else {
         throw new Error("No se puede guardar el archivo en este dispositivo.");
@@ -214,7 +206,7 @@ export const useFileOperations = () => {
       fileName?: string
     ): Promise<FileOperationResult> => {
       if (!fileUrl) {
-        Alert.alert("Error", "Falta la URL del archivo.");
+        Toast.show({ type: "error", text1: "Error", text2: "Falta la URL del archivo." });
         return { success: false, error: "Missing file URL" };
       }
 
@@ -259,7 +251,7 @@ export const useFileOperations = () => {
           }
         }
 
-        Alert.alert("Error", errorMessage);
+        Toast.show({ type: "error", text1: "Error", text2: errorMessage });
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);
@@ -275,7 +267,7 @@ export const useFileOperations = () => {
       fileName?: string
     ): Promise<FileOperationResult> => {
       if (!fileUrl) {
-        Alert.alert("Error", "No se proporcionó una URL válida.");
+        Toast.show({ type: "error", text1: "Error", text2: "No se proporcionó una URL válida." });
         return { success: false, error: "No file URL provided" };
       }
 
@@ -306,7 +298,7 @@ export const useFileOperations = () => {
       } catch (error) {
         const errorMessage = "No se pudo compartir el archivo.";
         console.error("Error sharing file:", error);
-        Alert.alert("Error", errorMessage);
+        Toast.show({ type: "error", text1: "Error", text2: errorMessage });
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);
@@ -323,7 +315,7 @@ export const useFileOperations = () => {
       fileExt?: string
     ): Promise<FileOperationResult> => {
       if (!fileUrl || !fileName) {
-        Alert.alert("Error", "Falta la URL o el nombre del archivo.");
+        Toast.show({ type: "error", text1: "Error", text2: "Falta la URL o el nombre del archivo." });
         return { success: false, error: "Missing required parameters" };
       }
 
@@ -350,7 +342,7 @@ export const useFileOperations = () => {
         const errorMessage =
           "No se pudo descargar el archivo. Verifica tu conexión o permisos.";
         console.error("Error downloading file:", error);
-        Alert.alert("Error", errorMessage);
+        Toast.show({ type: "error", text1: "Error", text2: errorMessage });
         return { success: false, error: errorMessage };
       } finally {
         setLoading(false);

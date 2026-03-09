@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx expo install expo-splash-screen)"
+      "Bash(npx expo install expo-splash-screen)",
+      "Bash(head -50 /d/laragon/www/android/doki/src/hooks/*.ts)"
     ]
   }
 }

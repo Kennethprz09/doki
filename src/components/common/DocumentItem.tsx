@@ -1,21 +1,16 @@
 "use client";
 import React from "react";
 import { memo, useCallback } from "react";
-import {
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
-  Dimensions,
-} from "react-native";
+import { TouchableOpacity, Text, View, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useNavigation } from "@react-navigation/native";
 import type { Document, NavigationProp } from "../types";
+import { colors, fonts, radii, shadows, withAlpha } from "../../theme";
 
 const { width } = Dimensions.get("window");
-const GRID_ITEM_WIDTH = (width - 48) / 2;
+const GRID_ITEM_WIDTH = (width - 16 * 2 - 12) / 2;
 
 interface DocumentItemProps {
   document: Document;
@@ -28,155 +23,124 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = memo(
-  ({
-    document,
-    onPress,
-    onLongPress,
-    isSelected,
-    showActions,
-    renderMode,
-    onActionPress,
-  }) => {
+  ({ document, onPress, onLongPress, isSelected, showActions, renderMode, onActionPress }) => {
     const navigation = useNavigation<NavigationProp>();
 
-    // Optimización 2: Función de press optimizada
     const handlePress = useCallback(() => {
       if (document.is_folder && showActions) {
         navigation.navigate("OpenFolderPage", { item: document });
-      } else {
-        if (!document.is_folder) {
-          onPress(document);
-        }
+      } else if (!document.is_folder) {
+        onPress(document);
       }
     }, [document, showActions, navigation, onPress]);
 
     const handleLongPress = useCallback(() => {
-      if (!document.is_folder) {
-        onLongPress(document);
-      }
+      if (!document.is_folder) onLongPress(document);
     }, [onLongPress, document]);
 
     const handleActionPress = useCallback(() => {
       onActionPress?.(document);
     }, [onActionPress, document]);
 
-    let documentName: string = "";
-    let documentColor: string = "";
-    let documentIcon: string = "";
-
-    const safeText = (value: any, fallback: string = "Sin nombre"): string => {
-      if (value === null || value === undefined) {
-        return fallback;
-      }
-      if (typeof value === "object") {
-        return fallback;
-      }
-      const stringValue = String(value).trim();
-      if (
-        stringValue === "" ||
-        stringValue === "null" ||
-        stringValue === "undefined"
-      ) {
-        return fallback;
-      }
-      return stringValue;
+    const safeText = (value: any, fallback = "Sin nombre"): string => {
+      if (value === null || value === undefined || typeof value === "object") return fallback;
+      const s = String(value).trim();
+      return s === "" || s === "null" || s === "undefined" ? fallback : s;
     };
 
-    documentName = safeText(document.name);
-    documentColor =
-      document.color && typeof document.color === "string"
-        ? document.color
-        : "#a1a1a1ff";
-    documentIcon =
-      document.icon && typeof document.icon === "string"
-        ? document.icon
-        : "document-outline";
+    const documentName = safeText(document.name);
+    const documentColor =
+      document.color && typeof document.color === "string" ? document.color : colors.gray400;
+    const documentIcon =
+      document.icon && typeof document.icon === "string" ? document.icon : "document-outline";
 
-    const itemStyle = [
-      renderMode === "grid" ? styles.gridItem : styles.listItem,
-      isSelected && styles.selectedItem,
-    ];
-    const iconName = isSelected ? "checkmark-circle-outline" : documentIcon;
-    const iconColor = isSelected ? "#a1a1a1ff" : documentColor;
+    const iconName = isSelected ? "checkmark-circle" : documentIcon;
+    const iconColor = isSelected ? colors.primary : documentColor;
+    const iconBg = isSelected ? colors.primarySubtle : withAlpha(documentColor, 14);
 
-    const accessibilityLabel = `${
-      document.is_folder ? "Carpeta" : "Documento"
-    }: ${documentName}`;
+    const extLabel = document.ext
+      ? document.ext.replace(".", "").toUpperCase().slice(0, 4)
+      : null;
+
+    const formattedDate = document.updated_at
+      ? format(new Date(document.updated_at), "d MMM yyyy", { locale: es })
+      : null;
 
     if (renderMode === "grid") {
       return (
         <TouchableOpacity
-          style={itemStyle}
+          style={[styles.gridItem, isSelected && styles.selectedGrid]}
           onPress={handlePress}
           onLongPress={handleLongPress}
-          accessibilityLabel={accessibilityLabel}
+          accessibilityLabel={`${document.is_folder ? "Carpeta" : "Documento"}: ${documentName}`}
+          activeOpacity={0.75}
         >
-          <View style={styles.gridContentWrapper}>
-            <View
-              style={[
-                styles.gridIconContainer,
-                { backgroundColor: documentColor },
-              ]}
+          {/* Action button */}
+          {showActions && (
+            <TouchableOpacity
+              style={styles.gridAction}
+              onPress={handleActionPress}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name={iconName as any} size={40} color="#FFF" />
-            </View>
-            <Text
-              style={styles.gridFileName}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {documentName}
-            </Text>
-            {document.updated_at && (
-              <Text style={styles.gridFileDetails}>
-                {`Modificado ${format(
-                  new Date(document.updated_at),
-                  "dd MMM yyyy",
-                  { locale: es }
-                )}`}
-              </Text>
-            )}
-            {showActions && (
-              <TouchableOpacity
-                style={styles.gridMoreIcon}
-                onPress={handleActionPress}
-              >
-                <Ionicons name="ellipsis-vertical" size={20} color="#666" />
-              </TouchableOpacity>
-            )}
+              <Ionicons name="ellipsis-vertical" size={16} color={colors.gray400} />
+            </TouchableOpacity>
+          )}
+
+          {/* Icon */}
+          <View style={[styles.gridIconContainer, { backgroundColor: iconBg }]}>
+            <Ionicons name={iconName as any} size={32} color={iconColor} />
           </View>
+
+          {/* Name */}
+          <Text style={styles.gridName} numberOfLines={2} ellipsizeMode="tail">
+            {documentName}
+          </Text>
+
+          {/* Date */}
+          {formattedDate && (
+            <Text style={styles.gridDate} numberOfLines={1}>
+              {formattedDate}
+            </Text>
+          )}
         </TouchableOpacity>
       );
     }
 
+    // ─── List mode ───────────────────────────────────────────────────────────
     return (
       <TouchableOpacity
-        style={itemStyle}
+        style={[styles.listItem, isSelected && styles.selectedList]}
         onPress={handlePress}
         onLongPress={handleLongPress}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={`${document.is_folder ? "Carpeta" : "Documento"}: ${documentName}`}
+        activeOpacity={0.75}
       >
-        <Ionicons name={iconName as any} size={30} color={iconColor} />
-        <View style={styles.listFileInfo}>
-          <Text
-            style={styles.listFileName}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
+        {/* Left accent bar */}
+        <View style={[styles.listAccent, { backgroundColor: documentColor }]} />
+
+        {/* Icon container */}
+        <View style={[styles.listIconContainer, { backgroundColor: iconBg }]}>
+          <Ionicons name={iconName as any} size={22} color={iconColor} />
+        </View>
+
+        {/* Text content */}
+        <View style={styles.listContent}>
+          <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">
             {documentName}
           </Text>
-          {document.updated_at && (
-            <Text style={styles.listFileDetails}>
-              {`Modificado ${format(
-                new Date(document.updated_at),
-                "dd MMM yyyy"
-              )}`}
-            </Text>
-          )}
+          <View style={styles.listMeta}>
+            {formattedDate && <Text style={styles.listDate}>{formattedDate}</Text>}
+          </View>
         </View>
+
+        {/* Action button */}
         {showActions && (
-          <TouchableOpacity onPress={handleActionPress}>
-            <Ionicons name="ellipsis-vertical" size={20} color="#888" />
+          <TouchableOpacity
+            onPress={handleActionPress}
+            style={styles.listAction}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="ellipsis-vertical" size={18} color={colors.gray400} />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -187,92 +151,118 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
 DocumentItem.displayName = "DocumentItem";
 
 const styles = StyleSheet.create({
+  // ── List ──────────────────────────────────────────────────────────────────
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    marginBottom: 8,
+    overflow: "hidden",
+    ...shadows.sm,
+  },
+  selectedList: {
+    backgroundColor: colors.primarySubtle,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  listAccent: {
+    width: 4,
+    alignSelf: "stretch",
+  },
+  listIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.sm,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
+    marginVertical: 12,
+  },
+  listContent: {
+    flex: 1,
+    marginLeft: 12,
+    marginVertical: 14,
+    justifyContent: "center",
+  },
+  listName: {
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    color: colors.gray900,
+    marginBottom: 4,
+  },
+  listMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  listDate: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.gray400,
+  },
+  listAction: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+
+  // ── Grid ──────────────────────────────────────────────────────────────────
   gridItem: {
     width: GRID_ITEM_WIDTH,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    paddingTop: 40,
+    paddingBottom: 16,
     paddingHorizontal: 12,
-    position: "relative",
     alignItems: "center",
-    minHeight: 150,
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-    marginVertical: 8,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
+    minHeight: 160,
+    ...shadows.md,
   },
-  gridContentWrapper: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+  selectedGrid: {
+    backgroundColor: colors.primarySubtle,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
   gridIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: radii.md,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
   },
-  gridFileName: {
-    fontSize: 15,
-    fontFamily: "Karla-Bold",
-    color: "#333333",
+  gridName: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.gray900,
     textAlign: "center",
     marginBottom: 4,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
+    lineHeight: 18,
   },
-  gridFileDetails: {
-    fontSize: 12,
-    fontFamily: "Karla-Regular",
-    color: "#666666",
+  gridDate: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.gray400,
     textAlign: "center",
-    paddingHorizontal: 5,
   },
-  gridMoreIcon: {
+  gridAction: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     padding: 4,
   },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    borderRadius: 8,
-    marginBottom: 4,
+
+  // ── Shared ────────────────────────────────────────────────────────────────
+  extBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.xs,
   },
-  listFileInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "center",
-  },
-  listFileName: {
-    fontSize: 16,
-    fontFamily: "Karla-Bold",
-    color: "#333",
-    marginBottom: 2,
-  },
-  listFileDetails: {
-    fontSize: 14,
-    fontFamily: "Karla-Regular",
-    color: "#888",
-  },
-  selectedItem: {
-    backgroundColor: "#fff3e0",
-    borderColor: "#ff8c00",
-    borderWidth: 2,
+  extText: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.5,
   },
 });
 

@@ -149,57 +149,40 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation })
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Restablecer Contraseña</Text>
-            <Text style={styles.subtitle}>Ingresa tu nueva contraseña</Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {/* ── Back ── */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Login")} accessibilityLabel="Volver">
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </TouchableOpacity>
+
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={styles.iconContainer}>
+            <Text style={styles.iconEmoji}>🔒</Text>
           </View>
+          <Text style={styles.title}>Nueva contraseña</Text>
+          <Text style={styles.subtitle}>Elige una contraseña segura para tu cuenta</Text>
+        </View>
 
-          <View style={styles.formContainer}>
-            <FormInput
-              iconName="lock-closed-outline"
-              placeholder="Nueva contraseña"
-              value={formData.newPassword}
-              onChangeText={updateField("newPassword")}
-              error={errors.newPassword}
-              isPassword
-              autoCapitalize="none"
-              theme="dark"
-            />
-
-            <FormInput
-              iconName="lock-closed-outline"
-              placeholder="Confirmar contraseña"
-              value={formData.confirmPassword}
-              onChangeText={updateField("confirmPassword")}
-              error={
-                errors.confirmPassword ||
-                (formData.confirmPassword && formData.confirmPassword !== formData.newPassword
-                  ? "Las contraseñas no coinciden"
-                  : "")
-              }
-              isPassword
-              autoCapitalize="none"
-              theme="dark"
-            />
-
-            {successMessage && (
-              <View style={styles.successContainer}>
-                <Text style={styles.successMessage}>{successMessage}</Text>
-              </View>
-            )}
-
-            <LoadingButton title="Actualizar Contraseña" onPress={handleUpdatePassword} loading={loading} />
-
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => navigation.navigate("Login")}
-              accessibilityLabel="Volver al inicio de sesión"
-            >
-              <Text style={styles.linkText}>Volver al inicio de sesión</Text>
-            </TouchableOpacity>
-          </View>
+        {/* ── Card ── */}
+        <View style={styles.card}>
+          <FormInput iconName="lock-closed-outline" placeholder="Nueva contraseña" value={formData.newPassword} onChangeText={updateField("newPassword")} error={errors.newPassword} isPassword autoCapitalize="none" theme="dark" />
+          <FormInput
+            iconName="lock-closed-outline"
+            placeholder="Confirmar contraseña"
+            value={formData.confirmPassword}
+            onChangeText={updateField("confirmPassword")}
+            error={errors.confirmPassword || (formData.confirmPassword && formData.confirmPassword !== formData.newPassword ? "Las contraseñas no coinciden" : "")}
+            isPassword
+            autoCapitalize="none"
+            theme="dark"
+          />
+          {successMessage ? (
+            <View style={styles.successContainer}>
+              <Text style={styles.successMessage}>{successMessage}</Text>
+            </View>
+          ) : null}
+          <LoadingButton title="Actualizar contraseña" onPress={handleUpdatePassword} loading={loading} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -207,65 +190,19 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation })
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-    backgroundColor: "black",
-  },
-  container: {
-    width: "100%",
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  title: {
-    fontFamily: "Karla-Bold",
-    fontSize: 24,
-    color: "#ffffff",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontFamily: "Karla-Regular",
-    color: "#ffffff",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  formContainer: {
-    width: "100%",
-  },
-  successContainer: {
-    marginBottom: 20,
-    padding: 10,
-    backgroundColor: "rgba(40, 167, 69, 0.1)",
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#28a745",
-  },
-  successMessage: {
-    color: "#28a745",
-    fontSize: 14,
-    fontFamily: "Karla-Regular",
-  },
-  linkButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  linkText: {
-    fontFamily: "Karla-SemiBold",
-    color: "#ffffff",
-  },
+  keyboardView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollContainer: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+  backButton: { marginBottom: 32 },
+  backButtonText: { fontFamily: "Karla-SemiBold", color: "#FF8C00", fontSize: 15 },
+  header: { alignItems: "center", marginBottom: 36 },
+  iconContainer: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#1C1C1E", justifyContent: "center", alignItems: "center", marginBottom: 20 },
+  iconEmoji: { fontSize: 32 },
+  title: { fontFamily: "Karla-Bold", fontSize: 26, color: "#FFFFFF", marginBottom: 10, textAlign: "center" },
+  subtitle: { fontFamily: "Karla-Regular", color: "#6B7280", fontSize: 14, textAlign: "center", lineHeight: 20 },
+  card: { backgroundColor: "#1C1C1E", borderRadius: 20, padding: 24 },
+  successContainer: { marginBottom: 16, padding: 12, backgroundColor: "rgba(16,185,129,0.12)", borderRadius: 10, borderLeftWidth: 3, borderLeftColor: "#10B981" },
+  successMessage: { color: "#10B981", fontSize: 14, fontFamily: "Karla-Regular" },
 })
 
 export default ResetPasswordScreen

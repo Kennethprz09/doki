@@ -3,6 +3,7 @@ import React from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import BaseModal from "../common/BaseModal";
+import { colors, fonts, radii, shadows } from "../../theme";
 
 interface LoaderProps {
   mensaje?: string;
@@ -13,36 +14,31 @@ interface LoaderProps {
 }
 
 const Loader: React.FC<LoaderProps> = ({
-  mensaje = "Cargando, por favor espere...",
+  mensaje = "Cargando...",
   size = "large",
-  color = "#ff8c00",
+  color = colors.primary,
   overlay = true,
   blur = false,
 }) => {
-  const containerStyle = overlay
-    ? styles.overlayContainer
-    : styles.inlineContainer;
   const LoaderContent = () => (
     <BaseModal visible={true} onClose={() => {}}>
       <View style={styles.loaderContent}>
         <ActivityIndicator size={size} color={color} />
-        <Text style={[styles.loaderText, { color: overlay ? "#333" : color }]}>
-          {mensaje}
-        </Text>
+        <Text style={styles.loaderText}>{mensaje}</Text>
       </View>
     </BaseModal>
   );
-  if (!overlay) {
-    return <LoaderContent />;
-  }
+
+  if (!overlay) return <LoaderContent />;
+
   return (
-    <View style={containerStyle}>
+    <View style={styles.overlayContainer}>
       {blur ? (
-        <BlurView intensity={20} style={styles.blurContainer}>
+        <BlurView intensity={20} style={styles.fillContainer}>
           <LoaderContent />
         </BlurView>
       ) : (
-        <View style={styles.backgroundContainer}>
+        <View style={styles.fillContainer}>
           <LoaderContent />
         </View>
       )}
@@ -61,41 +57,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  inlineContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    zIndex: 99999,
-  },
-  backgroundContainer: {
+  fillContainer: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    zIndex: 99999,
-  },
-  blurContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 99999,
   },
   loaderContent: {
     alignItems: "center",
-    padding: 20,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    paddingVertical: 28,
+    paddingHorizontal: 32,
+    borderRadius: radii.xl,
+    backgroundColor: colors.surface,
+    ...shadows.lg,
   },
   loaderText: {
-    marginTop: 16,
+    marginTop: 14,
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    color: colors.gray700,
     maxWidth: 200,
   },
 });

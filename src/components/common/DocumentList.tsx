@@ -8,14 +8,12 @@ import {
   StyleSheet,
   Text,
   View,
-  Dimensions,
 } from "react-native";
 import type { Document } from "../types";
 import DocumentItem from "./DocumentItem";
 import SelectionBar from "./SelectionBar";
 import { useFileOperations } from "../../hooks/useFileOperations";
 
-const { height } = Dimensions.get("window");
 
 interface DocumentListProps {
   documents: Document[];
@@ -187,24 +185,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 8,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 120,
   },
   gridRow: {
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 60,
   },
   emptyText: {
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "Karla-Regular",
-    color: "#888",
+    color: "#9CA3AF",
   },
 });
 

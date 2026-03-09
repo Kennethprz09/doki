@@ -190,72 +190,32 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={styles.container}>
-          <View style={styles.logo}>
-            <Image
-              source={require("../../assets/logo/logoDark.png")}
-              style={styles.image}
-              resizeMode="contain"
-              accessibilityLabel="Logo de la aplicación"
-            />
-            <Text style={styles.label}>Crea tu cuenta</Text>
-          </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Logo ── */}
+        <View style={styles.logoSection}>
+          <Image source={require("../../assets/logo/logoDark.png")} style={styles.image} resizeMode="contain" accessibilityLabel="Logo de la aplicación" />
+        </View>
 
-          <View style={styles.formContainer}>
-            <FormInput
-              iconName="person-circle-outline"
-              placeholder="Nombre"
-              value={formData.name}
-              onChangeText={updateField("name")}
-              error={errors.name}
-              autoCapitalize="words"
-              theme="dark"
-            />
+        {/* ── Card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Crear cuenta</Text>
+          <FormInput iconName="person-circle-outline" placeholder="Nombre" value={formData.name} onChangeText={updateField("name")} error={errors.name} autoCapitalize="words" theme="dark" />
+          <FormInput iconName="person-circle-outline" placeholder="Apellido" value={formData.surname} onChangeText={updateField("surname")} error={errors.surname} autoCapitalize="words" theme="dark" />
+          <FormInput iconName="mail-outline" placeholder="Correo electrónico" value={formData.email} onChangeText={updateField("email")} error={errors.email} keyboardType="email-address" autoCapitalize="none" autoComplete="email" theme="dark" />
+          <FormInput iconName="lock-closed-outline" placeholder="Contraseña" value={formData.password} onChangeText={updateField("password")} error={errors.password} isPassword autoCapitalize="none" theme="dark" />
+          <LoadingButton title="Crear cuenta" onPress={handleRegister} loading={loading} />
+        </View>
 
-            <FormInput
-              iconName="person-circle-outline"
-              placeholder="Apellido"
-              value={formData.surname}
-              onChangeText={updateField("surname")}
-              error={errors.surname}
-              autoCapitalize="words"
-              theme="dark"
-            />
-
-            <FormInput
-              iconName="mail-outline"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChangeText={updateField("email")}
-              error={errors.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              theme="dark"
-            />
-
-            <FormInput
-              iconName="lock-closed-outline"
-              placeholder="Contraseña"
-              value={formData.password}
-              onChangeText={updateField("password")}
-              error={errors.password}
-              isPassword
-              autoCapitalize="none"
-              theme="dark"
-            />
-
-            <LoadingButton title="Continuar" onPress={handleRegister} loading={loading} />
-
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => navigation.navigate("Login")}
-              accessibilityLabel="Ir a iniciar sesión"
-            >
-              <Text style={styles.linkText}>Iniciar Sesión</Text>
-            </TouchableOpacity>
-          </View>
+        {/* ── Footer ── */}
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")} accessibilityLabel="Ir a iniciar sesión">
+            <Text style={styles.footerText}>¿Ya tienes cuenta? <Text style={styles.footerLink}>Iniciar sesión</Text></Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -263,50 +223,18 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-    backgroundColor: "black",
-  },
-  container: {
-    width: "100%",
-  },
-  logo: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  image: {
-    width: 160,
-    height: 138,
-  },
-  label: {
-    fontFamily: "Karla-Regular",
-    color: "#ffffff",
-    marginBottom: 15,
-    fontSize: 14,
-  },
-  formContainer: {
-    width: "100%",
-  },
-  linkButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  linkText: {
-    fontFamily: "Karla-SemiBold",
-    color: "#ffffff",
-  },
+  keyboardView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollContainer: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40, justifyContent: "center" },
+  logoSection: { alignItems: "center", marginBottom: 0 },
+  image: { width: 212, height: 202, marginBottom: 0 },
+  appName: { fontSize: 34, fontFamily: "Karla-Bold", color: "#FFFFFF", letterSpacing: -0.5, marginBottom: 4 },
+  tagline: { fontSize: 14, fontFamily: "Karla-Regular", color: "#6B7280" },
+  card: { backgroundColor: "#1C1C1E", borderRadius: 20, padding: 24, marginBottom: 24 },
+  cardTitle: { fontSize: 20, fontFamily: "Karla-Bold", color: "#FFFFFF", marginBottom: 20 },
+  footer: { alignItems: "center" },
+  footerText: { fontFamily: "Karla-Regular", color: "#9CA3AF", fontSize: 14 },
+  footerLink: { fontFamily: "Karla-Bold", color: "#FF8C00" },
 })
 
 export default RegisterScreen

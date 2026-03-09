@@ -1,26 +1,27 @@
-"use client"
+"use client";
 
-import React from "react"
-import { memo, useCallback } from "react"
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import React from "react";
+import { memo, useCallback } from "react";
+import { View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, fonts, spacing, radii } from "../../theme";
 
 interface SearchHeaderProps {
-  title: string
-  backgroundColor?: string
-  isSearching: boolean
-  searchValue: string
-  onSearchChange: (value: string) => void
-  onToggleSearch: () => void
-  onBack: () => void
-  placeholder?: string
+  title: string;
+  backgroundColor?: string;
+  isSearching: boolean;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  onToggleSearch: () => void;
+  onBack: () => void;
+  placeholder?: string;
 }
 
-// Optimización 1: Header de búsqueda reutilizable
 const SearchHeader: React.FC<SearchHeaderProps> = memo(
   ({
     title,
-    backgroundColor = "#f8f9fa",
+    backgroundColor = colors.surface,
     isSearching,
     searchValue,
     onSearchChange,
@@ -28,86 +29,98 @@ const SearchHeader: React.FC<SearchHeaderProps> = memo(
     onBack,
     placeholder = "Buscar...",
   }) => {
-    // Optimización 2: Función para cancelar búsqueda
+    const insets = useSafeAreaInsets();
+
     const handleCancelSearch = useCallback(() => {
-      onSearchChange("")
-      onToggleSearch()
-    }, [onSearchChange, onToggleSearch])
+      onSearchChange("");
+      onToggleSearch();
+    }, [onSearchChange, onToggleSearch]);
+
+    const isCustomColor = backgroundColor !== colors.surface && backgroundColor !== "#f8f9fa";
+    const iconColor = isCustomColor ? "#FFF" : colors.gray700;
+    const titleColor = isCustomColor ? "#FFF" : colors.gray900;
+    const accentBg = isCustomColor ? "rgba(255,255,255,0.18)" : colors.gray100;
+
+    const headerStyle = [styles.header, { backgroundColor, paddingTop: insets.top + 10 }];
 
     if (isSearching) {
       return (
-        <View style={[styles.header, { backgroundColor }]}>
-          <TouchableOpacity onPress={handleCancelSearch} accessibilityLabel="Cancelar búsqueda">
-            <Ionicons name="arrow-back-outline" size={24} color="#333" />
+        <View style={headerStyle}>
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: accentBg }]} onPress={handleCancelSearch} accessibilityLabel="Cancelar búsqueda">
+            <Ionicons name="arrow-back" size={20} color={iconColor} />
           </TouchableOpacity>
-
-          <View style={styles.searchContainer}>
+          <View style={[styles.searchBar, { backgroundColor: accentBg }]}>
+            <Ionicons name="search-outline" size={16} color={isCustomColor ? "rgba(255,255,255,0.7)" : colors.gray400} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: isCustomColor ? "#FFF" : colors.gray900 }]}
               placeholder={placeholder}
               value={searchValue}
               onChangeText={onSearchChange}
-              placeholderTextColor="#a3a3a3"
+              placeholderTextColor={isCustomColor ? "rgba(255,255,255,0.5)" : colors.gray400}
               autoFocus
               returnKeyType="search"
             />
+            {searchValue.length > 0 && (
+              <TouchableOpacity onPress={() => onSearchChange("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-circle" size={16} color={isCustomColor ? "rgba(255,255,255,0.7)" : colors.gray400} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      )
+      );
     }
 
     return (
-      <View style={[styles.header, { backgroundColor }]}>
-        <TouchableOpacity onPress={onBack} accessibilityLabel="Volver">
-          <Ionicons name="arrow-back-outline" size={24} color="#333" />
+      <View style={headerStyle}>
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: accentBg }]} onPress={onBack} accessibilityLabel="Volver">
+          <Ionicons name="arrow-back" size={20} color={iconColor} />
         </TouchableOpacity>
-
-        <Text style={styles.title}>{title}</Text>
-
-        <TouchableOpacity onPress={onToggleSearch} accessibilityLabel="Buscar">
-          <Ionicons name="search-outline" size={24} color="#333" />
+        <Text style={[styles.title, { color: titleColor }]} numberOfLines={1}>{title}</Text>
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: accentBg }]} onPress={onToggleSearch} accessibilityLabel="Buscar">
+          <Ionicons name="search-outline" size={20} color={iconColor} />
         </TouchableOpacity>
       </View>
-    )
-  },
-)
+    );
+  }
+);
 
-SearchHeader.displayName = "SearchHeader"
+SearchHeader.displayName = "SearchHeader";
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    height: 56,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    marginBottom: 8,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+  },
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
+    flex: 1,
     fontSize: 18,
-    fontFamily: "Karla-Bold",
-    color: "#333",
-    flex: 1,
-    marginLeft: 16,
+    fontFamily: fonts.bold,
   },
-  searchContainer: {
+  searchBar: {
     flex: 1,
-    backgroundColor: "#F1F3F4",
-    borderRadius: 8,
-    marginHorizontal: 8,
-    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    height: 38,
   },
+  searchIcon: { marginRight: 6 },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: "Karla-Regular",
-    color: "#333",
-    paddingVertical: 8,
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    paddingVertical: 0,
   },
-})
+});
 
-export default SearchHeader
+export default SearchHeader;

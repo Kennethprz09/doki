@@ -1,6 +1,8 @@
 // src/components/modals/SimpleCropper.tsx
 import React, { useState, useEffect } from "react";
-import { View, Text, Alert, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Toast from "react-native-toast-message";
+import { colors, fonts } from "../../theme";
 import { ImageEditor } from "expo-dynamic-image-crop";
 
 interface SimpleCropperProps {
@@ -42,7 +44,7 @@ export default function SimpleCropper({
               onCrop(image.uri);
             } else {
               console.error("No valid image URI after crop");
-              Alert.alert("Error", "No se pudo completar el recorte");
+              Toast.show({ type: "error", text1: "Error", text2: "No se pudo completar el recorte" });
               onCancel();
             }
           }}
@@ -76,7 +78,7 @@ export default function SimpleCropper({
     );
   } catch (error) {
     console.error("Error rendering ImageEditor:", error);
-    Alert.alert("Error", "No se pudo abrir el editor de recorte");
+    Toast.show({ type: "error", text1: "Error", text2: "No se pudo abrir el editor de recorte" });
     onCancel();
     return (
       <View style={styles.errorContainer}>
@@ -93,12 +95,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   errorText: {
-    fontSize: 16,
-    color: "#ff0000",
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.error,
     textAlign: "center",
-    padding: 20,
+    padding: 24,
   },
 });

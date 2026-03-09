@@ -194,7 +194,7 @@ FiltersFolderScreen.displayName = "FiltersFolderScreen";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#F4F5F7",
   },
   loaderContainer: {
     flex: 1,
@@ -204,7 +204,8 @@ const styles = StyleSheet.create({
   loaderText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#333",
+    fontFamily: "Karla-Regular",
+    color: "#6B7280",
   },
 });
 

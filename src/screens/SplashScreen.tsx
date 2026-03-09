@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useEffect, useCallback } from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { useEffect, useCallback, useRef } from "react";
+import { View, StyleSheet, Animated } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../components/types";
@@ -20,8 +20,16 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
   const { user } = useUserStore();
   const { setLoading } = useGlobalStore();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Función de autenticación que primero solicita permisos esenciales
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const authenticateUser = useCallback(async () => {
     try {
       // Paso 1: Solicitar permisos de cámara si no están concedidos
@@ -48,9 +56,9 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
 
   return (
     <View style={styles.container}>
-      <Image
+      <Animated.Image
         source={require("../../assets/logo/logoDark.png")}
-        style={styles.logo}
+        style={[styles.logo, { opacity: fadeAnim }]}
         resizeMode="contain"
         accessibilityLabel="Logo de la aplicación"
       />

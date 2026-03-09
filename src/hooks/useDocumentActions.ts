@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
-import { Alert, DeviceEventEmitter } from "react-native"
+import { DeviceEventEmitter } from "react-native"
 import Toast from "react-native-toast-message"
 import { useGlobalStore } from "../store/globalStore"
 import { useDocumentsStore } from "../store/documentsStore"
@@ -82,60 +82,37 @@ export const useDocumentActions = () => {
     [setLoading, updateDocument, syncDocuments, checkConnectivity, getCurrentUser],
   )
 
-  const deleteDocumentWithConfirmation = useCallback(
-    async (id: string, name: string) => {
-      return new Promise<boolean>((resolve) => {
-        Alert.alert(
-          "Confirmar eliminación",
-          `¿Estás seguro de que quieres eliminar "${name}"?`,
-          [
-            {
-              text: "Cancelar",
-              style: "cancel",
-              onPress: () => resolve(false),
-            },
-            {
-              text: "Eliminar",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  if (!(await checkConnectivity())) {
-                    resolve(false)
-                    return
-                  }
+  const deleteDocumentById = useCallback(
+    async (id: string) => {
+      try {
+        if (!(await checkConnectivity())) return false
 
-                  setLoading(true)
-                  const user = await getCurrentUser()
+        setLoading(true)
+        const user = await getCurrentUser()
 
-                  const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id)
+        const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id)
 
-                  if (error) throw error
+        if (error) throw error
 
-                  deleteDocument(id)
+        deleteDocument(id)
 
-                  Toast.show({
-                    type: "success",
-                    text1: "Documento eliminado",
-                  })
+        Toast.show({
+          type: "success",
+          text1: "Documento eliminado",
+        })
 
-                  resolve(true)
-                } catch (error) {
-                  console.error("Error deleting document:", error)
-                  Toast.show({
-                    type: "error",
-                    text1: "Error",
-                    text2: "No se pudo eliminar el documento",
-                  })
-                  resolve(false)
-                } finally {
-                  setLoading(false)
-                }
-              },
-            },
-          ],
-          { cancelable: true },
-        )
-      })
+        return true
+      } catch (error) {
+        console.error("Error deleting document:", error)
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "No se pudo eliminar el documento",
+        })
+        return false
+      } finally {
+        setLoading(false)
+      }
     },
     [setLoading, deleteDocument, checkConnectivity, getCurrentUser],
   )
@@ -223,7 +200,7 @@ export const useDocumentActions = () => {
 
   return {
     toggleFavorite,
-    deleteDocumentWithConfirmation,
+    deleteDocumentById,
     updateDocumentColor,
     moveDocuments,
   }

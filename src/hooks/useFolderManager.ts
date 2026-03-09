@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { Alert } from "react-native"
 import Toast from "react-native-toast-message"
 import { useUserStore } from "../store/userStore"
 import { useDocumentsStore } from "../store/documentsStore"
@@ -28,7 +27,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
       if (!trimmedName) {
         const errorMsg = "El nombre es obligatorio"
         onError?.(errorMsg)
-        Alert.alert("Error", errorMsg)
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg })
         return null
       }
       return trimmedName
@@ -53,7 +52,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
     if (!user?.id) {
       const errorMsg = "Usuario no autenticado"
       onError?.(errorMsg)
-      Alert.alert("Error", errorMsg)
+      Toast.show({ type: "error", text1: "Error", text2: errorMsg })
       return false
     }
 
@@ -111,7 +110,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
         const errorMsg = error.message || "No se pudo crear la carpeta"
         console.error("Error creating folder:", error)
         onError?.(errorMsg)
-        Alert.alert("Error", errorMsg)
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg })
         return false
       } finally {
         setProcessing(false)
@@ -156,7 +155,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
         const errorMsg = error.message || "No se pudo actualizar el elemento"
         console.error("Error editing item:", error)
         onError?.(errorMsg)
-        Alert.alert("Error", errorMsg)
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg })
         return false
       } finally {
         setProcessing(false)

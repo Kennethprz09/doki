@@ -2,6 +2,7 @@
 import React from "react"
 import { useCallback, useEffect, useState } from "react"
 import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler, Dimensions } from "react-native"
+import { SafeAreaProvider } from "react-native-safe-area-context"
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
 
@@ -74,22 +75,22 @@ const BaseModal: React.FC<BaseModalProps> = ({
 
   const overlayStyle = [
     styles.overlay,
+    position === "bottom" ? styles.overlayBottom : styles.overlayCenter,
     {
       backgroundColor: `rgba(0, 0, 0, ${backdropOpacity})`,
       opacity: fadeAnim,
-      justifyContent: position === "bottom" ? "flex-end" : "center",
     },
   ]
 
   const containerAnimatedStyle = [
-    styles.container,
+    position !== "bottom" && styles.container,
     {
       opacity: fadeAnim,
       transform: [
         {
           translateY: position === "bottom" ? fadeAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [300, 0], // Simple slide para posición bottom
+            outputRange: [300, 0],
           }) : 0,
         },
       ],
@@ -105,13 +106,15 @@ const BaseModal: React.FC<BaseModalProps> = ({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <Animated.View style={overlayStyle}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <Animated.View style={containerAnimatedStyle}>{children}</Animated.View>
-          </TouchableWithoutFeedback>
-        </Animated.View>
-      </TouchableWithoutFeedback>
+      <SafeAreaProvider>
+        <TouchableWithoutFeedback onPress={handleBackdropPress}>
+          <Animated.View style={overlayStyle}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <Animated.View style={containerAnimatedStyle}>{children}</Animated.View>
+            </TouchableWithoutFeedback>
+          </Animated.View>
+        </TouchableWithoutFeedback>
+      </SafeAreaProvider>
     </Modal>
   )
 }
@@ -120,6 +123,13 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     alignItems: "center",
+  },
+  overlayCenter: {
+    justifyContent: "center" as const,
+  },
+  overlayBottom: {
+    justifyContent: "flex-end" as const,
+    alignItems: "stretch" as const,
   },
   container: {
     maxWidth: "90%",

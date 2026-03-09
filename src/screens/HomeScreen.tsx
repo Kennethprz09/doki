@@ -1,14 +1,14 @@
 import React from "react"
 import { memo } from "react"
 import { View, StyleSheet } from "react-native"
-import FiltersComponents from "../components/Filters/FiltersComponents"
+import FiltersScreen from "./FiltersScreen"
 import NewActionComponent from "../components/NewAction/NewActionComponent"
 
 // Optimización 1: Componente memoizado para evitar re-renders innecesarios
 const HomeScreen: React.FC = memo(() => {
   return (
     <View style={styles.container}>
-      <FiltersComponents filterType="all" />
+      <FiltersScreen filterType="all" />
       <NewActionComponent />
     </View>
   )
@@ -17,7 +17,7 @@ const HomeScreen: React.FC = memo(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#F4F5F7",
   },
 })
 

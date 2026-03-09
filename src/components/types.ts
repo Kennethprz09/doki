@@ -57,8 +57,10 @@ export type RootStackParamList = {
   MainRoutes: undefined
   Home: undefined
   Highlights: undefined
+  Cuenta: undefined
   HomePage: undefined
   HighlightsPage: undefined
+  CuentaPage: undefined
   OpenFolderPage: { item: Document }
   MyAccountPage: undefined
 }

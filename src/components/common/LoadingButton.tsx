@@ -1,5 +1,6 @@
 import React from "react"
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, type TouchableOpacityProps } from "react-native"
+import { colors, fonts, radii } from "../../theme"
 
 interface LoadingButtonProps extends TouchableOpacityProps {
   title: string
@@ -8,7 +9,6 @@ interface LoadingButtonProps extends TouchableOpacityProps {
   size?: "small" | "medium" | "large"
 }
 
-// Optimización: Componente reutilizable para botones con loading y mejor variante ghost
 const LoadingButton: React.FC<LoadingButtonProps> = ({
   title,
   loading = false,
@@ -19,32 +19,17 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   ...touchableProps
 }) => {
   const buttonStyle = [styles.button, styles[variant], styles[size], (loading || disabled) && styles.disabled, style]
+  const textStyle = [styles.buttonText, styles[`${variant}Text`], styles[`${size}Text`]]
 
-  const textStyle = [
-    styles.buttonText,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    (loading || disabled) && variant === "ghost" && styles.disabledGhostText,
-  ]
-
-  const getActivityIndicatorColor = () => {
-    switch (variant) {
-      case "primary":
-        return "#fff"
-      case "secondary":
-      case "outline":
-        return "#ff8c00"
-      case "ghost":
-        return "#666"
-      default:
-        return "#fff"
-    }
-  }
+  const indicatorColor =
+    variant === "primary" ? colors.white :
+    variant === "ghost" ? colors.gray500 :
+    colors.primary
 
   return (
     <TouchableOpacity style={buttonStyle} disabled={loading || disabled} {...touchableProps}>
       {loading ? (
-        <ActivityIndicator size="small" color={getActivityIndicatorColor()} />
+        <ActivityIndicator size="small" color={indicatorColor} />
       ) : (
         <Text style={textStyle}>{title}</Text>
       )}
@@ -54,78 +39,34 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
   },
-  primary: {
-    backgroundColor: "#ff8c00",
-  },
+  primary: { backgroundColor: colors.primary },
   secondary: {
     backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#ff8c00",
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
-  ghost: {
-    backgroundColor: "transparent",
-    elevation: 0,
-    shadowOpacity: 0,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
-  },
+  ghost: { backgroundColor: "transparent" },
   outline: {
     backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
-  small: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  medium: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  large: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    fontFamily: "Karla-Bold",
-    textAlign: "center",
-  },
-  primaryText: {
-    color: "#fff",
-  },
-  secondaryText: {
-    color: "#ff8c00",
-  },
-  ghostText: {
-    color: "#666",
-  },
-  outlineText: {
-    color: "#333",
-  },
-  disabledGhostText: {
-    color: "#ccc",
-  },
-  smallText: {
-    fontSize: 14,
-  },
-  mediumText: {
-    fontSize: 16,
-  },
-  largeText: {
-    fontSize: 18,
-  },
+  small: { paddingVertical: 10, paddingHorizontal: 16 },
+  medium: { paddingVertical: 13, paddingHorizontal: 24 },
+  large: { paddingVertical: 16, paddingHorizontal: 32 },
+  disabled: { opacity: 0.5 },
+  buttonText: { fontFamily: fonts.bold, textAlign: "center" },
+  primaryText: { color: colors.white },
+  secondaryText: { color: colors.primary },
+  ghostText: { color: colors.gray600 },
+  outlineText: { color: colors.gray700 },
+  smallText: { fontSize: 14 },
+  mediumText: { fontSize: 15 },
+  largeText: { fontSize: 16 },
 })
 
 export default LoadingButton

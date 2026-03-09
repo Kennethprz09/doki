@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from "react"
-import { Alert, AppState, type AppStateStatus } from "react-native"
+import { AppState, type AppStateStatus } from "react-native"
+import Toast from "react-native-toast-message"
 import * as Network from "expo-network"
 import { useGlobalStore } from "../store/globalStore"
 import { syncUser } from "../utils/actions"
@@ -42,9 +43,7 @@ const useNetInfo = () => {
         setNetworkStatusRef.current(isNowOnline ? "online" : "offline")
 
         if (lastNetworkState.current?.isConnected && !currentNetworkInfo.isConnected) {
-          Alert.alert("Sin conexión", "No tienes conexión a Internet. Los datos se mostrarán en modo offline.", [
-            { text: "Entendido", style: "default" },
-          ])
+          Toast.show({ type: "error", text1: "Sin conexión", text2: "No tienes conexión a Internet. Los datos se mostrarán en modo offline." })
         }
 
         if (wasOffline && isNowOnline && !syncInProgress.current) {

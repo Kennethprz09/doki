@@ -1,7 +1,7 @@
 // NewActionComponent.tsx
 import React from "react";
-import { memo, useState, useCallback } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { memo, useState, useCallback, useRef } from "react";
+import { View, StyleSheet } from "react-native";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import { useDocumentScanner } from "../../hooks/useDocumentScanner";
 import { useFolderManager } from "../../hooks/useFolderManager";
@@ -11,6 +11,7 @@ import ActionOptionsModal from "../modals/ActionOptionsModal";
 import CameraModal from "../modals/CameraModal";
 import PhotoPreviewModal from "../modals/PhotoPreviewModal";
 import CreateFolderModal from "../modals/CreateFolderModal";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 interface NewActionComponentProps {
   folder?: { folder?: Partial<Document> };
@@ -22,6 +23,8 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
     const [showCamera, setShowCamera] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showCreateFolder, setShowCreateFolder] = useState(false);
+    const [showBackPhotoConfirm, setShowBackPhotoConfirm] = useState(false);
+    const pendingPhotoUri = useRef<string>("");
 
     const { uploadFile, uploading } = useFileUpload({
       folderId: folder?.folder?.id,
@@ -49,30 +52,14 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           setShowCamera(false);
           setTimeout(() => {
             setShowPreview(true);
-          }, 500); // Retraso para cerrar CameraModal
+          }, 500);
         } else {
           setFrontPhoto(photoUri);
-          Alert.alert(
-            "¿Tomar foto trasera?",
-            "¿Deseas tomar una foto de la parte trasera del documento?",
-            [
-              {
-                text: "No",
-                onPress: () => {
-                  setShowCamera(false);
-                  setTimeout(() => {
-                    setShowPreview(true);
-                  }, 500); // Retraso para cerrar CameraModal
-                },
-              },
-              {
-                text: "Sí",
-                onPress: () => {
-                  setIsCapturingBack(true);
-                },
-              },
-            ]
-          );
+          pendingPhotoUri.current = photoUri;
+          setShowCamera(false);
+          setTimeout(() => {
+            setShowBackPhotoConfirm(true);
+          }, 500);
         }
       },
       [
@@ -82,6 +69,21 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
         setIsCapturingBack,
       ]
     );
+
+    const handleBackPhotoNo = useCallback(() => {
+      setShowBackPhotoConfirm(false);
+      setTimeout(() => {
+        setShowPreview(true);
+      }, 300);
+    }, []);
+
+    const handleBackPhotoYes = useCallback(() => {
+      setShowBackPhotoConfirm(false);
+      setIsCapturingBack(true);
+      setTimeout(() => {
+        setShowCamera(true);
+      }, 300);
+    }, [setIsCapturingBack]);
 
     const handleRetakeFront = useCallback(() => {
       setFrontPhoto("");
@@ -177,7 +179,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
     const isDisabled = uploading || scanning || processing;
 
     return (
-      <View style={styles.container}>
+      <View style={styles.container} pointerEvents="box-none">
         <NewActionButton
           onPress={() => {
             setShowOptions(true);
@@ -225,6 +227,17 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           onSubmit={handleCreateFolder}
           loading={processing}
         />
+
+        <ConfirmDialog
+          visible={showBackPhotoConfirm}
+          onClose={() => setShowBackPhotoConfirm(false)}
+          onCancel={handleBackPhotoNo}
+          onConfirm={handleBackPhotoYes}
+          title="¿Tomar foto trasera?"
+          message="¿Deseas tomar una foto de la parte trasera del documento?"
+          confirmText="Sí"
+          cancelText="No"
+        />
       </View>
     );
   }
@@ -234,8 +247,13 @@ NewActionComponent.displayName = "NewActionComponent";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 0.17,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "transparent",
+    pointerEvents: "box-none",
   },
 });
 

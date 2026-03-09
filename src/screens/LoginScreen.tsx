@@ -97,131 +97,65 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={styles.container}>
-          <View style={styles.logo}>
-            <Image
-              source={require("../../assets/logo/logoDark.png")}
-              style={styles.image}
-              resizeMode="contain"
-              accessibilityLabel="Logo de la aplicación"
-            />
-            <Text style={styles.label}>Iniciar sesión en tu cuenta</Text>
-          </View>
-
-          <View style={styles.formContainer}>
-            <FormInput
-              iconName="mail-outline"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChangeText={updateField("email")}
-              error={errors.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              theme="dark"
-            />
-
-            <FormInput
-              iconName="lock-closed-outline"
-              placeholder="Contraseña"
-              value={formData.password}
-              onChangeText={updateField("password")}
-              error={errors.password}
-              isPassword
-              autoCapitalize="none"
-              autoComplete="password"
-              theme="dark"
-            />
-
-            <TouchableOpacity
-              style={styles.forgotPasswordLink}
-              onPress={() => navigation.navigate("ForgotPassword")}
-              accessibilityLabel="Olvidé mi contraseña"
-            >
-              <Text style={styles.forgotPasswordText}>Olvidé mi contraseña</Text>
-            </TouchableOpacity>
-
-            <LoadingButton title="Iniciar Sesión" onPress={handleLogin} loading={loading} />
-
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => navigation.navigate("Register")}
-              accessibilityLabel="Crear cuenta nueva"
-            >
-              <Text style={styles.linkText}>Crear Cuenta</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => setPrivacyModalVisible(true)}
-              accessibilityLabel="Ver políticas de privacidad"
-            >
-              <Text style={styles.linkText}>Políticas de privacidad</Text>
-            </TouchableOpacity>
-          </View>
-
-          <PrivacyPoliciesModal visible={isPrivacyModalVisible} onClose={() => setPrivacyModalVisible(false)} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Logo ── */}
+        <View style={styles.logoSection}>
+          <Image
+            source={require("../../assets/logo/logoDark.png")}
+            style={styles.image}
+            resizeMode="contain"
+            accessibilityLabel="Logo de la aplicación"
+          />
         </View>
+
+        {/* ── Card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Iniciar sesión</Text>
+          <FormInput iconName="mail-outline" placeholder="Correo electrónico" value={formData.email} onChangeText={updateField("email")} error={errors.email} keyboardType="email-address" autoCapitalize="none" autoComplete="email" theme="dark" />
+          <FormInput iconName="lock-closed-outline" placeholder="Contraseña" value={formData.password} onChangeText={updateField("password")} error={errors.password} isPassword autoCapitalize="none" autoComplete="password" theme="dark" />
+          <TouchableOpacity style={styles.forgotPasswordLink} onPress={() => navigation.navigate("ForgotPassword")} accessibilityLabel="Olvidé mi contraseña">
+            <Text style={styles.forgotPasswordText}>Olvidé mi contraseña</Text>
+          </TouchableOpacity>
+          <LoadingButton title="Iniciar Sesión" onPress={handleLogin} loading={loading} />
+        </View>
+
+        {/* ── Footer ── */}
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={() => navigation.navigate("Register")} accessibilityLabel="Crear cuenta nueva">
+            <Text style={styles.footerText}>¿No tienes cuenta? <Text style={styles.footerLink}>Crear cuenta</Text></Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setPrivacyModalVisible(true)} accessibilityLabel="Ver políticas de privacidad">
+            <Text style={styles.privacyText}>Políticas de privacidad</Text>
+          </TouchableOpacity>
+        </View>
+
+        <PrivacyPoliciesModal visible={isPrivacyModalVisible} onClose={() => setPrivacyModalVisible(false)} />
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: "black",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-    backgroundColor: "black",
-  },
-  container: {
-    width: "100%",
-  },
-  logo: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  image: {
-    width: 160,
-    height: 138,
-  },
-  label: {
-    fontFamily: "Karla-Regular",
-    color: "#ffffff",
-    marginBottom: 15,
-    fontSize: 14,
-  },
-  formContainer: {
-    width: "100%",
-  },
-  forgotPasswordLink: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: "#ffffff",
-    fontFamily: "Karla-SemiBold",
-    fontSize: 14,
-  },
-  linkButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  linkText: {
-    fontFamily: "Karla-SemiBold",
-    color: "#ffffff",
-  },
+  keyboardView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollView: { flex: 1, backgroundColor: "#0A0A0A" },
+  scrollContainer: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40, justifyContent: "center" },
+  logoSection: { alignItems: "center", marginBottom: 0 },
+  image: { width: 212, height: 202, marginBottom: 0 },
+  appName: { fontSize: 34, fontFamily: "Karla-Bold", color: "#FFFFFF", letterSpacing: -0.5, marginBottom: 4 },
+  tagline: { fontSize: 14, fontFamily: "Karla-Regular", color: "#6B7280" },
+  card: { backgroundColor: "#1C1C1E", borderRadius: 20, padding: 24, marginBottom: 24 },
+  cardTitle: { fontSize: 20, fontFamily: "Karla-Bold", color: "#FFFFFF", marginBottom: 20 },
+  forgotPasswordLink: { alignSelf: "flex-end", marginBottom: 20, marginTop: 4 },
+  forgotPasswordText: { color: "#FF8C00", fontFamily: "Karla-SemiBold", fontSize: 14 },
+  footer: { alignItems: "center", gap: 16 },
+  footerText: { fontFamily: "Karla-Regular", color: "#9CA3AF", fontSize: 14 },
+  footerLink: { fontFamily: "Karla-Bold", color: "#FF8C00" },
+  privacyText: { fontFamily: "Karla-Regular", color: "#6B7280", fontSize: 13 },
 })
 
 export default LoginScreen

@@ -1,6 +1,6 @@
 // useFileUpload.ts
 import { useCallback, useState } from "react";
-import { Alert, DeviceEventEmitter } from "react-native";
+import { DeviceEventEmitter } from "react-native";
 import Toast from "react-native-toast-message";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
@@ -65,7 +65,7 @@ export const useFileUpload = ({
       if (!user?.id) {
         const errorMsg = "Usuario no autenticado";
         onError?.(errorMsg);
-        Alert.alert("Error", errorMsg);
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg });
         return false;
       }
 
@@ -88,7 +88,7 @@ export const useFileUpload = ({
       if (file.size && file.size > MAX_FILE_SIZE) {
         const errorMsg = "El archivo excede el límite de 10MB";
         onError?.(errorMsg);
-        Alert.alert("Error", errorMsg);
+        Toast.show({ type: "error", text1: "Error", text2: errorMsg });
         return false;
       }
 
@@ -174,7 +174,7 @@ export const useFileUpload = ({
     } catch (error: any) {
       const errorMsg = error.message || "No se pudo subir el archivo";
       onError?.(errorMsg);
-      Alert.alert("Error", errorMsg);
+      Toast.show({ type: "error", text1: "Error", text2: errorMsg });
       return false;
     } finally {
       setUploading(false);
