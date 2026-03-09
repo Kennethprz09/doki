@@ -97,8 +97,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   // Optimización 4: Función de registro mejorada
   const handleRegister = useCallback(async () => {
     try {
-      const isOffline = await checkInternetConnection()
-      if (isOffline) {
+      const isConnected = await checkInternetConnection()
+      if (!isConnected) {
         Toast.show({
           type: "error",
           text1: "Sin conexión",
@@ -190,7 +190,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.container}>
           <View style={styles.logo}>
             <Image
@@ -286,8 +286,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   image: {
-    width: 290,
-    height: 190,
+    width: 160,
+    height: 138,
   },
   label: {
     fontFamily: "Karla-Regular",

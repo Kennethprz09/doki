@@ -3,6 +3,11 @@
     "newArchEnabled": true,
     "name": "Doki",
     "slug": "doki",
+    "splash": {
+      "image": "./assets/logo/logoDark.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "scheme": "com.app.doki",
     "owner": "kennethprz09",
     "extra": {
@@ -12,6 +17,10 @@
     },
     "android": {
       "icon": "./assets/icon_android.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon_android.png",
+        "backgroundColor": "#000000"
+      },
       "package": "com.app.doki",
       "permissions": [
         "android.permission.CAMERA",
@@ -34,6 +43,15 @@
     },
     "plugins": [
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon_android.png",
+          "imageWidth": 150,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
       [
         "expo-camera",
         {

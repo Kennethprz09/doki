@@ -62,7 +62,6 @@ const useDocumentsSync = () => {
         return true
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Error al sincronizar documentos"
-        console.error("Error syncing documents:", error)
         setError(errorMessage)
         options.onError?.(errorMessage)
         return false
@@ -87,9 +86,7 @@ const useDocumentsSync = () => {
   // Optimización 4: Sincronización automática cuando se recupera la conexión
   useEffect(() => {
     if (networkStatus === "online" && needsSync() && !isSubscribed && user?.id) {
-      syncDocuments({
-        onError: (error) => console.warn("Auto-sync failed:", error),
-      })
+      syncDocuments()
     }
   }, [networkStatus, needsSync, isSubscribed, syncDocuments])
 

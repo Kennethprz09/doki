@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback } from "react";
 import {
   TouchableOpacity,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { useNavigation } from "@react-navigation/native";
 import type { Document, NavigationProp } from "../types";
 
@@ -37,9 +38,6 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
     onActionPress,
   }) => {
     const navigation = useNavigation<NavigationProp>();
-    const [selectedItems, setSelectedItems] = useState<number[]>([]);
-    const [onSelectionChange, setOnSelectionChange] =
-      useState<(selectedItems: number[]) => void | undefined>(undefined);
 
     // Optimización 2: Función de press optimizada
     const handlePress = useCallback(() => {
@@ -54,20 +52,14 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
 
     const handleLongPress = useCallback(() => {
       if (!document.is_folder) {
-        const newSelection = selectedItems.includes(document.id)
-          ? selectedItems
-          : [...selectedItems, document.id];
-        setSelectedItems(newSelection);
-        onSelectionChange?.(newSelection);
         onLongPress(document);
       }
-    }, [selectedItems, onLongPress, onSelectionChange, document]);
+    }, [onLongPress, document]);
 
     const handleActionPress = useCallback(() => {
       onActionPress?.(document);
     }, [onActionPress, document]);
 
-    const formattedDate: string | null = null;
     let documentName: string = "";
     let documentColor: string = "";
     let documentIcon: string = "";
@@ -139,7 +131,8 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
               <Text style={styles.gridFileDetails}>
                 {`Modificado ${format(
                   new Date(document.updated_at),
-                  "dd MMM yyyy"
+                  "dd MMM yyyy",
+                  { locale: es }
                 )}`}
               </Text>
             )}

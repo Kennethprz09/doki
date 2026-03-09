@@ -7,6 +7,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import BaseModal from "../common/BaseModal";
 import LoadingButton from "../common/LoadingButton";
 import SimpleCropper from "./SimpleCropper";
+import { useGlobalStore } from "../../store/globalStore";
 
 interface PhotoPreviewModalProps {
   visible: boolean;
@@ -35,6 +36,8 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     const [saving, setSaving] = useState(false);
     const [showCropper, setShowCropper] = useState(false);
     const [cropTarget, setCropTarget] = useState<"front" | "back" | null>(null);
+    const [cropKey, setCropKey] = useState(0);
+    const { setLoading } = useGlobalStore();
 
     const rotateImage = useCallback(
       async (target: "front" | "back", angle: number) => {
@@ -62,10 +65,12 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
 
     const startCrop = useCallback((target: "front" | "back") => {
       setCropTarget(target);
+      setCropKey((prev) => prev + 1);
+      setLoading(true);
       setTimeout(() => {
         setShowCropper(true);
-      }, 500); // Retraso para transición
-    }, []);
+      }, 300);
+    }, [setLoading]);
 
     const handleCropComplete = useCallback(
       (croppedUri: string) => {
@@ -149,7 +154,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
       if (!imageUri) return null;
 
       return (
-        <SimpleCropper imageUri={imageUri} onCrop={handleCropComplete} onCancel={handleCropCancel} />
+        <SimpleCropper key={cropKey} imageUri={imageUri} onCrop={handleCropComplete} onCancel={handleCropCancel} onReady={() => setLoading(false)} />
       );
     }
 

@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BaseModal from "../common/BaseModal";
 
 interface CameraModalProps {
@@ -16,6 +17,7 @@ interface CameraModalProps {
 const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture }) => {
   const cameraRef = useRef<CameraView>(null);
   const [capturing, setCapturing] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const takePicture = useCallback(async () => {
     if (!cameraRef.current || capturing) return;
@@ -54,13 +56,13 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
       <View style={styles.container}>
         <CameraView style={styles.camera} ref={cameraRef} facing="back" />
 
-        <View style={styles.header}>
+        <View style={[styles.header, { top: insets.top + 10 }]}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Cerrar cámara">
             <Ionicons name="close" size={30} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.controls}>
+        <View style={[styles.controls, { bottom: Math.max(insets.bottom, 20) + 30 }]}>
           <TouchableOpacity
             style={[styles.captureButton, capturing && styles.capturingButton]}
             onPress={takePicture}
@@ -89,7 +91,6 @@ const styles = StyleSheet.create({
   },
   header: {
     position: "absolute",
-    top: 50,
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: "absolute",
-    bottom: 50,
     left: 0,
     right: 0,
     flexDirection: "row",

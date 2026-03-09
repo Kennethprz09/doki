@@ -49,8 +49,8 @@ export const useFileUpload = ({
   const uploadFile = useCallback(async () => {
     try {
       // Verificar conectividad
-      const isOffline = await checkInternetConnection();
-      if (isOffline) {
+      const isConnected = await checkInternetConnection();
+      if (!isConnected) {
         const errorMsg = "No hay conexión a internet";
         onError?.(errorMsg);
         Toast.show({
@@ -137,7 +137,6 @@ export const useFileUpload = ({
         .single();
 
       if (insertError) {
-        console.error("Insert error:", insertError);
         throw insertError;
       }
 
@@ -157,11 +156,8 @@ export const useFileUpload = ({
       };
 
       if (!data.folder_id) {
-        console.log("desde raiz");
-        
         addDocument(newDocument);
       } else {
-        console.log("desde carpeta");
         DeviceEventEmitter.emit("document:uploaded", { document: newDocument });
       }
 
@@ -177,7 +173,6 @@ export const useFileUpload = ({
       return true;
     } catch (error: any) {
       const errorMsg = error.message || "No se pudo subir el archivo";
-      console.error("Error uploading file:", error);
       onError?.(errorMsg);
       Alert.alert("Error", errorMsg);
       return false;

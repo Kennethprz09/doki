@@ -10,17 +10,14 @@ export const useFolderDocuments = (folder: Document | null) => {
   const [loading, setLoading] = useState(false);
 
   const fetchFolderDocuments = useCallback(async () => {
-    console.log("se ejecuto fetchFolderDocuments");
-    
     if (!folder?.id) {
       setDocumentsFolder([]);
       return;
     }
 
     try {
-      const isOffline = await checkInternetConnection();
-      if (isOffline) {
-        console.error("Offline, cannot fetch documents");
+      const isConnected = await checkInternetConnection();
+      if (!isConnected) {
         Toast.show({
           type: "error",
           text1: "Sin conexión",
@@ -30,21 +27,22 @@ export const useFolderDocuments = (folder: Document | null) => {
       }
 
       setLoading(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return;
+
       const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("folder_id", folder.id)
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       setDocumentsFolder(data || []);
-    } catch (error) {
-      console.error("Error fetching folder documents:", error);
+    } catch {
       Toast.show({
         type: "error",
         text1: "Error",

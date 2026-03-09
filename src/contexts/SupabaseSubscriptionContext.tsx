@@ -139,9 +139,9 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
           if (status === "SUBSCRIBED") {
             isSubscribedRef.current = true
           } else if (status === "CHANNEL_ERROR") {
-            // console.error("Error subscribing to documents channel")
             isSubscribedRef.current = false
-            // Reintentar conexión después de 5 segundos
+            // Limpiar timeout previo antes de agendar uno nuevo
+            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
             reconnectTimeoutRef.current = setTimeout(connect, 5000)
           }
         })
@@ -172,19 +172,13 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
     await connect()
   }, [disconnect, connect])
 
-  // Optimización 6: Manejo del estado de la app
-  const handleAppStateChange = useCallback(
-    (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active" && networkStatus === "online") {
-        // Reconectar cuando la app se activa
-        reconnect()
-      } else if (nextAppState === "background" || nextAppState === "inactive") {
-        // Desconectar cuando la app va a background para ahorrar recursos
-        disconnect()
-      }
-    },
-    [networkStatus, reconnect, disconnect],
-  )
+  // Refs para que el listener de AppState siempre use la versión actualizada sin re-registrarse
+  const reconnectRef = useRef(reconnect)
+  const disconnectRef = useRef(disconnect)
+  const networkStatusRef = useRef(networkStatus)
+  useEffect(() => { reconnectRef.current = reconnect }, [reconnect])
+  useEffect(() => { disconnectRef.current = disconnect }, [disconnect])
+  useEffect(() => { networkStatusRef.current = networkStatus }, [networkStatus])
 
   // Efecto principal para manejar conexiones
   useEffect(() => {
@@ -197,11 +191,17 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
     return disconnect
   }, [user?.id, networkStatus, connect, disconnect])
 
-  // Efecto para manejar cambios de estado de la app
+  // Efecto para manejar cambios de estado de la app — se registra solo una vez
   useEffect(() => {
-    const appStateSubscription = AppState.addEventListener("change", handleAppStateChange)
-    return () => appStateSubscription?.remove()
-  }, [handleAppStateChange])
+    const appStateSubscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active" && networkStatusRef.current === "online") {
+        reconnectRef.current()
+      } else if (nextAppState === "background" || nextAppState === "inactive") {
+        disconnectRef.current()
+      }
+    })
+    return () => appStateSubscription.remove()
+  }, [])
 
   const contextValue: SubscriptionContextType = {
     isSubscribed: isSubscribedRef.current,

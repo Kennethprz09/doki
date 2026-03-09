@@ -45,7 +45,6 @@ export const useDocumentScanner = ({
     try {
       const { status } = await Camera.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        console.error("Camera permission denied");
         Alert.alert(
           "Permiso denegado",
           "Se necesita acceso a la cámara para escanear documentos."
@@ -53,8 +52,7 @@ export const useDocumentScanner = ({
         return false;
       }
       return true;
-    } catch (error) {
-      console.error("Error requesting camera permission:", error);
+    } catch {
       return false;
     }
   }, []);
@@ -82,17 +80,15 @@ export const useDocumentScanner = ({
   const generatePDF = useCallback(async () => {
     if (!scanState.frontPhoto) {
       const errorMsg = "La foto frontal es obligatoria";
-      console.error(errorMsg);
       onError?.(errorMsg);
       Alert.alert("Error", errorMsg);
       return false;
     }
 
     try {
-      const isOffline = await checkInternetConnection();
-      if (isOffline) {
+      const isConnected = await checkInternetConnection();
+      if (!isConnected) {
         const errorMsg = "No hay conexión a internet";
-        console.error(errorMsg);
         onError?.(errorMsg);
         Toast.show({
           type: "error",
@@ -104,7 +100,6 @@ export const useDocumentScanner = ({
 
       if (!user?.id) {
         const errorMsg = "Usuario no autenticado";
-        console.error(errorMsg);
         onError?.(errorMsg);
         Alert.alert("Error", errorMsg);
         return false;
@@ -113,33 +108,28 @@ export const useDocumentScanner = ({
       setScanning(true);
       setLoading(true);
 
-      // Validar tamaño de las imágen frontPhoto
+      // Validar existencia y tamaño ANTES de leer base64
       const frontFile = new File(scanState.frontPhoto);
       const frontInfo = await frontFile.info();
-      const frontPhotoBase64 = await frontFile.base64();
       if (!frontInfo.exists || frontFile.size > MAX_IMAGE_SIZE) {
-        const errorMsg =
-          "La foto frontal es inválida o excede el límite de 5MB";
-        console.error(errorMsg);
+        const errorMsg = "La foto frontal es inválida o excede el límite de 5MB";
         onError?.(errorMsg);
         Alert.alert("Error", errorMsg);
         return false;
       }
+      const frontPhotoBase64 = await frontFile.base64();
 
-      var backPhotoBase64 = "";
+      let backPhotoBase64 = "";
       if (scanState.backPhoto) {
         const backFile = new File(scanState.backPhoto);
         const backInfo = await backFile.info();
-        backPhotoBase64 = await backFile.base64();
-
         if (!backInfo.exists || backFile.size > MAX_IMAGE_SIZE) {
-          const errorMsg =
-            "La foto trasera es inválida o excede el límite de 5MB";
-          console.error(errorMsg);
+          const errorMsg = "La foto trasera es inválida o excede el límite de 5MB";
           onError?.(errorMsg);
           Alert.alert("Error", errorMsg);
           return false;
         }
+        backPhotoBase64 = await backFile.base64();
       }
 
       // Crear HTML con imágenes incrustadas
@@ -252,9 +242,13 @@ export const useDocumentScanner = ({
         base64: true,
       });
 
+      if (!uri) {
+        throw new Error("No se pudo generar el archivo PDF");
+      }
+
       const fileName = `scanned_${Date.now()}.pdf`;
       const filePath = `${user.id}/${fileName}`;
-      const fileInstance = new File(uri ?? "");
+      const fileInstance = new File(uri);
       const fileData = await fileInstance.bytes();
 
       const { error: uploadError } = await supabase.storage
@@ -263,10 +257,7 @@ export const useDocumentScanner = ({
           contentType: "application/pdf",
         });
 
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data, error: insertError } = await supabase
         .from("documents")
@@ -284,10 +275,7 @@ export const useDocumentScanner = ({
         .select()
         .single();
 
-      if (insertError) {
-        console.error("Insert error:", insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
       const newDocument: Document = {
         id: data.id,
@@ -316,7 +304,6 @@ export const useDocumentScanner = ({
       return true;
     } catch (error: any) {
       const errorMsg = error.message || "No se pudo generar el PDF";
-      console.error("Error generating PDF:", error);
       onError?.(errorMsg);
       Alert.alert("Error", errorMsg);
       return false;

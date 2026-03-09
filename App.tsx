@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
 import Toast from "react-native-toast-message";
 import toastConfig from "./src/components/Template/toastConfig";
 import Loader from "./src/components/Template/Loader";
@@ -13,6 +14,8 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import useDocumentsSync from "./src/hooks/useDocumentsSync";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SupabaseSubscriptionProvider } from "./src/contexts/SupabaseSubscriptionContext";
+
+SplashScreen.preventAutoHideAsync();
 
 const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.loading);
@@ -48,12 +51,13 @@ const App = () => {
         "Karla-SemiBold": require("./assets/fonts/Karla-SemiBold.ttf"),
       });
       setFontsLoaded(true);
+      await SplashScreen.hideAsync();
     }
     loadFonts();
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Render nothing until fonts are loaded
+    return null;
   }
 
   return (
@@ -63,8 +67,8 @@ const App = () => {
         edges={["top", "bottom"]}
       >
         <StatusBar
-          translucent={false}
-          backgroundColor={"#ffffff"}
+          translucent={true}
+          backgroundColor={"transparent"}
           barStyle={"dark-content"}
         />
         <GestureHandlerRootView style={{ flex: 1 }}>

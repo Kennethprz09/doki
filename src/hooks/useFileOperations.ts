@@ -59,6 +59,10 @@ export const useFileOperations = () => {
           throw new Error("No se pudo obtener la URL firmada.");
         }
 
+        if (!FileSystem.cacheDirectory) {
+          throw new Error("El directorio de caché no está disponible.");
+        }
+
         const localFile = `${FileSystem.cacheDirectory}${fileName}`;
         const { uri } = await FileSystem.downloadAsync(
           data.signedUrl,

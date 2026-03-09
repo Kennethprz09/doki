@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
-import { Alert } from "react-native"
+import { Alert, DeviceEventEmitter } from "react-native"
 import Toast from "react-native-toast-message"
 import { useGlobalStore } from "../store/globalStore"
 import { useDocumentsStore } from "../store/documentsStore"
@@ -29,8 +29,8 @@ export const useDocumentActions = () => {
 
   // Función auxiliar para verificar conectividad
   const checkConnectivity = useCallback(async () => {
-    const isOffline = await checkInternetConnection()
-    if (isOffline) {
+    const isConnected = await checkInternetConnection()
+    if (!isConnected) {
       Toast.show({
         type: "error",
         text1: "Sin conexión",
@@ -196,6 +196,8 @@ export const useDocumentActions = () => {
         documentIds.forEach((id) => {
           updateDocument({ id, changes: { folder_id: targetFolderId } })
         })
+
+        DeviceEventEmitter.emit("document:moved", { documentIds, targetFolderId })
 
         Toast.show({
           type: "success",

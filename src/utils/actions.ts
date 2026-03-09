@@ -17,13 +17,9 @@ interface SyncResult {
 // Optimización 2: Mejorar la función de verificación de conexión
 export const checkInternetConnection = async (): Promise<boolean> => {
   try {
-    // const networkState = await Network.getNetworkStateAsync()
-    // // Verificar tanto la conexión como la accesibilidad a internet
-    // return networkState.isConnected && (networkState.isInternetReachable ?? true)
-    const networkState = await Network.getNetworkStateAsync();
-    return !networkState.isConnected;
-  } catch (error) {
-    console.error("Error checking internet connection:", error)
+    const networkState = await Network.getNetworkStateAsync()
+    return networkState.isConnected === true && (networkState.isInternetReachable ?? true)
+  } catch {
     return false
   }
 }

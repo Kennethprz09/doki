@@ -46,7 +46,7 @@ const MyAccountScreen: React.FC = () => {
     password: {
       required: false,
       custom: (value: string) => {
-        if (value && value.length >= 6) {
+        if (value && value.length < 6) {
           return "La contraseña debe tener al menos 6 caracteres"
         }
         return null

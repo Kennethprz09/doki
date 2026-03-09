@@ -38,8 +38,8 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
 
   // Función auxiliar para verificar conectividad y usuario
   const validatePrerequisites = useCallback(async () => {
-    const isOffline = await checkInternetConnection()
-    if (isOffline) {
+    const isConnected = await checkInternetConnection()
+    if (!isConnected) {
       const errorMsg = "No hay conexión a internet"
       onError?.(errorMsg)
       Toast.show({

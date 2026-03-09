@@ -50,7 +50,7 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
 
   const handleToggleView = useCallback(() => {
     setViewMode((prev) => (prev === "list" ? "grid" : "list"));
-  }, [viewMode]);
+  }, []);
 
   const handleToggleProfile = useCallback(() => {
     setIsProfileModalVisible(!isProfileModalVisible);
@@ -104,15 +104,19 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   );
 
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener("document:uploaded", (payload: { document: Document }) => {
+    const subUpload = DeviceEventEmitter.addListener("document:uploaded", (payload: { document: Document }) => {
       const uploaded = payload?.document;
       if (!uploaded) return;
       if (uploaded.folder_id === folder?.id) {
         refetch();
       }
     });
+    const subMoved = DeviceEventEmitter.addListener("document:moved", () => {
+      refetch();
+    });
     return () => {
-      sub.remove();
+      subUpload.remove();
+      subMoved.remove();
     };
   }, [folder?.id, refetch]);
 

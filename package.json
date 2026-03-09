@@ -36,6 +36,7 @@
     "expo-network": "^8.0.7",
     "expo-print": "^15.0.7",
     "expo-sharing": "^14.0.7",
+    "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.8",
     "expo-web-browser": "^15.0.8",
     "react": "19.1.0",
@@ -54,6 +55,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.4",
     "@types/react": "~19.1.0",
+    "baseline-browser-mapping": "^2.10.0",
     "typescript": "~5.9.2"
   },
   "expo": {

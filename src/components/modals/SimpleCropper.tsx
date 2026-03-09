@@ -1,5 +1,5 @@
 // src/components/modals/SimpleCropper.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Alert, StyleSheet } from "react-native";
 import { ImageEditor } from "expo-dynamic-image-crop";
 
@@ -7,18 +7,30 @@ interface SimpleCropperProps {
   imageUri: string;
   onCrop: (imageUri: string) => void;
   onCancel: () => void;
+  onReady?: () => void;
 }
 
 export default function SimpleCropper({
   imageUri,
   onCrop,
   onCancel,
+  onReady,
 }: SimpleCropperProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+      onReady?.();
+    }, 80);
+    return () => clearTimeout(timer);
+  }, []);
+
   try {
     return (
       <View style={{ flex: 1 }}>
         <ImageEditor
-          isVisible={true}
+          isVisible={isVisible}
           dynamicCrop={true}
           imageUri={imageUri}
           minimumCropDimensions={{ width: 50, height: 50 }}

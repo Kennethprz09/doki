@@ -58,11 +58,7 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           setSelectedItems(newSelection);
           onSelectionChange?.(newSelection);
         } else {
-          console.log(document, "que eres");
-          // Modo normal: ejecutar acción
-          // onDocumentPress?.(document)
-
-          if (document.is_folder == false) {
+          if (document.is_folder === false) {
             await viewFile(document.path, document.ext, document.name);
           }
         }
@@ -175,18 +171,9 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           ListEmptyComponent={EmptyComponent}
           initialNumToRender={10}
           windowSize={5}
-          removeClippedSubviews={true}
+          removeClippedSubviews={renderMode === "list"}
           maxToRenderPerBatch={10}
           updateCellsBatchingPeriod={50}
-          getItemLayout={
-            renderMode === "list"
-              ? (data, index) => ({
-                  length: 70,
-                  offset: 70 * index,
-                  index,
-                })
-              : undefined
-          }
         />
       </View>
     );

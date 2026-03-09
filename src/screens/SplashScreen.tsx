@@ -26,10 +26,7 @@ const SplashScreen: React.FC<SplashScreenProps> = () => {
     try {
       // Paso 1: Solicitar permisos de cámara si no están concedidos
       if (!cameraPermission?.granted) {
-        console.log("Solicitando permiso de cámara...");
         await requestCameraPermission();
-      } else {
-        console.log("Permiso de cámara ya concedido");
       }
 
       setLoading(true);
@@ -69,8 +66,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   logo: {
-    width: 450,
-    height: 250,
+    width: 240,
+    height: 207,
   },
 });
 
