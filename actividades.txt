@@ -1,3 +1,9 @@
+- Cuando se activa el slector de archivos multiples y se pone y se quita uno pierde el diseño las letras y queda en blanco
+
+- Hacer una verificacion general de todas las funcionalidad que estan dentro de src no el diseño (contexts, hooks, store, supabase y utils)
+
+
+
 token gmail: cltmnphkcstyvvle
 
 npx expo start -c

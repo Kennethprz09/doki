@@ -90,6 +90,28 @@ export const useDocumentActions = () => {
         setLoading(true)
         const user = await getCurrentUser()
 
+        // Obtener el path del archivo antes de eliminar el registro
+        const { data: doc, error: fetchError } = await supabase
+          .from("documents")
+          .select("path, is_folder")
+          .eq("id", id)
+          .eq("user_id", user.id)
+          .single()
+
+        if (fetchError) throw fetchError
+
+        // Eliminar del bucket si tiene path (es un archivo, no una carpeta)
+        if (!doc.is_folder && doc.path) {
+          const { error: storageError } = await supabase.storage
+            .from("documents")
+            .remove([doc.path])
+
+          if (storageError) {
+            console.error("Error deleting from storage:", storageError)
+          }
+        }
+
+        // Eliminar el registro de la base de datos
         const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id)
 
         if (error) throw error
