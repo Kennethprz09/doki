@@ -56,6 +56,32 @@ export const logout = async () => {
   }
 };
 
+export const deleteAccount = async (): Promise<{ success: boolean; errorMessage?: string }> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      method: 'POST',
+    });
+
+    if (error) {
+      return { success: false, errorMessage: error.message || 'Error al eliminar la cuenta' };
+    }
+
+    if (!data?.success) {
+      return { success: false, errorMessage: data?.error || 'Error al eliminar la cuenta' };
+    }
+
+    // Limpiar sesión local
+    await supabase.auth.signOut();
+    useUserStore.getState().setUser(null);
+    await AsyncStorage.removeItem('accessToken');
+    await AsyncStorage.removeItem('user');
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, errorMessage: err.message || 'Error al eliminar la cuenta' };
+  }
+};
+
 export const resetPassword = async (email: string): Promise<ResetPasswordResponse> => {
   try {
     // Validar el correo electrónico

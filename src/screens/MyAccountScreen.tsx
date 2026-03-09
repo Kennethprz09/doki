@@ -11,6 +11,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
@@ -20,6 +21,7 @@ import { useGlobalStore } from "../store/globalStore"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList } from "../components/types"
 import { supabase } from "../supabase/supabaseClient"
+import { deleteAccount } from "../supabase/auth"
 import { useFormValidation, commonValidationRules } from "../hooks/useFormValidation"
 import FormInput from "../components/common/FormInput"
 import LoadingButton from "../components/common/LoadingButton"
@@ -160,6 +162,34 @@ const MyAccountScreen: React.FC = () => {
     }
   }, [formData, validateForm, user, setUser, setLoading, togglePasswordField])
 
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      "Eliminar cuenta",
+      "Esta acción es permanente. Se borrarán tu cuenta y todos tus datos. ¿Estás seguro?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true)
+            const result = await deleteAccount()
+            setLoading(false)
+            if (result.success) {
+              navigation.reset({ index: 0, routes: [{ name: "Login" }] })
+            } else {
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: result.errorMessage || "No se pudo eliminar la cuenta.",
+              })
+            }
+          },
+        },
+      ]
+    )
+  }, [setLoading])
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -279,6 +309,11 @@ const MyAccountScreen: React.FC = () => {
               loading={loading}
               style={styles.saveButton}
             />
+
+            <TouchableOpacity onPress={handleDeleteAccount} style={styles.deleteAccountButton} accessibilityLabel="Eliminar cuenta">
+              <Ionicons name="trash-outline" size={16} color="#cc0000" />
+              <Text style={styles.deleteAccountText}>Eliminar mi cuenta</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -409,7 +444,20 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   saveButton: {
-    marginTop: 10, // Espacio antes del botón de guardar
+    marginTop: 10,
+  },
+  deleteAccountButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  deleteAccountText: {
+    color: "#cc0000",
+    fontSize: 15,
+    fontFamily: "Karla-SemiBold",
   },
 })
 
