@@ -2,6 +2,7 @@
 import React from "react";
 import { memo, useCallback, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import BaseModal from "../common/BaseModal";
 import ActionMoveModal from "./ActionMoveModal";
@@ -20,6 +21,7 @@ interface ActionMenuModalProps extends ModalProps {
 
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
   ({ visible, onClose, document, onActionComplete, folder, onActionSelect }) => {
+    const insets = useSafeAreaInsets();
     const { toggleFavorite, deleteDocumentById } = useDocumentActions();
     const { viewFile, shareFile, downloadFile } = useFileOperations();
     const [showMoveModal, setShowMoveModal] = useState(false);
@@ -83,9 +85,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
       document.color && typeof document.color === "string" ? document.color : colors.gray400;
     const docIcon =
       document.icon && typeof document.icon === "string" ? document.icon : "document-outline";
-    const extLabel = document.ext
-      ? document.ext.replace(".", "").toUpperCase().slice(0, 4)
-      : null;
 
     // ── Action groups ────────────────────────────────────────────────────────
     const primaryActions = [
@@ -170,7 +169,7 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
               <Text style={styles.deleteLabel}>Eliminar</Text>
             </TouchableOpacity>
 
-            <View style={styles.bottomSpacer} />
+            <View style={{ height: Math.max(insets.bottom, spacing.xl) }} />
           </View>
         </BaseModal>
 
@@ -326,9 +325,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.semiBold,
     color: colors.error,
-  },
-  bottomSpacer: {
-    height: spacing.xl,
   },
 });
 
