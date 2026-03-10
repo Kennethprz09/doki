@@ -77,7 +77,7 @@ const useNetInfo = () => {
       if (nextAppState === "active") {
         checkNetworkStatusRef.current()
         if (checkIntervalRef.current) clearInterval(checkIntervalRef.current)
-        checkIntervalRef.current = setInterval(() => checkNetworkStatusRef.current(), 15000)
+        checkIntervalRef.current = setInterval(() => checkNetworkStatusRef.current(), 30000)
       } else if (nextAppState === "background" || nextAppState === "inactive") {
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current)
@@ -86,7 +86,7 @@ const useNetInfo = () => {
       }
     })
 
-    checkIntervalRef.current = setInterval(() => checkNetworkStatusRef.current(), 15000)
+    checkIntervalRef.current = setInterval(() => checkNetworkStatusRef.current(), 30000)
 
     return () => {
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current)

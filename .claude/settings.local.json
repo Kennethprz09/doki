@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npx expo install expo-splash-screen)",
-      "Bash(head -50 /d/laragon/www/android/doki/src/hooks/*.ts)"
+      "Bash(head -50 /d/laragon/www/android/doki/src/hooks/*.ts)",
+      "Bash(xargs grep -l \"multiple.*select\\\\|multi.*file\\\\|batch.*select\")",
+      "Bash(grep -n 'export ' /d/laragon/www/android/doki/src/components/common/*.tsx /d/laragon/www/android/doki/src/components/modals/*.tsx)"
     ]
   }
 }

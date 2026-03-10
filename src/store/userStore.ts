@@ -45,22 +45,6 @@ const validateUser = (user: any): user is User => {
   return user && typeof user === "object" && typeof user.id === "string"
 }
 
-// Optimización 4: Función para inicializar usuario con mejor manejo de errores
-const initializeUser = async (): Promise<User | null> => {
-  try {
-    const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY)
-    if (!storedUser) return null
-
-    const parsedUser = JSON.parse(storedUser)
-    return validateUser(parsedUser) ? parsedUser : null
-  } catch (error) {
-    console.error("Error al cargar usuario desde AsyncStorage:", error)
-    // Limpiar datos corruptos
-    await AsyncStorage.removeItem(USER_STORAGE_KEY)
-    return null
-  }
-}
-
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
@@ -80,38 +64,18 @@ export const useUserStore = create<UserState>()(
         set({ error })
       },
 
+      // Zustand persist maneja la hidratación automáticamente,
+      // loadUser solo fuerza una re-lectura si es necesario
       loadUser: async () => {
-        const { setLoading, setError, setUser } = get()
-
-        try {
-          setLoading(true)
-          setError(null)
-
-          const storedUser = await initializeUser()
-          setUser(storedUser)
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Error al cargar usuario"
-          setError(errorMessage)
-          console.error("Error loading user:", error)
-        } finally {
-          setLoading(false)
-        }
+        // El middleware persist ya hidrata el estado al iniciar.
+        // Este método existe por compatibilidad; no hace nada adicional.
+        set({ isLoading: false, error: null })
       },
 
+      // Solo setear null; Zustand persist se encarga de persistir el cambio.
+      // NO hacer removeItem manual para evitar race condition con persist.
       clearUser: async () => {
-        const { setLoading, setError } = get()
-
-        try {
-          setLoading(true)
-          set({ user: null, error: null })
-          await AsyncStorage.removeItem(USER_STORAGE_KEY)
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Error al limpiar usuario"
-          setError(errorMessage)
-          console.error("Error clearing user:", error)
-        } finally {
-          setLoading(false)
-        }
+        set({ user: null, error: null, isLoading: false })
       },
 
       // Optimización 5: Nueva función para actualizar usuario

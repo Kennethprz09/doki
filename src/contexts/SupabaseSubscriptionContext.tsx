@@ -1,5 +1,3 @@
-"use client"
-
 import React from "react"
 import { createContext, useContext, useEffect, useRef, useCallback } from "react"
 import { AppState, type AppStateStatus } from "react-native"
@@ -75,13 +73,26 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
             useDocumentsStore.setState((state) => {
               // Evitar duplicados
               const exists = state.documents.some((doc) => doc.id === document.id)
-              if (exists) return state
+              const existsInFolder = state.documentsFolder.some((doc) => doc.id === document.id)
+
+              // Solo agregar a root si NO tiene folder_id
+              const newDocuments = !document.folder_id && !exists
+                ? [document, ...state.documents]
+                : state.documents
+
+              // Si tiene folder_id, agregar a documentsFolder
+              const newDocumentsFolder = document.folder_id && !existsInFolder
+                ? [document, ...state.documentsFolder]
+                : state.documentsFolder
+
+              const newFavorites = document.is_favorite && !exists
+                ? [document, ...state.documentsFavorite]
+                : state.documentsFavorite
 
               return {
-                documents: [document, ...state.documents],
-                documentsFavorite: document.is_favorite
-                  ? [document, ...state.documentsFavorite]
-                  : state.documentsFavorite,
+                documents: newDocuments,
+                documentsFolder: newDocumentsFolder,
+                documentsFavorite: newFavorites,
               }
             })
             break
@@ -91,9 +102,14 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
               const updatedDocuments = state.documents.map((doc) =>
                 doc.id === document.id ? { ...doc, ...document } : doc,
               )
-              const updatedFavorites = updatedDocuments.filter((doc) => doc.is_favorite)
+              const updatedFolder = state.documentsFolder.map((doc) =>
+                doc.id === document.id ? { ...doc, ...document } : doc,
+              )
+              const allDocs = [...updatedDocuments, ...updatedFolder]
+              const updatedFavorites = allDocs.filter((doc) => doc.is_favorite)
               return {
                 documents: updatedDocuments,
+                documentsFolder: updatedFolder,
                 documentsFavorite: updatedFavorites,
               }
             })
@@ -102,6 +118,7 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
           case "DELETE":
             useDocumentsStore.setState((state) => ({
               documents: state.documents.filter((doc) => doc.id !== oldDocument.id),
+              documentsFolder: state.documentsFolder.filter((doc) => doc.id !== oldDocument.id),
               documentsFavorite: state.documentsFavorite.filter((doc) => doc.id !== oldDocument.id),
             }))
             break

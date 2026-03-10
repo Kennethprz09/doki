@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useCallback } from "react"
 
 interface ValidationRule {
@@ -90,46 +88,22 @@ export const useFormValidation = (rules: ValidationRules) => {
   }
 }
 
-// Optimización 2: Reglas de validación predefinidas
+// Reglas de validación predefinidas (sin custom redundantes; el hook ya valida pattern/minLength)
 export const commonValidationRules = {
   email: {
     required: true,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    custom: (value: string) => {
-      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return "Por favor, ingresa un correo electrónico válido"
-      }
-      return null
-    },
   },
   password: {
     required: true,
     minLength: 6,
-    custom: (value: string) => {
-      if (value && value.length < 6) {
-        return "La contraseña debe tener al menos 6 caracteres"
-      }
-      return null
-    },
   },
   name: {
     required: true,
     minLength: 2,
-    custom: (value: string) => {
-      if (value && value.trim().length < 2) {
-        return "El nombre debe tener al menos 2 caracteres"
-      }
-      return null
-    },
   },
   surname: {
     required: true,
     minLength: 2,
-    custom: (value: string) => {
-      if (value && value.trim().length < 2) {
-        return "El apellido debe tener al menos 2 caracteres"
-      }
-      return null
-    },
   },
 }

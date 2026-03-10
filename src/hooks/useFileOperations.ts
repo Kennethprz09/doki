@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback } from "react";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
@@ -9,8 +7,6 @@ import * as IntentLauncher from "expo-intent-launcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../supabase/supabaseClient";
 import { useGlobalStore } from "../store/globalStore";
-import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
 
 interface FileOperationResult {
   success: boolean;
@@ -79,26 +75,31 @@ export const useFileOperations = () => {
     []
   );
 
-  // Manejo específico para Android
+  // Manejo específico para Android - con recuperación de permisos SAF
+  const requestDownloadDir = async (): Promise<string | null> => {
+    const permissions =
+      await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+    if (!permissions.granted) {
+      Toast.show({ type: "error", text1: "Permisos denegados", text2: "Se requieren permisos para guardar archivos en Descargas." });
+      return null;
+    }
+    await AsyncStorage.setItem("downloadDirUri", permissions.directoryUri);
+    return permissions.directoryUri;
+  };
+
   const handleAndroidDownload = async (
     tempUri: string,
     fileName: string,
     fileExt: string
   ): Promise<FileOperationResult> => {
+    let dirUri = await AsyncStorage.getItem("downloadDirUri");
+
+    if (!dirUri) {
+      dirUri = await requestDownloadDir();
+      if (!dirUri) return { success: false, error: "Permissions denied" };
+    }
+
     try {
-      let dirUri = await AsyncStorage.getItem("downloadDirUri");
-
-      if (!dirUri) {
-        const permissions =
-          await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        if (!permissions.granted) {
-          Toast.show({ type: "error", text1: "Permisos denegados", text2: "Se requieren permisos para guardar archivos en Descargas." });
-          return { success: false, error: "Permissions denied" };
-        }
-        dirUri = permissions.directoryUri;
-        await AsyncStorage.setItem("downloadDirUri", dirUri);
-      }
-
       const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
         dirUri,
         fileName,
@@ -112,16 +113,34 @@ export const useFileOperations = () => {
       await FileSystem.StorageAccessFramework.writeAsStringAsync(
         fileUri,
         fileBase64,
-        {
-          encoding: FileSystem.EncodingType.Base64,
-        }
+        { encoding: FileSystem.EncodingType.Base64 }
       );
 
       Toast.show({ type: "success", text1: "Descarga completada", text2: `Archivo guardado en: Descargas/${fileName}` });
-
       return { success: true };
     } catch (error) {
-      throw error;
+      // Si el permiso SAF fue revocado, limpiar caché y re-solicitar
+      await AsyncStorage.removeItem("downloadDirUri");
+      dirUri = await requestDownloadDir();
+      if (!dirUri) return { success: false, error: "Permissions denied" };
+
+      // Reintentar una vez con el nuevo permiso
+      const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        dirUri,
+        fileName,
+        getMimeType(fileExt)
+      );
+      const fileBase64 = await FileSystem.readAsStringAsync(tempUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(
+        fileUri,
+        fileBase64,
+        { encoding: FileSystem.EncodingType.Base64 }
+      );
+
+      Toast.show({ type: "success", text1: "Descarga completada", text2: `Archivo guardado en: Descargas/${fileName}` });
+      return { success: true };
     }
   };
 
@@ -198,7 +217,7 @@ export const useFileOperations = () => {
     return mimeType;
   };
 
-  // Función viewFile corregida
+  // Función viewFile - usa el archivo descargado en caché
   const viewFile = useCallback(
     async (
       fileUrl?: string,
@@ -213,25 +232,34 @@ export const useFileOperations = () => {
       try {
         setLoading(true);
 
-        // Extraer la extensión correcta
         const realExtension = extractFileExtension(fileUrl, fileExt);
         const finalFileName =
           fileName || fileUrl.split("/").pop() || `tempfile.${realExtension}`;
         const mimeType = getMimeType(realExtension);
 
-        const downloadResult = await downloadFileToCache(
-          fileUrl,
-          finalFileName
-        );
+        const downloadResult = await downloadFileToCache(fileUrl, finalFileName);
         if (!downloadResult) {
           throw new Error("No se pudo descargar el archivo.");
         }
 
-        const canOpen = await Linking.canOpenURL(downloadResult.signedUrl);
-        if (canOpen) {
-          await Linking.openURL(downloadResult.signedUrl);
+        if (Platform.OS === "android") {
+          // En Android usar IntentLauncher con el archivo local para mejor compatibilidad
+          const contentUri = await FileSystem.getContentUriAsync(downloadResult.uri);
+          await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+            data: contentUri,
+            flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+            type: mimeType,
+          });
         } else {
-          throw new Error("No se puede abrir el archivo en este dispositivo.");
+          // En iOS usar Sharing que maneja mejor la apertura de archivos
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(downloadResult.uri, {
+              mimeType,
+              UTI: mimeType,
+            });
+          } else {
+            throw new Error("No se puede abrir el archivo en este dispositivo.");
+          }
         }
 
         return { success: true };

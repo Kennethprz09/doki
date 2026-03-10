@@ -10,7 +10,6 @@ import { useGlobalStore } from "../store/globalStore";
 import { checkInternetConnection } from "../utils/actions";
 import { supabase } from "../supabase/supabaseClient";
 import type { Document } from "../components/types";
-import useDocumentsSync from "./useDocumentsSync";
 
 interface UseFileUploadProps {
   folderId?: string | null;
@@ -26,9 +25,6 @@ export const useFileUpload = ({
   const user = useUserStore((state) => state.user);
   const { addDocument } = useDocumentsStore();
   const { setLoading } = useGlobalStore();
-  const { syncDocuments } = useDocumentsSync()
-
-  
   const [uploading, setUploading] = useState(false);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -155,13 +151,12 @@ export const useFileUpload = ({
         updated_at: data.updated_at,
       };
 
-      if (!data.folder_id) {
-        addDocument(newDocument);
-      } else {
+      // Agregar al store local; la suscripción realtime sincroniza automáticamente
+      addDocument(newDocument);
+      if (data.folder_id) {
         DeviceEventEmitter.emit("document:uploaded", { document: newDocument });
       }
 
-      await syncDocuments();
       onSuccess?.(newDocument);
 
       Toast.show({
@@ -180,7 +175,7 @@ export const useFileUpload = ({
       setUploading(false);
       setLoading(false);
     }
-  }, [user?.id, folderId, addDocument, syncDocuments, setLoading, onSuccess, onError]);
+  }, [user?.id, folderId, addDocument, setLoading, onSuccess, onError]);
 
   return {
     uploadFile,

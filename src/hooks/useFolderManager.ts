@@ -1,5 +1,3 @@
-"use client"
-
 import { useCallback, useState } from "react"
 import Toast from "react-native-toast-message"
 import { useUserStore } from "../store/userStore"

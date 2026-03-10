@@ -1,31 +1,24 @@
-"use client"
-
 import { useCallback } from "react"
 import { DeviceEventEmitter } from "react-native"
 import Toast from "react-native-toast-message"
 import { useGlobalStore } from "../store/globalStore"
 import { useDocumentsStore } from "../store/documentsStore"
+import { useUserStore } from "../store/userStore"
 import { checkInternetConnection } from "../utils/actions"
 import { supabase } from "../supabase/supabaseClient"
-import useDocumentsSync from "./useDocumentsSync"
 
 export const useDocumentActions = () => {
   const { setLoading } = useGlobalStore()
   const { updateDocument, deleteDocument } = useDocumentsStore()
-  const { syncDocuments } = useDocumentsSync()
+  const user = useUserStore((state) => state.user)
 
-
-  // Función auxiliar para obtener el usuario actual
-  const getCurrentUser = useCallback(async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser()
-    if (error || !user) {
+  // Función auxiliar para obtener el usuario actual (del store, sin request de red)
+  const getUserId = useCallback(() => {
+    if (!user?.id) {
       throw new Error("Usuario no autenticado")
     }
-    return user
-  }, [])
+    return user.id
+  }, [user?.id])
 
   // Función auxiliar para verificar conectividad
   const checkConnectivity = useCallback(async () => {
@@ -47,19 +40,17 @@ export const useDocumentActions = () => {
         if (!(await checkConnectivity())) return false
 
         setLoading(true)
-        const user = await getCurrentUser()
+        const userId = getUserId()
 
         const { error } = await supabase
           .from("documents")
           .update({ is_favorite: !currentStatus })
           .eq("id", id)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
 
         if (error) throw error
 
         updateDocument({ id, changes: { is_favorite: !currentStatus } })
-
-        await syncDocuments()
 
         Toast.show({
           type: "success",
@@ -79,7 +70,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument, syncDocuments, checkConnectivity, getCurrentUser],
+    [setLoading, updateDocument, checkConnectivity, getUserId],
   )
 
   const deleteDocumentById = useCallback(
@@ -88,14 +79,14 @@ export const useDocumentActions = () => {
         if (!(await checkConnectivity())) return false
 
         setLoading(true)
-        const user = await getCurrentUser()
+        const userId = getUserId()
 
         // Obtener el path del archivo antes de eliminar el registro
         const { data: doc, error: fetchError } = await supabase
           .from("documents")
           .select("path, is_folder")
           .eq("id", id)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .single()
 
         if (fetchError) throw fetchError
@@ -112,7 +103,7 @@ export const useDocumentActions = () => {
         }
 
         // Eliminar el registro de la base de datos
-        const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id)
+        const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", userId)
 
         if (error) throw error
 
@@ -136,7 +127,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, deleteDocument, checkConnectivity, getCurrentUser],
+    [setLoading, deleteDocument, checkConnectivity, getUserId],
   )
 
   const updateDocumentColor = useCallback(
@@ -145,14 +136,13 @@ export const useDocumentActions = () => {
         if (!(await checkConnectivity())) return false
 
         setLoading(true)
-        const user = await getCurrentUser()
+        const userId = getUserId()
 
-        const { error } = await supabase.from("documents").update({ color }).eq("id", id).eq("user_id", user.id)
+        const { error } = await supabase.from("documents").update({ color }).eq("id", id).eq("user_id", userId)
 
         if (error) throw error
 
         updateDocument({ id, changes: { color } })
-        await syncDocuments()
 
         Toast.show({
           type: "success",
@@ -172,7 +162,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument, syncDocuments, checkConnectivity, getCurrentUser],
+    [setLoading, updateDocument, checkConnectivity, getUserId],
   )
 
   const moveDocuments = useCallback(
@@ -181,13 +171,13 @@ export const useDocumentActions = () => {
         if (!(await checkConnectivity())) return false
 
         setLoading(true)
-        const user = await getCurrentUser()
+        const userId = getUserId()
 
         const { error } = await supabase
           .from("documents")
           .update({ folder_id: targetFolderId })
           .in("id", documentIds)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
 
         if (error) throw error
 
@@ -217,7 +207,7 @@ export const useDocumentActions = () => {
         setLoading(false)
       }
     },
-    [setLoading, updateDocument, checkConnectivity, getCurrentUser],
+    [setLoading, updateDocument, checkConnectivity, getUserId],
   )
 
   return {

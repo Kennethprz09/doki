@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { memo, useCallback } from "react";
 import { TouchableOpacity, Text, View, StyleSheet, Dimensions } from "react-native";
@@ -57,10 +56,6 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
     const iconName = isSelected ? "checkmark-circle" : documentIcon;
     const iconColor = isSelected ? colors.primary : documentColor;
     const iconBg = isSelected ? colors.primarySubtle : withAlpha(documentColor, 14);
-
-    const extLabel = document.ext
-      ? document.ext.replace(".", "").toUpperCase().slice(0, 4)
-      : null;
 
     const formattedDate = document.updated_at
       ? format(new Date(document.updated_at), "d MMM yyyy", { locale: es })
@@ -159,11 +154,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     marginBottom: 8,
     overflow: "hidden",
+    borderWidth: 1.5,
+    borderColor: "transparent",
     ...shadows.sm,
   },
   selectedList: {
     backgroundColor: colors.primarySubtle,
-    borderWidth: 1.5,
     borderColor: colors.primary,
   },
   listAccent: {
@@ -216,11 +212,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     alignItems: "center",
     minHeight: 160,
+    borderWidth: 1.5,
+    borderColor: "transparent",
     ...shadows.md,
   },
   selectedGrid: {
     backgroundColor: colors.primarySubtle,
-    borderWidth: 1.5,
     borderColor: colors.primary,
   },
   gridIconContainer: {
@@ -251,18 +248,6 @@ const styles = StyleSheet.create({
     top: 10,
     right: 10,
     padding: 4,
-  },
-
-  // ── Shared ────────────────────────────────────────────────────────────────
-  extBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.xs,
-  },
-  extText: {
-    fontSize: 10,
-    fontFamily: fonts.bold,
-    letterSpacing: 0.5,
   },
 });
 

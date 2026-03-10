@@ -1,6 +1,4 @@
-"use client"
-
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSupabaseSubscription } from "../contexts/SupabaseSubscriptionContext"
 import { useDocumentsStore } from "../store/documentsStore"
 import { useUserStore } from "../store/userStore"
@@ -22,6 +20,7 @@ const useDocumentsSync = () => {
 
   const lastSyncRef = useRef<Date | null>(null)
   const syncInProgressRef = useRef(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Optimización 2: Función para sincronización manual
   const syncDocuments = useCallback(
@@ -37,6 +36,7 @@ const useDocumentsSync = () => {
       }
 
       syncInProgressRef.current = true
+      setIsSyncing(true)
       setLoading(true)
       setError(null)
 
@@ -68,6 +68,7 @@ const useDocumentsSync = () => {
       } finally {
         setLoading(false)
         syncInProgressRef.current = false
+        setIsSyncing(false)
       }
     },
     [user?.id, networkStatus, setDocuments, setDocumentsFavorite, setLoading, setError],
@@ -103,7 +104,7 @@ const useDocumentsSync = () => {
 
   return {
     isSubscribed,
-    isSyncing: syncInProgressRef.current,
+    isSyncing,
     lastSync: lastSyncRef.current,
     syncDocuments,
     needsSync: needsSync(),

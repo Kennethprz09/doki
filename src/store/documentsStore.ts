@@ -14,22 +14,15 @@ interface DocumentsState {
   // Actions
   setDocuments: (documents: Document[]) => void
   setDocumentsFavorite: (documents: Document[]) => void
-  setDocumentsFolder: (documentsFolder: Document[]) => void // Nueva acción para documentos de carpeta
+  setDocumentsFolder: (documentsFolder: Document[]) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   updateDocument: (payload: { id: string; changes: Partial<Document> }) => void
-  updateDocumentFavorite: (payload: { id: string; changes: Partial<Document> }) => void
   deleteDocument: (id: string) => void
   addDocument: (document: Document) => void
   clearDocuments: () => void
-
-  // Computed getters
-  getFavoriteDocuments: () => Document[]
-  getDocumentById: (id: string) => Document | undefined
-  getDocumentsByFolder: (folderId: string) => Document[]
 }
 
-// Optimización 1: Función para validar documentos
 const validateDocuments = (documents: any): documents is Document[] => {
   return (
     Array.isArray(documents) && documents.every((doc) => doc && typeof doc === "object" && typeof doc.id === "string")
@@ -38,10 +31,10 @@ const validateDocuments = (documents: any): documents is Document[] => {
 
 export const useDocumentsStore = create<DocumentsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       documents: [],
       documentsFavorite: [],
-      documentsFolder: [], // Inicializar
+      documentsFolder: [],
       isLoading: false,
       error: null,
       lastSync: null,
@@ -49,7 +42,7 @@ export const useDocumentsStore = create<DocumentsState>()(
       setDocuments: (documents) => {
         const validDocuments = validateDocuments(documents) ? documents : []
         set({
-          documents: validDocuments.filter((doc) => !doc.folder_id), // Asegurar que solo sean documentos raíz
+          documents: validDocuments.filter((doc) => !doc.folder_id),
           documentsFavorite: validDocuments.filter((doc) => doc.is_favorite),
           lastSync: new Date().toISOString(),
           error: null,
@@ -63,50 +56,26 @@ export const useDocumentsStore = create<DocumentsState>()(
 
       setDocumentsFolder: (documentsFolder) => {
         const validDocuments = validateDocuments(documentsFolder) ? documentsFolder : []
-        set({ documentsFolder: validDocuments }) // Establecer directamente los documentos de la carpeta
+        set({ documentsFolder: validDocuments })
       },
 
       setLoading: (isLoading) => set({ isLoading }),
 
       setError: (error) => set({ error }),
 
-      // Optimización 2: Actualización más eficiente con immer-like pattern
       updateDocument: ({ id, changes }) => {
         set((state) => {
-          // Actualizar en documents (raíz)
           const updatedRootDocuments = state.documents.map((doc) => (doc.id === id ? { ...doc, ...changes } : doc))
-          // Actualizar en documentsFolder (si aplica)
           const updatedFolderDocuments = state.documentsFolder.map((doc) =>
             doc.id === id ? { ...doc, ...changes } : doc,
           )
-          // Actualizar en documentsFavorite (si aplica)
           const updatedFavoriteDocuments = state.documentsFavorite.map((doc) =>
             doc.id === id ? { ...doc, ...changes } : doc,
           )
 
           return {
-            documents: updatedRootDocuments.filter((doc) => !doc.folder_id), // Re-filtrar para asegurar solo raíz
-            documentsFavorite: updatedFavoriteDocuments.filter((doc) => doc.is_favorite), // Re-filtrar favoritos
-            documentsFolder: updatedFolderDocuments,
-            lastSync: new Date().toISOString(),
-          }
-        })
-      },
-
-      updateDocumentFavorite: ({ id, changes }) => {
-        set((state) => {
-          // Actualizar en documents (raíz)
-          const updatedRootDocuments = state.documents.map((doc) => (doc.id === id ? { ...doc, ...changes } : doc))
-          // Actualizar en documentsFolder (si aplica)
-          const updatedFolderDocuments = state.documentsFolder.map((doc) =>
-            doc.id === id ? { ...doc, ...changes } : doc,
-          )
-          // Actualizar en documentsFavorite
-          const updatedFavorites = state.documentsFavorite.map((doc) => (doc.id === id ? { ...doc, ...changes } : doc))
-
-          return {
-            documents: updatedRootDocuments,
-            documentsFavorite: updatedFavorites.filter((doc) => doc.is_favorite),
+            documents: updatedRootDocuments.filter((doc) => !doc.folder_id),
+            documentsFavorite: updatedFavoriteDocuments.filter((doc) => doc.is_favorite),
             documentsFolder: updatedFolderDocuments,
             lastSync: new Date().toISOString(),
           }
@@ -117,15 +86,15 @@ export const useDocumentsStore = create<DocumentsState>()(
         set((state) => ({
           documents: state.documents.filter((doc) => doc.id !== id),
           documentsFavorite: state.documentsFavorite.filter((doc) => doc.id !== id),
-          documentsFolder: state.documentsFolder.filter((doc) => doc.id !== id), // Eliminar también de documentsFolder
+          documentsFolder: state.documentsFolder.filter((doc) => doc.id !== id),
           lastSync: new Date().toISOString(),
         }))
       },
 
       addDocument: (document) => {
         set((state) => {
-          const newDocuments = document.folder_id ? state.documents : [...state.documents, document] // Añadir a raíz si no tiene folder_id
-          const newDocumentsFolder = document.folder_id ? [...state.documentsFolder, document] : state.documentsFolder // Añadir a folder si tiene folder_id
+          const newDocuments = document.folder_id ? state.documents : [...state.documents, document]
+          const newDocumentsFolder = document.folder_id ? [...state.documentsFolder, document] : state.documentsFolder
           const newDocumentsFavorite = document.is_favorite
             ? [...state.documentsFavorite, document]
             : state.documentsFavorite
@@ -147,42 +116,16 @@ export const useDocumentsStore = create<DocumentsState>()(
           lastSync: null,
         })
       },
-
-      // Optimización 3: Getters computados para mejor rendimiento
-      getFavoriteDocuments: () => {
-        return get().documents.filter((doc) => doc.is_favorite)
-      },
-
-      getDocumentById: (id) => {
-        // Buscar en todos los arrays para mayor cobertura
-        return (
-          get().documents.find((doc) => doc.id === id) ||
-          get().documentsFavorite.find((doc) => doc.id === id) ||
-          get().documentsFolder.find((doc) => doc.id === id)
-        )
-      },
-
-      getDocumentsByFolder: (folderId) => {
-        // Este getter ahora puede ser más directo si documentsFolder ya está filtrado
-        return get().documentsFolder.filter((doc) => doc.folder_id === folderId)
-      },
     }),
     {
       name: "documents-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      // Optimización 4: Partición del estado para mejor rendimiento
+      // Solo persistir documentos raíz y favoritos; documentsFolder es transiente
       partialize: (state) => ({
         documents: state.documents,
         documentsFavorite: state.documentsFavorite,
-        documentsFolder: state.documentsFolder, // Persistir también documentsFolder
         lastSync: state.lastSync,
       }),
     },
   ),
 )
-
-// Optimización 5: Selectores específicos para evitar re-renders
-export const useDocuments = () => useDocumentsStore((state) => state.documents)
-export const useFavoriteDocuments = () => useDocumentsStore((state) => state.documentsFavorite)
-export const useFolderDocumentsState = () => useDocumentsStore((state) => state.documentsFolder) // Nuevo selector
-export const useDocumentsLoading = () => useDocumentsStore((state) => state.isLoading)

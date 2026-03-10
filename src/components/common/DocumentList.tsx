@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { memo, useCallback, useState } from "react";
 import {
@@ -167,9 +165,10 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           }
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={EmptyComponent}
+          extraData={selectedItems}
           initialNumToRender={10}
           windowSize={5}
-          removeClippedSubviews={renderMode === "list"}
+          removeClippedSubviews={false}
           maxToRenderPerBatch={10}
           updateCellsBatchingPeriod={50}
         />

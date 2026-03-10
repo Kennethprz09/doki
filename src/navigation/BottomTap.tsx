@@ -1,6 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { TransitionPresets } from "@react-navigation/stack";
 import React from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

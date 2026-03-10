@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";

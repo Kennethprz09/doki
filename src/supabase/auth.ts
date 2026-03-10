@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../store/userStore';
+import { useDocumentsStore } from '../store/documentsStore';
 
 interface LoginResponse {
   success: boolean;
@@ -48,9 +48,9 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 export const logout = async () => {
   try {
     await supabase.auth.signOut();
-    useUserStore.getState().setUser(null);
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('user');
+    // Limpiar stores via Zustand (persist se encarga del AsyncStorage)
+    await useUserStore.getState().clearUser();
+    useDocumentsStore.getState().clearDocuments();
   } catch (err) {
     console.error('Error al cerrar sesión:', err);
   }
@@ -72,9 +72,8 @@ export const deleteAccount = async (): Promise<{ success: boolean; errorMessage?
 
     // Limpiar sesión local
     await supabase.auth.signOut();
-    useUserStore.getState().setUser(null);
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('user');
+    await useUserStore.getState().clearUser();
+    useDocumentsStore.getState().clearDocuments();
 
     return { success: true };
   } catch (err: any) {
@@ -104,11 +103,11 @@ export const resetPassword = async (email: string): Promise<ResetPasswordRespons
       body: { email },
     });
 
-    if (checkError || !checkData.success) {
-      console.error("Email check failed:", checkError || checkData.errorMessage);
+    if (checkError || !checkData?.success) {
+      console.error("Email check failed:", checkError || checkData?.errorMessage);
       return {
         success: false,
-        errorMessage: checkData.errorMessage || checkError?.message || 'El correo electrónico no está registrado',
+        errorMessage: checkData?.errorMessage || checkError?.message || 'El correo electrónico no está registrado',
       };
     }
 

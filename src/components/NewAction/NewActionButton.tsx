@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { memo } from "react";
 import { TouchableOpacity, Text, StyleSheet, Platform } from "react-native";

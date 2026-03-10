@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { useEffect, useCallback, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";

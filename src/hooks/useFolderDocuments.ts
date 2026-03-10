@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDocumentsStore } from "../store/documentsStore";
+import { useUserStore } from "../store/userStore";
 import { checkInternetConnection } from "../utils/actions";
 import { supabase } from "../supabase/supabaseClient";
 import type { Document } from "../components/types";
@@ -7,6 +8,7 @@ import Toast from "react-native-toast-message";
 
 export const useFolderDocuments = (folder: Document | null) => {
   const { documentsFolder, setDocumentsFolder } = useDocumentsStore();
+  const user = useUserStore((state) => state.user);
   const [loading, setLoading] = useState(false);
 
   const fetchFolderDocuments = useCallback(async () => {
@@ -26,17 +28,15 @@ export const useFolderDocuments = (folder: Document | null) => {
         return;
       }
 
-      setLoading(true);
+      if (!user?.id) return;
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (!userId) return;
+      setLoading(true);
 
       const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("folder_id", folder.id)
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -52,7 +52,7 @@ export const useFolderDocuments = (folder: Document | null) => {
     } finally {
       setLoading(false);
     }
-  }, [folder?.id, setDocumentsFolder]);
+  }, [folder?.id, user?.id, setDocumentsFolder]);
 
   useEffect(() => {
     if (folder?.id) {
