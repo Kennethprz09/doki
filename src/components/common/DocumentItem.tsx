@@ -90,13 +90,6 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
           <Text style={styles.gridName} numberOfLines={2} ellipsizeMode="tail">
             {documentName}
           </Text>
-
-          {/* Date */}
-          {formattedDate && (
-            <Text style={styles.gridDate} numberOfLines={1}>
-              {formattedDate}
-            </Text>
-          )}
         </TouchableOpacity>
       );
     }
@@ -123,9 +116,6 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
           <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">
             {documentName}
           </Text>
-          <View style={styles.listMeta}>
-            {formattedDate && <Text style={styles.listDate}>{formattedDate}</Text>}
-          </View>
         </View>
 
         {/* Action button */}

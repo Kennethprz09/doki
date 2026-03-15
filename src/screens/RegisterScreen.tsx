@@ -35,13 +35,7 @@ interface RegisterScreenProps {
 
 // Optimización 1: Carpetas por defecto como constante
 const DEFAULT_FOLDERS = [
-  { name: "Cedula o tarjeta de id" },
-  { name: "Tarjeta de propiedad carro o moto" },
-  { name: "Pase de conduccion" },
-  { name: "Pasaporte" },
-  { name: "Tarjeta profesional" },
-  { name: "Carnet EPS" },
-  { name: "Otros" },
+  { name: "Mis Documentos" },
 ] as const
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {

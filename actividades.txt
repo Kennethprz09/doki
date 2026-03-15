@@ -1,3 +1,9 @@
+Eliminar cuenta agregarle padding a Eliminar cuenta que se ve muy abajo.
+
+
+revisar cerrar sesion en ios.
+
+
 token gmail: cltmnphkcstyvvle
 
 npx expo start -g
