@@ -1,7 +1,6 @@
 // NewActionComponent.tsx
 import React from "react";
 import { memo, useState, useCallback, useRef } from "react";
-import { View, StyleSheet } from "react-native";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import { useDocumentScanner } from "../../hooks/useDocumentScanner";
 import { useFolderManager } from "../../hooks/useFolderManager";
@@ -179,7 +178,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
     const isDisabled = uploading || scanning || processing;
 
     return (
-      <View style={styles.container} pointerEvents="box-none">
+      <>
         <NewActionButton
           onPress={() => {
             setShowOptions(true);
@@ -238,23 +237,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           confirmText="Sí"
           cancelText="No"
         />
-      </View>
+      </>
     );
   }
 );
 
 NewActionComponent.displayName = "NewActionComponent";
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "transparent",
-    pointerEvents: "box-none",
-  },
-});
 
 export default NewActionComponent;

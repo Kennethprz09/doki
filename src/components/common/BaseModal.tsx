@@ -1,7 +1,7 @@
 // BaseModal.tsx
 import React from "react"
 import { useCallback, useEffect, useState } from "react"
-import { Modal, StyleSheet, TouchableWithoutFeedback, Animated, BackHandler, Dimensions } from "react-native"
+import { Modal, StyleSheet, Pressable, View, Animated, BackHandler, Dimensions } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
@@ -107,13 +107,13 @@ const BaseModal: React.FC<BaseModalProps> = ({
       statusBarTranslucent
     >
       <SafeAreaProvider>
-        <TouchableWithoutFeedback onPress={handleBackdropPress}>
+        <Pressable style={{ flex: 1 }} onPress={handleBackdropPress}>
           <Animated.View style={overlayStyle}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+            <Pressable onPress={(e) => e.stopPropagation()}>
               <Animated.View style={containerAnimatedStyle}>{children}</Animated.View>
-            </TouchableWithoutFeedback>
+            </Pressable>
           </Animated.View>
-        </TouchableWithoutFeedback>
+        </Pressable>
       </SafeAreaProvider>
     </Modal>
   )

@@ -23,20 +23,23 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ visible, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const handleLogout = useCallback(() => {
-    setShowLogoutConfirm(true)
-  }, [])
+    onClose()
+    setTimeout(() => {
+      setShowLogoutConfirm(true)
+    }, 300)
+  }, [onClose])
 
   const confirmLogout = useCallback(async () => {
     try {
+      setShowLogoutConfirm(false)
       await logout()
       clearDocuments()
-      onClose()
       Toast.show({ type: "success", text1: "Sesión cerrada", text2: "Has cerrado sesión correctamente" })
       navigation.navigate("Login")
     } catch {
       Toast.show({ type: "error", text1: "Error", text2: "No se pudo cerrar la sesión" })
     }
-  }, [navigation, onClose, clearDocuments])
+  }, [navigation, clearDocuments])
 
   const handleNavigateToAccount = useCallback(() => {
     onClose()
