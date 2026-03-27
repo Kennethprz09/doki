@@ -7,8 +7,31 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    autoRefreshToken: true,
+    autoRefreshToken: false,
     persistSession: true,
     storage: AsyncStorage,
   },
+});
+
+// Verificar sesión al iniciar y activar auto-refresh solo si es válida
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error || !data.session) {
+    // Token inválido o no hay sesión - limpiar silenciosamente
+    supabase.auth.signOut().catch(() => {});
+  } else {
+    // Sesión válida - activar auto-refresh
+    supabase.auth.startAutoRefresh();
+  }
+}).catch(() => {
+  // Error inesperado - limpiar sesión
+  supabase.auth.signOut().catch(() => {});
+});
+
+// Si en algún momento el refresh falla, limpiar sesión
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    supabase.auth.stopAutoRefresh();
+  } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    supabase.auth.startAutoRefresh();
+  }
 });

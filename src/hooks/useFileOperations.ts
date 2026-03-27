@@ -4,6 +4,7 @@ import Toast from "react-native-toast-message";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as IntentLauncher from "expo-intent-launcher";
+import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../supabase/supabaseClient";
 import { useGlobalStore } from "../store/globalStore";
@@ -251,15 +252,8 @@ export const useFileOperations = () => {
             type: mimeType,
           });
         } else {
-          // En iOS usar Sharing que maneja mejor la apertura de archivos
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(downloadResult.uri, {
-              mimeType,
-              UTI: mimeType,
-            });
-          } else {
-            throw new Error("No se puede abrir el archivo en este dispositivo.");
-          }
+          // En iOS abrir la URL firmada en el navegador
+          await WebBrowser.openBrowserAsync(downloadResult.signedUrl);
         }
 
         return { success: true };
