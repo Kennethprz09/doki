@@ -1,6 +1,6 @@
 // BaseModal.tsx
 import React from "react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Modal, StyleSheet, Pressable, View, Animated, BackHandler, Dimensions } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -19,6 +19,7 @@ interface BaseModalProps extends ModalProps {
   children: React.ReactNode
   position?: "center" | "bottom"
   fullScreen?: boolean
+  onModalHidden?: () => void
 }
 
 const BaseModal: React.FC<BaseModalProps> = ({
@@ -31,9 +32,16 @@ const BaseModal: React.FC<BaseModalProps> = ({
   children,
   position = "center",
   fullScreen = false,
+  onModalHidden,
 }) => {
   const [modalVisible, setModalVisible] = useState(visible)
-  const fadeAnim = useState(new Animated.Value(visible ? 1 : 0))[0] // Iniciar con valor correcto
+  const fadeAnim = useState(new Animated.Value(visible ? 1 : 0))[0]
+  const wasVisibleRef = useRef(visible)
+  const onModalHiddenRef = useRef(onModalHidden)
+
+  useEffect(() => {
+    onModalHiddenRef.current = onModalHidden
+  })
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -48,6 +56,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
 
   useEffect(() => {
     if (visible) {
+      wasVisibleRef.current = true
       setModalVisible(true)
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -61,6 +70,10 @@ const BaseModal: React.FC<BaseModalProps> = ({
         useNativeDriver: true,
       }).start(() => {
         setModalVisible(false)
+        if (wasVisibleRef.current) {
+          wasVisibleRef.current = false
+          onModalHiddenRef.current?.()
+        }
       })
     }
   }, [visible, fadeAnim])

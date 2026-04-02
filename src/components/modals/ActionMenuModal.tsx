@@ -1,12 +1,10 @@
 // ActionMenuModal.tsx
 import React from "react";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import BaseModal from "../common/BaseModal";
-import ActionMoveModal from "./ActionMoveModal";
-import ConfirmDialog from "../common/ConfirmDialog";
 import { useDocumentActions } from "../../hooks/useDocumentActions";
 import { useFileOperations } from "../../hooks/useFileOperations";
 import type { Document, ModalProps } from "../types";
@@ -16,16 +14,15 @@ interface ActionMenuModalProps extends ModalProps {
   document: Document | null;
   onActionComplete: () => void;
   folder?: Document;
-  onActionSelect: (action: "edit" | "color", document: Document) => void;
+  onActionSelect: (action: "edit" | "color" | "delete", document: Document) => void;
+  onModalHidden?: () => void;
 }
 
 const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
-  ({ visible, onClose, document, onActionComplete, folder, onActionSelect }) => {
+  ({ visible, onClose, document, onActionComplete, folder, onActionSelect, onModalHidden }) => {
     const insets = useSafeAreaInsets();
     const { toggleFavorite, deleteDocumentById } = useDocumentActions();
     const { viewFile, shareFile, downloadFile } = useFileOperations();
-    const [showMoveModal, setShowMoveModal] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleToggleFavorite = useCallback(async () => {
       if (!document) return;
@@ -53,14 +50,9 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
 
     const handleDelete = useCallback(() => {
       if (!document) return;
-      setShowDeleteConfirm(true);
-    }, [document]);
-
-    const confirmDelete = useCallback(async () => {
-      if (!document) return;
-      const success = await deleteDocumentById(document.id);
-      if (success) onActionComplete();
-    }, [document, deleteDocumentById, onActionComplete]);
+      onClose();
+      onActionSelect("delete", document);
+    }, [document, onClose, onActionSelect]);
 
     const handleEdit = useCallback(() => {
       if (!document) return;
@@ -73,11 +65,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
       onClose();
       onActionSelect("color", document);
     }, [document, onClose, onActionSelect]);
-
-    const handleMoveComplete = useCallback(() => {
-      setShowMoveModal(false);
-      onActionComplete();
-    }, [onActionComplete]);
 
     if (!document) return null;
 
@@ -100,8 +87,7 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
     ];
 
     return (
-      <>
-        <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.55} position="bottom">
+        <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.55} position="bottom" onModalHidden={onModalHidden}>
           <View style={styles.sheet}>
             {/* Drag handle */}
             <View style={styles.handle} />
@@ -172,26 +158,6 @@ const ActionMenuModal: React.FC<ActionMenuModalProps> = memo(
             <View style={{ height: Math.max(insets.bottom, spacing.xl) }} />
           </View>
         </BaseModal>
-
-        <ActionMoveModal
-          visible={showMoveModal}
-          onClose={() => setShowMoveModal(false)}
-          selectedItems={document ? [document.id] : []}
-          onMoveComplete={handleMoveComplete}
-          folder={folder}
-        />
-
-        <ConfirmDialog
-          visible={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={confirmDelete}
-          title="Eliminar documento"
-          message={`¿Estás seguro de que quieres eliminar "${document?.name}"?`}
-          confirmText="Eliminar"
-          variant="destructive"
-          icon="trash-outline"
-        />
-      </>
     );
   }
 );

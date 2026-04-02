@@ -11,9 +11,8 @@ type OpenFolderScreenRouteProp = RouteProp<RootStackParamList, "OpenFolderPage">
 // Optimización 1: Componente memoizado con mejor tipado
 const OpenFolderScreen: React.FC = memo(() => {
   const route = useRoute<OpenFolderScreenRouteProp>()
-  const { item: folder } = route.params
+  const folder = route.params?.item
 
-  // Optimización 2: Validación de parámetros
   if (!folder) {
     return (
       <View style={styles.container}>

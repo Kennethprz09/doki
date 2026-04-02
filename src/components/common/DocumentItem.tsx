@@ -57,9 +57,15 @@ const DocumentItem: React.FC<DocumentItemProps> = memo(
     const iconColor = isSelected ? colors.primary : documentColor;
     const iconBg = isSelected ? colors.primarySubtle : withAlpha(documentColor, 14);
 
-    const formattedDate = document.updated_at
-      ? format(new Date(document.updated_at), "d MMM yyyy", { locale: es })
-      : null;
+    let formattedDate: string | null = null;
+    if (document.updated_at) {
+      try {
+        const date = new Date(document.updated_at);
+        if (!isNaN(date.getTime())) {
+          formattedDate = format(date, "d MMM yyyy", { locale: es });
+        }
+      } catch {}
+    }
 
     if (renderMode === "grid") {
       return (

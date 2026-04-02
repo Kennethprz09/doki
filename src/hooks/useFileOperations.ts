@@ -62,12 +62,16 @@ export const useFileOperations = () => {
         }
 
         const localFile = `${FileSystem.cacheDirectory}${fileName}`;
-        const { uri } = await FileSystem.downloadAsync(
+        const downloadResult = await FileSystem.downloadAsync(
           data.signedUrl,
           localFile
         );
 
-        return { uri, signedUrl: data.signedUrl };
+        if (!downloadResult?.uri) {
+          throw new Error("La descarga no produjo un archivo válido.");
+        }
+
+        return { uri: downloadResult.uri, signedUrl: data.signedUrl };
       } catch (error) {
         console.error("Error downloading file to cache:", error);
         return null;

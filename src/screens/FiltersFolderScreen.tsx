@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useRef } from "react";
 import { View, StyleSheet, ActivityIndicator, Text, DeviceEventEmitter } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp, Document } from "../components/types";
@@ -12,6 +12,7 @@ import ProfileModal from "../components/modals/ProfileModal";
 import ActionMenuModal from "../components/modals/ActionMenuModal";
 import CreateFolderModal from "../components/modals/CreateFolderModal";
 import ColorPicker from "../components/common/ColorPicker";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import { useFolderManager } from "../hooks/useFolderManager";
 import { useDocumentActions } from "../hooks/useDocumentActions";
 
@@ -28,6 +29,9 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
   const [selectedDocumentForActions, setSelectedDocumentForActions] = useState<Document | null>(null);
   const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
+
+  const pendingActionRef = useRef<"edit" | "color" | "delete" | null>(null);
 
   const { folderDocuments, loading, refetch } = useFolderDocuments(folder);
   const { search, setSearch, sortOrder, toggleSortOrder, filteredDocuments } = useDocumentFilters({
@@ -66,16 +70,26 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
     setSelectedDocumentForActions(null);
   }, []);
 
-  const handleActionSelect = useCallback((action: "edit" | "color", document: Document) => {
+  const handleActionSelect = useCallback((action: "edit" | "color" | "delete", document: Document) => {
     setSelectedDocumentForActions(document);
-    setTimeout(() => {
-      if (action === "edit") {
-        setIsEditModalVisible(true);
-      } else if (action === "color") {
-        setIsColorPickerVisible(true);
-      }
-    }, 500);
+    pendingActionRef.current = action;
   }, []);
+
+  const handleActionMenuModalHidden = useCallback(() => {
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (action === "edit") setIsEditModalVisible(true);
+    else if (action === "color") setIsColorPickerVisible(true);
+    else if (action === "delete") setIsDeleteConfirmVisible(true);
+  }, []);
+
+  const { deleteDocumentById } = useDocumentActions();
+
+  const confirmDelete = useCallback(async () => {
+    if (!selectedDocumentForActions) return;
+    const success = await deleteDocumentById(selectedDocumentForActions.id);
+    if (success) handleActionMenuClose();
+  }, [selectedDocumentForActions, deleteDocumentById, handleActionMenuClose]);
 
   const handleEditSubmit = useCallback(
     async (newName: string) => {
@@ -165,6 +179,7 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
         onActionComplete={handleActionMenuClose}
         folder={folder}
         onActionSelect={handleActionSelect}
+        onModalHidden={handleActionMenuModalHidden}
       />
 
       <CreateFolderModal
@@ -184,6 +199,17 @@ const FiltersFolderScreen: React.FC<FiltersFolderScreenProps> = memo(({ folder }
         }}
         onColorSelect={handleColorSelect}
         selectedColor={selectedDocumentForActions?.color || undefined}
+      />
+
+      <ConfirmDialog
+        visible={isDeleteConfirmVisible}
+        onClose={() => setIsDeleteConfirmVisible(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar documento"
+        message={`¿Estás seguro de que quieres eliminar "${selectedDocumentForActions?.name}"?`}
+        confirmText="Eliminar"
+        variant="destructive"
+        icon="trash-outline"
       />
     </View>
   );

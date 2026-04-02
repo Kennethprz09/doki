@@ -1,6 +1,6 @@
 // FiltersScreen.tsx
 import React from "react";
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +13,7 @@ import ProfileModal from "../components/modals/ProfileModal";
 import ActionMenuModal from "../components/modals/ActionMenuModal";
 import ColorPicker from "../components/common/ColorPicker";
 import CreateFolderModal from "../components/modals/CreateFolderModal";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import type { Document } from "../components/types";
 import useDocumentsSync from "../hooks/useDocumentsSync";
 import { useFolderManager } from "../hooks/useFolderManager";
@@ -41,6 +42,9 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   const [selectedDocumentForActions, setSelectedDocumentForActions] = useState<Document | null>(null);
   const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
+
+  const pendingActionRef = useRef<"edit" | "color" | "delete" | null>(null);
 
   const { syncDocuments } = useDocumentsSync();
   const sourceDocuments = filterType === "all" ? documents : documentsFavorite;
@@ -69,13 +73,26 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
     setSelectedDocumentForActions(null);
   }, []);
 
-  const handleActionSelect = useCallback((action: "edit" | "color", document: Document) => {
+  const handleActionSelect = useCallback((action: "edit" | "color" | "delete", document: Document) => {
     setSelectedDocumentForActions(document);
-    setTimeout(() => {
-      if (action === "edit") setIsEditModalVisible(true);
-      else if (action === "color") setIsColorPickerVisible(true);
-    }, 500);
+    pendingActionRef.current = action;
   }, []);
+
+  const handleActionMenuModalHidden = useCallback(() => {
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (action === "edit") setIsEditModalVisible(true);
+    else if (action === "color") setIsColorPickerVisible(true);
+    else if (action === "delete") setIsDeleteConfirmVisible(true);
+  }, []);
+
+  const { deleteDocumentById } = useDocumentActions();
+
+  const confirmDelete = useCallback(async () => {
+    if (!selectedDocumentForActions) return;
+    const success = await deleteDocumentById(selectedDocumentForActions.id);
+    if (success) handleActionMenuClose();
+  }, [selectedDocumentForActions, deleteDocumentById, handleActionMenuClose]);
 
   const handleRefresh = useCallback(async () => {
     await syncDocuments();
@@ -108,7 +125,7 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
   );
 
   const userInitials =
-    user?.name && user?.surname
+    user?.name?.length && user?.surname?.length
       ? `${user.name[0]}${user.surname[0]}`.toUpperCase()
       : user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
 
@@ -187,6 +204,7 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
         document={selectedDocumentForActions}
         onActionComplete={handleActionMenuClose}
         onActionSelect={handleActionSelect}
+        onModalHidden={handleActionMenuModalHidden}
       />
 
       <CreateFolderModal
@@ -202,6 +220,17 @@ const FiltersScreen: React.FC<FiltersScreenProps> = memo(({ filterType }) => {
         onClose={() => setIsColorPickerVisible(false)}
         onColorSelect={handleColorSelect}
         selectedColor={selectedDocumentForActions?.color || undefined}
+      />
+
+      <ConfirmDialog
+        visible={isDeleteConfirmVisible}
+        onClose={() => setIsDeleteConfirmVisible(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar documento"
+        message={`¿Estás seguro de que quieres eliminar "${selectedDocumentForActions?.name}"?`}
+        confirmText="Eliminar"
+        variant="destructive"
+        icon="trash-outline"
       />
     </View>
   );

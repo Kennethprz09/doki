@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 import Toast from "react-native-toast-message";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { useUserStore } from "../store/userStore";
 import { useDocumentsStore } from "../store/documentsStore";
@@ -74,7 +75,7 @@ export const useFileUpload = ({
         copyToCacheDirectory: true,
       });
 
-      if (pickedFile.canceled) {
+      if (pickedFile.canceled || !pickedFile.assets?.length) {
         return false;
       }
 
@@ -177,8 +178,141 @@ export const useFileUpload = ({
     }
   }, [user?.id, folderId, addDocument, setLoading, onSuccess, onError]);
 
+  const pickFromGallery = useCallback(async () => {
+    try {
+      // Verificar conectividad
+      const isConnected = await checkInternetConnection();
+      if (!isConnected) {
+        onError?.("No hay conexión a internet");
+        Toast.show({
+          type: "error",
+          text1: "Sin conexión",
+          text2: "Por favor, verifica tu conexión a internet.",
+        });
+        return false;
+      }
+
+      if (!user?.id) {
+        onError?.("Usuario no autenticado");
+        Toast.show({ type: "error", text1: "Error", text2: "Usuario no autenticado" });
+        return false;
+      }
+
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Toast.show({
+          type: "error",
+          text1: "Permiso requerido",
+          text2: "Se necesita acceso a la galería para seleccionar fotos.",
+        });
+        return false;
+      }
+
+      setUploading(true);
+      setLoading(true);
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (result.canceled) {
+        return false;
+      }
+
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileSize = asset.fileSize || 0;
+      const mimeType = asset.mimeType || "image/jpeg";
+
+      if (fileSize > MAX_FILE_SIZE) {
+        onError?.("La foto excede el límite de 10MB");
+        Toast.show({ type: "error", text1: "Error", text2: "La foto excede el límite de 10MB" });
+        return false;
+      }
+
+      // Extraer nombre del archivo desde la URI
+      const uriParts = uri.split("/");
+      const fileName = uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
+
+      const sanitizeFileName = (name: string) => {
+        const normalized = name.normalize?.("NFKD")?.replace(/[\u0300-\u036f]/g, "") ?? name;
+        const replaced = normalized.replace(/\s+/g, "_");
+        const safe = replaced.replace(/[^a-zA-Z0-9._-]/g, "");
+        return safe || "file";
+      };
+
+      const fileInstance = new File(uri);
+      const fileData = await fileInstance.bytes();
+
+      const safeFileName = sanitizeFileName(fileName);
+      const filePath = `${user.id}/${Date.now()}_${safeFileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, fileData, { contentType: mimeType });
+
+      if (uploadError) throw uploadError;
+
+      const { data, error: insertError } = await supabase
+        .from("documents")
+        .insert([{
+          name: fileName,
+          size: fileSize,
+          ext: mimeType,
+          user_id: user.id,
+          folder_id: folderId || null,
+          is_folder: false,
+          path: filePath,
+        }])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const newDocument: Document = {
+        id: data.id,
+        name: data.name,
+        folder_id: data.folder_id,
+        is_favorite: false,
+        is_folder: data.is_folder,
+        path: data.path,
+        size: data.size,
+        ext: data.ext,
+        user_id: data.user_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      };
+
+      addDocument(newDocument);
+      if (data.folder_id) {
+        DeviceEventEmitter.emit("document:uploaded", { document: newDocument });
+      }
+
+      onSuccess?.(newDocument);
+
+      Toast.show({
+        type: "success",
+        text1: "Foto subida",
+        text2: "La foto se ha subido correctamente",
+      });
+
+      return true;
+    } catch (error: any) {
+      const errorMsg = error.message || "No se pudo subir la foto";
+      onError?.(errorMsg);
+      Toast.show({ type: "error", text1: "Error", text2: errorMsg });
+      return false;
+    } finally {
+      setUploading(false);
+      setLoading(false);
+    }
+  }, [user?.id, folderId, addDocument, setLoading, onSuccess, onError]);
+
   return {
     uploadFile,
+    pickFromGallery,
     uploading,
     isSupported: (mimeType: string) => ALLOWED_TYPES.includes(mimeType),
   };

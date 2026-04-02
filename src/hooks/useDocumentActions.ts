@@ -89,7 +89,7 @@ export const useDocumentActions = () => {
           .eq("user_id", userId)
           .single()
 
-        if (fetchError) throw fetchError
+        if (fetchError || !doc) throw fetchError || new Error("Documento no encontrado")
 
         // Eliminar del bucket si tiene path (es un archivo, no una carpeta)
         if (!doc.is_folder && doc.path) {

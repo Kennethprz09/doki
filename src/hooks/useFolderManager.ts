@@ -73,7 +73,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
           .insert([
             {
               name: validatedName,
-              user_id: user!.id,
+              user_id: user?.id || "",
               is_folder: true,
               icon: "folder-outline",
             },
@@ -133,7 +133,7 @@ export const useFolderManager = ({ onSuccess, onError }: UseFolderManagerProps =
           .from("documents")
           .update({ name: validatedName })
           .eq("id", itemId)
-          .eq("user_id", user!.id)
+          .eq("user_id", user?.id || "")
 
         if (error) throw error
 

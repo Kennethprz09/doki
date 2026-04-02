@@ -64,23 +64,21 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
   // Optimización 2: Función para manejar cambios en tiempo real
   const handleRealtimeChange = useCallback(
     (payload: any) => {
-      const document = payload.new as Document
-      const oldDocument = payload.old as Document
-
       try {
+        const document = payload?.new as Document | null
+        const oldDocument = payload?.old as Document | null
+
         switch (payload.eventType) {
           case "INSERT":
+            if (!document?.id) return
             useDocumentsStore.setState((state) => {
-              // Evitar duplicados
               const exists = state.documents.some((doc) => doc.id === document.id)
               const existsInFolder = state.documentsFolder.some((doc) => doc.id === document.id)
 
-              // Solo agregar a root si NO tiene folder_id
               const newDocuments = !document.folder_id && !exists
                 ? [document, ...state.documents]
                 : state.documents
 
-              // Si tiene folder_id, agregar a documentsFolder
               const newDocumentsFolder = document.folder_id && !existsInFolder
                 ? [document, ...state.documentsFolder]
                 : state.documentsFolder
@@ -98,6 +96,7 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
             break
 
           case "UPDATE":
+            if (!document?.id) return
             useDocumentsStore.setState((state) => {
               const updatedDocuments = state.documents.map((doc) =>
                 doc.id === document.id ? { ...doc, ...document } : doc,
@@ -116,6 +115,7 @@ export const SupabaseSubscriptionProvider: React.FC<{ children: React.ReactNode 
             break
 
           case "DELETE":
+            if (!oldDocument?.id) return
             useDocumentsStore.setState((state) => ({
               documents: state.documents.filter((doc) => doc.id !== oldDocument.id),
               documentsFolder: state.documentsFolder.filter((doc) => doc.id !== oldDocument.id),

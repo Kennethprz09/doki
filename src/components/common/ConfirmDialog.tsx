@@ -18,6 +18,7 @@ interface ConfirmDialogProps {
   onCancel?: () => void
   variant?: "default" | "destructive"
   icon?: keyof typeof Ionicons.glyphMap
+  onModalHidden?: () => void
 }
 
 interface SheetProps extends Omit<ConfirmDialogProps, "visible"> {
@@ -87,13 +88,14 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   variant = "default",
   icon,
+  onModalHidden,
 }) => {
   const isDestructive = variant === "destructive"
   const accentColor = isDestructive ? colors.error : colors.primary
   const iconName = icon || (isDestructive ? "alert-circle-outline" : "help-circle-outline")
 
   return (
-    <BaseModal visible={visible} onClose={onClose} position="bottom" backdropOpacity={0.45}>
+    <BaseModal visible={visible} onClose={onClose} position="bottom" backdropOpacity={0.45} onModalHidden={onModalHidden}>
       <SheetContent
         onClose={onClose}
         onConfirm={onConfirm}

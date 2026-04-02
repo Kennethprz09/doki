@@ -7,3 +7,5 @@ revisar cerrar sesion en ios.
 token gmail: cltmnphkcstyvvle
 
 npx expo start -g
+
+eas build --profile production

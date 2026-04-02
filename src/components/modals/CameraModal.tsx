@@ -13,9 +13,10 @@ interface CameraModalProps {
   visible: boolean
   onClose: () => void
   onCapture: (photoUri: string) => void
+  onModalHidden?: () => void
 }
 
-const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture }) => {
+const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapture, onModalHidden }) => {
   const cameraRef = useRef<CameraView>(null)
   const [capturing, setCapturing] = useState(false)
   const insets = useSafeAreaInsets()
@@ -47,7 +48,7 @@ const CameraModal: React.FC<CameraModalProps> = memo(({ visible, onClose, onCapt
   }, [capturing, onCapture])
 
   return (
-    <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen>
+    <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen onModalHidden={onModalHidden}>
       <View style={styles.container}>
         <CameraView style={styles.camera} ref={cameraRef} facing="back" />
 

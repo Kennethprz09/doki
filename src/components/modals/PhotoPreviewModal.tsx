@@ -23,6 +23,7 @@ interface PhotoPreviewModalProps {
   onSave: () => Promise<boolean>
   onUpdateFrontPhoto: (uri: string) => void
   onUpdateBackPhoto: (uri: string) => void
+  onModalHidden?: () => void
 }
 
 const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
@@ -36,6 +37,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     onSave,
     onUpdateFrontPhoto,
     onUpdateBackPhoto,
+    onModalHidden,
   }) => {
     const [saving, setSaving] = useState(false)
     const [showCropper, setShowCropper] = useState(false)
@@ -97,7 +99,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
     const cropImageUri = cropTarget === "front" ? frontPhoto : backPhoto
 
     return (
-      <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen>
+      <BaseModal visible={visible} onClose={onClose} animationType="fade" fullScreen onModalHidden={onModalHidden}>
         <View style={[styles.container, { paddingTop: insets.top }]}>
           {showCropper && cropTarget && cropImageUri ? (
             <SimpleCropper
@@ -158,6 +160,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = memo(
                     source={{ uri: activeUri }}
                     style={[styles.previewImage, { height: IMAGE_HEIGHT }]}
                     resizeMode="contain"
+                    onError={() => {}}
                   />
                 ) : (
                   <View style={[styles.imagePlaceholder, { height: IMAGE_HEIGHT }]}>

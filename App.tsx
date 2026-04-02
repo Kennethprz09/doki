@@ -45,13 +45,18 @@ const App = () => {
 
   useEffect(() => {
     async function loadFonts() {
-      await Font.loadAsync({
-        "Karla-Bold": require("./assets/fonts/Karla-Bold.ttf"),
-        "Karla-Regular": require("./assets/fonts/Karla-Regular.ttf"),
-        "Karla-SemiBold": require("./assets/fonts/Karla-SemiBold.ttf"),
-      });
-      setFontsLoaded(true);
-      await SplashScreen.hideAsync();
+      try {
+        await Font.loadAsync({
+          "Karla-Bold": require("./assets/fonts/Karla-Bold.ttf"),
+          "Karla-Regular": require("./assets/fonts/Karla-Regular.ttf"),
+          "Karla-SemiBold": require("./assets/fonts/Karla-SemiBold.ttf"),
+        });
+      } catch (error) {
+        console.error("Error loading fonts:", error);
+      } finally {
+        setFontsLoaded(true);
+        await SplashScreen.hideAsync().catch(() => {});
+      }
     }
     loadFonts();
   }, []);

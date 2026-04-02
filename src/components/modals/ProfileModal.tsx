@@ -1,5 +1,5 @@
 import React from "react"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
@@ -21,13 +21,19 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ visible, onClose }) => {
   const { user } = useUserStore()
   const { clearDocuments } = useDocumentsStore()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const pendingLogoutRef = useRef(false)
 
   const handleLogout = useCallback(() => {
+    pendingLogoutRef.current = true
     onClose()
-    setTimeout(() => {
-      setShowLogoutConfirm(true)
-    }, 300)
   }, [onClose])
+
+  const handleProfileModalHidden = useCallback(() => {
+    if (pendingLogoutRef.current) {
+      pendingLogoutRef.current = false
+      setShowLogoutConfirm(true)
+    }
+  }, [])
 
   const confirmLogout = useCallback(async () => {
     try {
@@ -61,7 +67,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ visible, onClose }) => {
 
   return (
     <>
-      <BaseModal visible={visible} onClose={onClose} position="bottom" backdropOpacity={0.5}>
+      <BaseModal visible={visible} onClose={onClose} position="bottom" backdropOpacity={0.5} onModalHidden={handleProfileModalHidden}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
 

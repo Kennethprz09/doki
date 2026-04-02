@@ -25,7 +25,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
     const [showBackPhotoConfirm, setShowBackPhotoConfirm] = useState(false);
     const pendingPhotoUri = useRef<string>("");
 
-    const { uploadFile, uploading } = useFileUpload({
+    const { uploadFile, pickFromGallery, uploading } = useFileUpload({
       folderId: folder?.folder?.id,
     });
 
@@ -44,80 +44,95 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
 
     const { createFolder, processing } = useFolderManager();
 
+    // Ref para la acción pendiente después de cerrar un modal
+    const pendingActionRef = useRef<string | null>(null);
+
+    const handleStartScan = useCallback(async () => {
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) return;
+      resetScanState();
+      setShowCamera(true);
+    }, [requestCameraPermission, resetScanState]);
+
+    // Callback cuando ActionOptionsModal termina de cerrarse
+    const handleOptionsModalHidden = useCallback(() => {
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action === "folder") setShowCreateFolder(true);
+      else if (action === "file") uploadFile();
+      else if (action === "photos") pickFromGallery();
+      else if (action === "scan") handleStartScan();
+    }, [uploadFile, pickFromGallery, handleStartScan]);
+
+    // Callback cuando CameraModal termina de cerrarse
+    const handleCameraModalHidden = useCallback(() => {
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action === "preview") setShowPreview(true);
+      else if (action === "backConfirm") setShowBackPhotoConfirm(true);
+    }, []);
+
+    // Callback cuando PhotoPreviewModal termina de cerrarse
+    const handlePreviewModalHidden = useCallback(() => {
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action === "camera") setShowCamera(true);
+    }, []);
+
+    // Callback cuando ConfirmDialog (foto trasera) termina de cerrarse
+    const handleBackConfirmModalHidden = useCallback(() => {
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action === "preview") setShowPreview(true);
+      else if (action === "camera") setShowCamera(true);
+    }, []);
+
     const handlePhotoCapture = useCallback(
       (photoUri: string) => {
         if (scanState.isCapturingBack) {
           setBackPhoto(photoUri);
+          pendingActionRef.current = "preview";
           setShowCamera(false);
-          setTimeout(() => {
-            setShowPreview(true);
-          }, 500);
         } else {
           setFrontPhoto(photoUri);
           pendingPhotoUri.current = photoUri;
+          pendingActionRef.current = "backConfirm";
           setShowCamera(false);
-          setTimeout(() => {
-            setShowBackPhotoConfirm(true);
-          }, 500);
         }
       },
-      [
-        scanState.isCapturingBack,
-        setFrontPhoto,
-        setBackPhoto,
-        setIsCapturingBack,
-      ]
+      [scanState.isCapturingBack, setFrontPhoto, setBackPhoto]
     );
 
     const handleBackPhotoNo = useCallback(() => {
+      pendingActionRef.current = "preview";
       setShowBackPhotoConfirm(false);
-      setTimeout(() => {
-        setShowPreview(true);
-      }, 300);
     }, []);
 
     const handleBackPhotoYes = useCallback(() => {
-      setShowBackPhotoConfirm(false);
       setIsCapturingBack(true);
-      setTimeout(() => {
-        setShowCamera(true);
-      }, 300);
+      pendingActionRef.current = "camera";
+      setShowBackPhotoConfirm(false);
     }, [setIsCapturingBack]);
 
     const handleRetakeFront = useCallback(() => {
       setFrontPhoto("");
       setIsCapturingBack(false);
+      pendingActionRef.current = "camera";
       setShowPreview(false);
-      setTimeout(() => {
-        setShowCamera(true);
-      }, 500); // Retraso para cerrar PhotoPreviewModal
     }, [setFrontPhoto, setIsCapturingBack]);
 
     const handleRetakeBack = useCallback(() => {
       setBackPhoto("");
       setIsCapturingBack(true);
+      pendingActionRef.current = "camera";
       setShowPreview(false);
-      setTimeout(() => {
-        setShowCamera(true);
-      }, 500); // Retraso para cerrar PhotoPreviewModal
     }, [setBackPhoto, setIsCapturingBack]);
-
-    const handleStartScan = useCallback(async () => {
-      const hasPermission = await requestCameraPermission();
-      if (!hasPermission) {
-        return;
-      }
-
-      resetScanState();
-      setShowCamera(true);
-    }, [requestCameraPermission, resetScanState]);
 
     const handleSavePDF = useCallback(async () => {
       const success = await generatePDF();
       if (success) {
         setShowPreview(false);
         resetScanState();
-      } else {
       }
       return success;
     }, [generatePDF, resetScanState]);
@@ -125,10 +140,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
     const handleCreateFolder = useCallback(
       async (name: string) => {
         const success = await createFolder(name);
-        if (success) {
-          setShowCreateFolder(false);
-        } else {
-        }
+        if (success) setShowCreateFolder(false);
         return success;
       },
       [createFolder]
@@ -136,18 +148,10 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
 
     const handleOptionSelect = useCallback(
       (optionId: string) => {
+        pendingActionRef.current = optionId;
         setShowOptions(false);
-        setTimeout(() => {
-          if (optionId === "folder") {
-            setShowCreateFolder(true);
-          } else if (optionId === "file") {
-            uploadFile();
-          } else if (optionId === "scan") {
-            handleStartScan();
-          }
-        }, 500); // Retraso de 500ms para todas las opciones
       },
-      [uploadFile, handleStartScan]
+      []
     );
 
     const actionOptions = [
@@ -166,6 +170,12 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
         label: "Archivo",
         icon: "cloud-upload-outline" as const,
         onPress: () => handleOptionSelect("file"),
+      },
+      {
+        id: "photos",
+        label: "Fotos",
+        icon: "images-outline" as const,
+        onPress: () => handleOptionSelect("photos"),
       },
       {
         id: "scan",
@@ -188,10 +198,9 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
 
         <ActionOptionsModal
           visible={showOptions}
-          onClose={() => {
-            setShowOptions(false);
-          }}
+          onClose={() => setShowOptions(false)}
           options={actionOptions}
+          onModalHidden={handleOptionsModalHidden}
         />
 
         <CameraModal
@@ -201,6 +210,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
             resetScanState();
           }}
           onCapture={handlePhotoCapture}
+          onModalHidden={handleCameraModalHidden}
         />
 
         <PhotoPreviewModal
@@ -216,6 +226,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           onSave={handleSavePDF}
           onUpdateFrontPhoto={setFrontPhoto}
           onUpdateBackPhoto={setBackPhoto}
+          onModalHidden={handlePreviewModalHidden}
         />
 
         <CreateFolderModal
@@ -236,6 +247,7 @@ const NewActionComponent: React.FC<NewActionComponentProps> = memo(
           message="¿Deseas tomar una foto de la parte trasera del documento?"
           confirmText="Sí"
           cancelText="No"
+          onModalHidden={handleBackConfirmModalHidden}
         />
       </>
     );

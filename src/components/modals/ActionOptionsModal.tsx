@@ -16,15 +16,17 @@ interface ActionOptionsModalProps {
   visible: boolean;
   onClose: () => void;
   options: ActionOption[];
+  onModalHidden?: () => void;
 }
 
 const ICON_COLORS: Record<string, string> = {
   folder: "#FF9800",
   file: "#2196F3",
+  photos: "#E040FB",
   scan: "#10B981",
 };
 
-const ActionOptionsModal: React.FC<ActionOptionsModalProps> = memo(({ visible, onClose, options }) => {
+const ActionOptionsModal: React.FC<ActionOptionsModalProps> = memo(({ visible, onClose, options, onModalHidden }) => {
   const renderOption = useCallback(
     (option: ActionOption) => {
       const accent = ICON_COLORS[option.id] || colors.primary;
@@ -50,7 +52,7 @@ const ActionOptionsModal: React.FC<ActionOptionsModalProps> = memo(({ visible, o
   );
 
   return (
-    <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.5} position="bottom">
+    <BaseModal visible={visible} onClose={onClose} backdropOpacity={0.5} position="bottom" onModalHidden={onModalHidden}>
       <View style={styles.sheet}>
         <View style={styles.handle} />
         <Text style={styles.title}>¿Qué quieres agregar?</Text>

@@ -40,7 +40,7 @@ export default function SimpleCropper({
             onCancel();
           }}
           onEditingComplete={(image) => {
-            if (image && image.uri) {
+            if (image?.uri) {
               onCrop(image.uri);
             } else {
               console.error("No valid image URI after crop");

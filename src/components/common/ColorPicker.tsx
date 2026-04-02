@@ -36,12 +36,17 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const handleConfirmColor = useCallback(async () => {
     if (!currentSelection) return
-    setIsLoading(true)
-    const success = await onColorSelect(currentSelection)
-    setIsLoading(false)
-    if (success) {
-      onClose()
-      setCurrentSelection(null)
+    try {
+      setIsLoading(true)
+      const success = await onColorSelect(currentSelection)
+      if (success) {
+        onClose()
+        setCurrentSelection(null)
+      }
+    } catch (error) {
+      console.error("Error selecting color:", error)
+    } finally {
+      setIsLoading(false)
     }
   }, [currentSelection, onColorSelect, onClose])
 

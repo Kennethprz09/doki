@@ -134,10 +134,12 @@ const MyAccountScreen: React.FC = () => {
   }, [user])
 
   const userInitials = useMemo(() => {
-    if (user?.user_metadata?.name && user?.user_metadata?.surname)
-      return `${user.user_metadata.name[0]}${user.user_metadata.surname[0]}`.toUpperCase()
-    if (user?.user_metadata?.name) return user.user_metadata.name[0].toUpperCase()
-    if (user?.email) return user.email[0].toUpperCase()
+    const name = user?.user_metadata?.name
+    const surname = user?.user_metadata?.surname
+    if (name?.length && surname?.length)
+      return `${name[0]}${surname[0]}`.toUpperCase()
+    if (name?.length) return name[0].toUpperCase()
+    if (user?.email?.length) return user.email[0].toUpperCase()
     return "U"
   }, [user])
 

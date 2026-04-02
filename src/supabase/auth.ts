@@ -30,6 +30,13 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 
     const { user, session } = data;
 
+    if (!user) {
+      return {
+        success: false,
+        errorMessage: 'No se pudo obtener la información del usuario.',
+      };
+    }
+
     // Store user data in Zustand
     useUserStore.getState().setUser(user);
 

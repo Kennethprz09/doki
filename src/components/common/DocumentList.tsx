@@ -55,7 +55,11 @@ const DocumentList: React.FC<DocumentListProps> = memo(
           onSelectionChange?.(newSelection);
         } else {
           if (document.is_folder === false) {
-            await viewFile(document.path, document.ext, document.name);
+            try {
+              await viewFile(document.path, document.ext, document.name);
+            } catch (error) {
+              console.error("Error viewing file:", error);
+            }
           }
         }
       },

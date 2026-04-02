@@ -271,20 +271,20 @@ export const useDocumentScanner = ({
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError || !data) throw insertError || new Error("No se recibieron datos del servidor");
 
       const newDocument: Document = {
         id: data.id,
-        name: data.name,
-        folder_id: data.folder_id,
-        is_favorite: false,
-        is_folder: data.is_folder,
-        path: data.path,
-        size: data.size,
-        ext: data.ext,
-        user_id: data.user_id,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
+        name: data.name ?? fileName,
+        folder_id: data.folder_id ?? null,
+        is_favorite: data.is_favorite ?? false,
+        is_folder: data.is_folder ?? false,
+        path: data.path ?? filePath,
+        size: data.size ?? 0,
+        ext: data.ext ?? "application/pdf",
+        user_id: data.user_id ?? user.id,
+        created_at: data.created_at ?? new Date().toISOString(),
+        updated_at: data.updated_at ?? new Date().toISOString(),
       };
 
       addDocument(newDocument);

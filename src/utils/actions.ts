@@ -35,8 +35,13 @@ export const syncUser = async (): Promise<SyncResult> => {
       }
     }
 
-    const parsedUser = JSON.parse(userData)
-    const userId = parsedUser.id
+    let parsedUser: any
+    try {
+      parsedUser = JSON.parse(userData)
+    } catch {
+      return { success: false, error: "Datos de usuario corruptos" }
+    }
+    const userId = parsedUser?.id
 
     if (!userId) {
       return {

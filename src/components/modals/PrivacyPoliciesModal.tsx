@@ -54,7 +54,7 @@ const PrivacyPoliciesModal: React.FC<PrivacyPoliciesModalProps> = ({ visible, on
   const slideY = fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] })
 
   const handleLink = useCallback(() => {
-    Linking.openURL("https://appdoki.com/politicas-de-privacidad")
+    Linking.openURL("https://appdoki.com/politicas-de-privacidad").catch(() => {})
   }, [])
 
   return (

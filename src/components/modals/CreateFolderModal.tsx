@@ -1,8 +1,20 @@
 import React from "react"
-import { memo, useState, useEffect, useCallback } from "react"
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Dimensions } from "react-native"
+import { memo, useState, useEffect, useCallback, useRef } from "react"
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions,
+  Modal,
+  Pressable,
+  Animated,
+  BackHandler,
+} from "react-native"
 import { colors, fonts, radii, shadows, withAlpha } from "../../theme"
-import BaseModal from "../common/BaseModal"
 import LoadingButton from "../common/LoadingButton"
 import type { Document } from "../types"
 
@@ -31,10 +43,31 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = memo(
     const [folderName, setFolderName] = useState("")
     const [submitting, setSubmitting] = useState(false)
     const [originalExtension, setOriginalExtension] = useState("")
+    const [modalVisible, setModalVisible] = useState(visible)
+    const fadeAnim = useRef(new Animated.Value(visible ? 1 : 0)).current
 
     const isEditing = Boolean(editItem?.id)
     const isEditingFile = isEditing && !editItem?.is_folder
     const title = isEditing ? (editItem?.is_folder ? "Editar carpeta" : "Editar archivo") : "Crear carpeta"
+
+    useEffect(() => {
+      if (visible) {
+        setModalVisible(true)
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+      } else {
+        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+          setModalVisible(false)
+        })
+      }
+    }, [visible, fadeAnim])
+
+    useEffect(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (visible) { onClose(); return true }
+        return false
+      })
+      return () => sub.remove()
+    }, [visible, onClose])
 
     useEffect(() => {
       if (visible && editItem?.name) {
@@ -75,60 +108,84 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = memo(
       : "Nombre de la carpeta"
 
     return (
-      <BaseModal visible={visible} onClose={handleClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
-          <View style={styles.card}>
-            <Text style={styles.title}>{title}</Text>
+      <Modal
+        transparent
+        animationType="none"
+        visible={modalVisible}
+        onRequestClose={handleClose}
+        statusBarTranslucent
+      >
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Pressable style={styles.flex} onPress={handleClose}>
+            <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                bounces={false}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <Pressable onPress={(e) => e.stopPropagation()}>
+                  <Animated.View style={{ opacity: fadeAnim }}>
+                    <View style={styles.card}>
+                      <Text style={styles.title}>{title}</Text>
 
-            {isEditingFile && originalExtension ? (
-              <View style={styles.extInfo}>
-                <Text style={styles.extText}>
-                  Extensión: <Text style={styles.extHighlight}>{originalExtension}</Text>
-                </Text>
-                <Text style={styles.extNote}>Se mantendrá automáticamente</Text>
-              </View>
-            ) : null}
+                      {isEditingFile && originalExtension ? (
+                        <View style={styles.extInfo}>
+                          <Text style={styles.extText}>
+                            Extensión: <Text style={styles.extHighlight}>{originalExtension}</Text>
+                          </Text>
+                          <Text style={styles.extNote}>Se mantendrá automáticamente</Text>
+                        </View>
+                      ) : null}
 
-            <TextInput
-              style={styles.input}
-              placeholder={placeholder}
-              value={folderName}
-              onChangeText={setFolderName}
-              placeholderTextColor={colors.gray400}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
-            />
+                      <TextInput
+                        style={styles.input}
+                        placeholder={placeholder}
+                        value={folderName}
+                        onChangeText={setFolderName}
+                        placeholderTextColor={colors.gray400}
+                        autoFocus
+                        returnKeyType="done"
+                        onSubmitEditing={handleSubmit}
+                      />
 
-            {isEditingFile && folderName.trim() && originalExtension ? (
-              <View style={styles.preview}>
-                <Text style={styles.previewLabel}>Nombre final:</Text>
-                <Text style={styles.previewText}>
-                  {folderName.trim()}
-                  <Text style={styles.previewExt}>{originalExtension}</Text>
-                </Text>
-              </View>
-            ) : null}
+                      {isEditingFile && folderName.trim() && originalExtension ? (
+                        <View style={styles.preview}>
+                          <Text style={styles.previewLabel}>Nombre final:</Text>
+                          <Text style={styles.previewText}>
+                            {folderName.trim()}
+                            <Text style={styles.previewExt}>{originalExtension}</Text>
+                          </Text>
+                        </View>
+                      ) : null}
 
-            <View style={styles.actions}>
-              <LoadingButton
-                title="Cancelar"
-                onPress={handleClose}
-                variant="ghost"
-                style={styles.cancelBtn}
-                disabled={submitting || loading}
-              />
-              <LoadingButton
-                title={isEditing ? "Guardar" : "Crear"}
-                onPress={handleSubmit}
-                loading={submitting || loading}
-                disabled={!folderName.trim()}
-                style={styles.submitBtn}
-              />
-            </View>
-          </View>
+                      <View style={styles.actions}>
+                        <LoadingButton
+                          title="Cancelar"
+                          onPress={handleClose}
+                          variant="ghost"
+                          style={styles.cancelBtn}
+                          disabled={submitting || loading}
+                        />
+                        <LoadingButton
+                          title={isEditing ? "Guardar" : "Crear"}
+                          onPress={handleSubmit}
+                          loading={submitting || loading}
+                          disabled={!folderName.trim()}
+                          style={styles.submitBtn}
+                        />
+                      </View>
+                    </View>
+                  </Animated.View>
+                </Pressable>
+              </ScrollView>
+            </Animated.View>
+          </Pressable>
         </KeyboardAvoidingView>
-      </BaseModal>
+      </Modal>
     )
   },
 )
@@ -136,6 +193,19 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = memo(
 CreateFolderModal.displayName = "CreateFolderModal"
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
   card: {
     width: width * 0.9,
     maxWidth: 440,
